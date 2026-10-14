@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useLogout } from "@/lib/auth";
 import { cx, Logo } from "@/components/ui";
 import { RequireStudent, useStudentMe } from "./RequireStudent";
-import { BalloonIcon, ChecklistIcon, CubeIcon, HouseIcon } from "./icons";
+import { BalloonIcon, ChecklistIcon, ClipboardCheckIcon, CubeIcon, HouseIcon } from "./icons";
 
 type NavItem = {
   to: string;
@@ -15,9 +15,11 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { to: "/", label: "Home", short: "Home", icon: HouseIcon, end: true },
+  // Learning order: pretest first, then the activities, posttest last.
+  { to: "/pretest", label: "Pretest", short: "Pretest", icon: ChecklistIcon },
   { to: "/games", label: "Games", short: "Games", icon: BalloonIcon },
   { to: "/explore", label: "3D Explore", short: "3D", icon: CubeIcon },
-  { to: "/tests", label: "Tests", short: "Tests", icon: ChecklistIcon },
+  { to: "/posttest", label: "Posttest", short: "Posttest", icon: ClipboardCheckIcon },
 ];
 
 /** Route element for "/" and its children: guard + responsive nav + footer. */
@@ -211,7 +213,7 @@ function BottomTabs() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {NAV.map(({ to, short, icon: Icon, end }) => (
           <li key={to}>
             <NavLink

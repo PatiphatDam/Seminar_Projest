@@ -43,6 +43,8 @@ export default function TestResult() {
 
   const item = tests.data?.find((t) => t.assignmentId === r.assignmentId) ?? null;
   const kind = item ? KIND_LABEL[item.kind] : "Test";
+  const listPath = item?.kind === "pretest" ? "/pretest" : item?.kind === "posttest" ? "/posttest" : "/tests";
+  const listLabel = item?.kind === "pretest" ? "Pretest" : item?.kind === "posttest" ? "Posttest" : "Tests";
   const attemptLine = `${kind} · Attempt ${r.attemptNumber}${item?.maxAttempts ? ` of ${item.maxAttempts}` : ""}`;
   const retry = item ? canStart(item) && item.status !== "in_progress" : false;
   const left = r.attemptsLeft;
@@ -59,8 +61,8 @@ export default function TestResult() {
     <div className="mx-auto max-w-[1200px]">
       <StudentPageHeader
         title="Result"
-        crumbs={[{ to: "/tests", label: "Tests" }, { label: r.title }, { label: "Result" }]}
-        back="/tests"
+        crumbs={[{ to: listPath, label: listLabel }, { label: r.title }, { label: "Result" }]}
+        back={listPath}
         phoneSubtitle={attemptLine}
       />
 
@@ -84,7 +86,7 @@ export default function TestResult() {
           )}
           <div className="mt-5 hidden gap-2.5 md:grid md:grid-cols-2">
             <Link
-              to="/tests"
+              to={listPath}
               className="inline-flex h-11 items-center justify-center rounded-xl border border-line bg-surface text-[14px] font-semibold text-ink hover:bg-zinc-50"
             >
               Back to tests
@@ -111,7 +113,7 @@ export default function TestResult() {
               Try again{left !== null ? ` (${left} left)` : ""}
             </Button>
           ) : (
-            <Link to="/tests" className="inline-flex h-[46px] w-full items-center justify-center rounded-xl border border-line bg-surface text-[15px] font-semibold text-ink">
+            <Link to={listPath} className="inline-flex h-[46px] w-full items-center justify-center rounded-xl border border-line bg-surface text-[15px] font-semibold text-ink">
               Back to tests
             </Link>
           )}

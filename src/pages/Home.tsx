@@ -9,12 +9,13 @@ import { useStudentStatus } from "@/components/student/queries";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { InfoIcon } from "@/components/student/icons";
 
-type Accent = "games" | "explore" | "tests";
+type Accent = "games" | "explore" | "tests" | "post";
 
 const tone: Record<Accent, { soft: string; text: string; button: string }> = {
   games: { soft: "bg-games-soft", text: "text-games", button: "bg-games hover:bg-violet-700" },
   explore: { soft: "bg-explore-soft", text: "text-explore", button: "bg-explore hover:bg-teal-700" },
   tests: { soft: "bg-tests-soft", text: "text-tests", button: "bg-tests hover:bg-blue-700" },
+  post: { soft: "bg-post-soft", text: "text-post", button: "bg-post hover:bg-orange-700" },
 };
 
 export default function Home() {
@@ -69,7 +70,18 @@ export default function Home() {
       </div>
 
       <h2 className="mt-[35px] text-[17px] font-semibold leading-6 text-ink md:mt-[47px] md:text-[22px] md:leading-7 lg:mt-[62px]">Start learning</h2>
-      <ul className="mt-4 grid gap-[13px] md:mt-[23px] md:gap-[21px] lg:mt-[26px] lg:grid-cols-3 lg:gap-[25px]">
+      <ul className="mt-4 grid gap-[13px] md:mt-[23px] md:gap-[21px] lg:mt-[26px] lg:grid-cols-2 lg:gap-[25px] xl:grid-cols-4">
+        {/* Learning order: pretest first (recommended, not locked), activities, posttest last. */}
+        <MenuCard
+          accent="tests"
+          image="/images/menu-tests.png"
+          title="Pretest"
+          subtitle="Do this first, before the lesson"
+          chips={pretestChips(status.data, enrolled, status.isPending)}
+          lo="Step 1"
+          action="Open"
+          to="/pretest"
+        />
         <MenuCard
           accent="games"
           image="/images/menu-games.png"
@@ -92,14 +104,14 @@ export default function Home() {
           to="/explore"
         />
         <MenuCard
-          accent="tests"
-          image="/images/menu-tests.png"
-          title="Tests"
-          subtitle="Pretest and posttest"
-          chips={testChips(status.data, enrolled, status.isPending)}
-          lo="Assessment"
+          accent="post"
+          image="/images/menu-posttest.svg"
+          title="Posttest"
+          subtitle="After the lesson — see how much you learned"
+          chips={posttestChips(status.data, enrolled, status.isPending)}
+          lo="Last step"
           action="Open"
-          to="/tests"
+          to="/posttest"
         />
       </ul>
     </div>
@@ -156,7 +168,7 @@ function sectionLabel(className: string) {
   return m ? `${m[2]} (${m[1]})` : className;
 }
 
-type ChipTone = "games" | "explore" | "done" | "neutral";
+type ChipTone = "games" | "explore" | "done" | "neutral" | "start" | "post";
 type Chip = { label: string; tone: ChipTone };
 
 const chipTone: Record<ChipTone, string> = {
@@ -164,26 +176,28 @@ const chipTone: Record<ChipTone, string> = {
   explore: "bg-explore-soft text-explore",
   done: "bg-[#e8f5ec] text-success",
   neutral: "bg-[#f0f0f2] text-muted",
+  start: "bg-tests-soft text-tests-ink",
+  post: "bg-post-soft text-post-ink",
 };
 
-function testChips(s: StudentStatus | undefined, enrolled: boolean, pending: boolean): Chip[] {
-  const neutral = (label: string): Chip => ({ label, tone: "neutral" });
-  if (!enrolled) return [neutral("Join a class to see tests")];
+const done = (score: number | null, max: number | null) => (score !== null && max !== null ? `Done ${score}/${max}` : "Done");
+const neutral = (label: string): Chip => ({ label, tone: "neutral" });
+
+function pretestChips(s: StudentStatus | undefined, enrolled: boolean, pending: boolean): Chip[] {
+  if (!enrolled) return [neutral("Join a class first")];
   if (pending || !s) return [neutral("Loading…")];
-  const chips: Chip[] = [];
-  const done = (score: number | null, max: number | null) => (score !== null && max !== null ? `Done ${score}/${max}` : "Done");
-  if (s.pretest) {
-    const p = s.pretest;
-    chips.push({ label: `Pretest · ${p.submitted ? done(p.score, p.maxScore) : "Not done"}`, tone: p.submitted ? "done" : "neutral" });
-  }
-  if (s.posttest) {
-    const p = s.posttest;
-    chips.push({
-      label: `Posttest · ${p.submitted ? done(p.score, p.maxScore) : p.isOpen ? "Open" : "Not open yet"}`,
-      tone: p.submitted ? "done" : "neutral",
-    });
-  }
-  return chips.length ? chips : [neutral("No tests assigned yet")];
+  const p = s.pretest;
+  if (!p) return [neutral("Not assigned yet")];
+  return p.submitted ? [{ label: done(p.score, p.maxScore), tone: "done" }] : [{ label: "Start here", tone: "start" }];
+}
+
+function posttestChips(s: StudentStatus | undefined, enrolled: boolean, pending: boolean): Chip[] {
+  if (!enrolled) return [neutral("Join a class first")];
+  if (pending || !s) return [neutral("Loading…")];
+  const p = s.posttest;
+  if (!p) return [neutral("Not assigned yet")];
+  if (p.submitted) return [{ label: done(p.score, p.maxScore), tone: "done" }];
+  return [p.isOpen ? { label: "Open now", tone: "post" } : neutral("Opens after the lesson")];
 }
 
 type MenuCardProps = {

@@ -27,6 +27,9 @@
   --color-tests: #2563eb;        /* blue-600 */
   --color-tests-soft: #dbeafe;   /* blue-100 */
   --color-tests-ink: #1e40af;    /* blue-800 */
+  --color-post: #ea580c;         /* orange-600 — Posttest (Pretest keeps the Tests blue) */
+  --color-post-soft: #ffedd5;    /* orange-100 */
+  --color-post-ink: #9a3412;     /* orange-800 */
   --color-success: #15803d;      /* green-700 */
   --color-success-soft: #dcfce7;
   --color-danger: #dc2626;       /* red-600 */

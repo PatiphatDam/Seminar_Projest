@@ -65,6 +65,17 @@ export function ChecklistIcon(p: IconProps) {
   );
 }
 
+/** Posttest: clipboard with a check mark. */
+export function ClipboardCheckIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="4.5" y="4.5" width="15" height="16" rx="2.5" />
+      <path d="M9 4.5V3.8A1.3 1.3 0 0 1 10.3 2.5h3.4A1.3 1.3 0 0 1 15 3.8v.7" />
+      <path d="m8.5 13 2.4 2.4 4.6-5" />
+    </svg>
+  );
+}
+
 export function LockIcon(p: IconProps) {
   return (
     <svg {...base(p)}>

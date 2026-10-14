@@ -23,30 +23,59 @@ import {
  * One card per assignment of the student's section. Start / Resume open the full-screen test page
  * (/tests/:assignmentId/take), which starts or resumes the attempt on the server.
  */
+type Kind = "pretest" | "posttest";
+
+const PAGE: Record<Kind, { title: string; empty: string; info: string }> = {
+  pretest: {
+    title: "Pretest",
+    empty: "Your instructor hasn't opened the pretest for your section yet.",
+    info: "Do the pretest first, before Games and 3D Explore — it shows what you knew before the lesson.",
+  },
+  posttest: {
+    title: "Posttest",
+    empty: "Your instructor hasn't assigned the posttest yet. It opens after the lesson.",
+    info: "The posttest opens after the lesson, at the time your instructor sets.",
+  },
+};
+
+/** /tests — every test of the section (also reached from older links and results). */
 export default function TestsList() {
-  useDocumentTitle("Tests");
+  return <TestsListView />;
+}
+
+/** /pretest and /posttest use the same list, filtered to one kind of test. */
+export function TestsListView({ kind }: { kind?: Kind }) {
+  const page = kind ? PAGE[kind] : null;
+  useDocumentTitle(page?.title ?? "Tests");
   const me = useStudentMe();
   const enrolled = me.enrollment?.status === "active";
   const tests = useStudentTests(enrolled);
   const [filter, setFilter] = useState<ListFilter>("all");
 
   const section = me.enrollment ? me.enrollment.className.split(" · ").reverse().join(" · ") : null;
-  const list = tests.data?.filter((t) => matchesFilter(t, filter)) ?? [];
+  const ofKind = tests.data?.filter((t) => !kind || t.kind === kind);
+  const list = ofKind?.filter((t) => matchesFilter(t, filter)) ?? [];
 
   return (
     <div className="mx-auto max-w-[1200px]">
       <StudentPageHeader
-        title="Tests"
-        crumbs={[{ to: "/", label: "Home" }, { label: "Tests" }]}
+        title={page?.title ?? "Tests"}
+        crumbs={[{ to: "/", label: "Home" }, { label: page?.title ?? "Tests" }]}
         back="/"
-        subtitle={section ? `Pretest and posttest for ${section}` : "Pretest and posttest"}
+        subtitle={section ? `${page?.title ?? "Pretest and posttest"} for ${section}` : (page?.title ?? "Pretest and posttest")}
         phoneSubtitle={section ?? undefined}
-        right={tests.data && tests.data.length > 0 ? <FilterPills value={filter} onChange={setFilter} /> : undefined}
+        right={ofKind && ofKind.length > 1 ? <FilterPills value={filter} onChange={setFilter} /> : undefined}
       />
 
-      <p className="mt-6 hidden items-center gap-2.5 rounded-xl bg-tests-soft px-4 py-3 text-[13px] font-medium text-tests-ink md:flex">
+      <p
+        className={cx(
+          "mt-6 flex items-center gap-2.5 rounded-xl px-4 py-3 text-[13px] font-medium",
+          kind === "posttest" ? "bg-post-soft text-post-ink" : "bg-tests-soft text-tests-ink",
+          !page && "hidden md:flex",
+        )}
+      >
         <InfoIcon size={18} className="shrink-0" />
-        Your answers save automatically. If the connection drops, come back and continue within the remaining time.
+        {page ? `${page.info} Your answers save automatically.` : "Your answers save automatically. If the connection drops, come back and continue within the remaining time."}
       </p>
 
       <div className="mt-[15px]">
@@ -61,8 +90,10 @@ export default function TestsList() {
               Try again
             </Button>
           </div>
-        ) : tests.data.length === 0 ? (
-          <EmptyState title="No tests assigned to your section yet">Your instructor will open the pretest in class.</EmptyState>
+        ) : (ofKind ?? []).length === 0 ? (
+          <EmptyState title={page ? `No ${page.title.toLowerCase()} yet` : "No tests assigned to your section yet"}>
+            {page?.empty ?? "Your instructor will open the pretest in class."}
+          </EmptyState>
         ) : list.length === 0 ? (
           <EmptyState title={filter === "open" ? "No open tests right now" : "No finished tests yet"} />
         ) : (
@@ -145,12 +176,13 @@ function TestCard({ t }: { t: StudentTestItem }) {
   else if (t.status === "closed") note = "This test is closed";
 
   const goTake = () => navigate(`/tests/${t.assignmentId}/take`);
+  const post = t.kind === "posttest";
 
   let actions: ReactNode;
   if (t.status === "in_progress") {
-    actions = <ActionButton onClick={goTake}>Resume</ActionButton>;
+    actions = <ActionButton post={post} onClick={goTake}>Resume</ActionButton>;
   } else if (startable && !hasResult) {
-    actions = <ActionButton onClick={goTake}>Start</ActionButton>;
+    actions = <ActionButton post={post} onClick={goTake}>Start</ActionButton>;
   } else if (hasResult) {
     actions = (
       <>
@@ -160,7 +192,7 @@ function TestCard({ t }: { t: StudentTestItem }) {
         >
           View result
         </Link>
-        {startable && <ActionButton onClick={goTake}>Try again</ActionButton>}
+        {startable && <ActionButton post={post} onClick={goTake}>Try again</ActionButton>}
       </>
     );
   } else {
@@ -175,12 +207,17 @@ function TestCard({ t }: { t: StudentTestItem }) {
     <li
       className={cx(
         "rounded-[20px] border bg-surface px-[15px] py-[15px] md:px-[19px] md:py-[19px]",
-        highlight ? "border-tests ring-1 ring-tests" : "border-line",
+        highlight ? (post ? "border-post ring-1 ring-post" : "border-tests ring-1 ring-tests") : "border-line",
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex h-[25px] items-center rounded-full bg-tests-soft px-2.5 text-[11.5px] font-semibold uppercase tracking-wide text-tests">
+          <span
+            className={cx(
+              "inline-flex h-[25px] items-center rounded-full px-2.5 text-[11.5px] font-semibold uppercase tracking-wide",
+              post ? "bg-post-soft text-post-ink" : "bg-tests-soft text-tests",
+            )}
+          >
             {KIND_LABEL[t.kind]}
           </span>
           <span className={cx("inline-flex h-[25px] items-center rounded-full px-2.5 text-[12px] font-semibold", chip.className)}>{chip.text}</span>
@@ -207,12 +244,15 @@ function TestCard({ t }: { t: StudentTestItem }) {
   );
 }
 
-function ActionButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function ActionButton({ onClick, children, post }: { onClick: () => void; children: ReactNode; post?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-11 min-w-[78px] items-center justify-center rounded-xl bg-tests px-4 text-[15px] font-semibold text-white hover:bg-blue-700"
+      className={cx(
+        "inline-flex h-11 min-w-[78px] items-center justify-center rounded-xl px-4 text-[15px] font-semibold text-white",
+        post ? "bg-post hover:bg-orange-700" : "bg-tests hover:bg-blue-700",
+      )}
     >
       {children}
     </button>

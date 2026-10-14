@@ -28,6 +28,8 @@ const studentRoutes: RouteObject[] = [
   { path: "explore/sarcomere", ...page(() => import("./pages/explore/Sarcomere")) },
 
   // 🧩 Tests (teammate UI, API ready)
+  { path: "pretest", ...page(() => import("./pages/tests/Pretest")) },
+  { path: "posttest", ...page(() => import("./pages/tests/Posttest")) },
   { path: "tests", ...page(() => import("./pages/tests/TestsList")) },
   { path: "tests/result/:attemptId", ...page(() => import("./pages/tests/TestResult")) },
 ];
