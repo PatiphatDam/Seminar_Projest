@@ -110,9 +110,9 @@ export function TestsListView({ kind }: { kind?: Kind }) {
 
 function FilterPills({ value, onChange }: { value: ListFilter; onChange: (f: ListFilter) => void }) {
   const items: { id: ListFilter; label: string; idle: string }[] = [
-    { id: "all", label: "All", idle: "bg-[#f0f0f2] text-ink" },
+    { id: "all", label: "All", idle: "bg-chip text-ink" },
     { id: "open", label: "Open", idle: "bg-tests-soft text-tests" },
-    { id: "done", label: "Done", idle: "bg-[#e8f5ec] text-success" },
+    { id: "done", label: "Done", idle: "bg-success-soft text-success" },
   ];
   return (
     <div role="group" aria-label="Filter tests" className="flex gap-1.5">
@@ -124,7 +124,7 @@ function FilterPills({ value, onChange }: { value: ListFilter; onChange: (f: Lis
           onClick={() => onChange(i.id)}
           className={cx(
             "h-[25px] rounded-full px-3 text-[12px] font-semibold transition-colors",
-            value === i.id ? "bg-ink text-white" : i.idle,
+            value === i.id ? "bg-ink text-on-ink" : i.idle,
           )}
         >
           {i.label}
@@ -135,11 +135,11 @@ function FilterPills({ value, onChange }: { value: ListFilter; onChange: (f: Lis
 }
 
 const STATUS_CHIP: Record<StudentTestItem["status"], { text: string; className: string }> = {
-  not_open: { text: "Not open yet", className: "bg-[#f0f0f2] text-muted" },
+  not_open: { text: "Not open yet", className: "bg-chip text-muted" },
   open: { text: "Open", className: "bg-tests text-white" },
   in_progress: { text: "In progress", className: "bg-amber-100 text-amber-800" },
-  submitted: { text: "Submitted", className: "bg-[#e8f5ec] text-success" },
-  closed: { text: "Closed", className: "bg-[#f0f0f2] text-muted" },
+  submitted: { text: "Submitted", className: "bg-success-soft text-success" },
+  closed: { text: "Closed", className: "bg-chip text-muted" },
 };
 
 function TestCard({ t }: { t: StudentTestItem }) {

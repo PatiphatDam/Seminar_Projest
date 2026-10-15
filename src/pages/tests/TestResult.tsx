@@ -79,7 +79,7 @@ export default function TestResult() {
           </p>
           {r.autoSubmitted && <p className="mt-2 text-[12.5px] text-amber-800 md:hidden">Submitted automatically when time ran out</p>}
           {compare && (
-            <p className="mt-4 inline-flex h-[34px] items-center rounded-xl bg-[#e8f5ec] px-3.5 text-[13.5px] font-semibold text-success">
+            <p className="mt-4 inline-flex h-[34px] items-center rounded-xl bg-success-soft px-3.5 text-[13.5px] font-semibold text-success">
               Pretest {compare.pre} → Posttest {compare.post} ({compare.diff >= 0 ? "+" : ""}
               {compare.diff})
             </p>
@@ -130,7 +130,7 @@ function ScoreRing({ score, max }: { score: number; max: number }) {
   return (
     <div className="relative mx-auto mt-0 size-[118px] md:mt-5 md:size-[124px]" role="img" aria-label={`Score ${score} out of ${max}`}>
       <svg viewBox="0 0 120 120" className="size-full -rotate-90" aria-hidden="true">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#e4e4e7" strokeWidth="8" />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="currentColor" strokeWidth="8" className="text-line" />
         <circle
           cx="60"
           cy="60"
@@ -167,9 +167,7 @@ function Review({ r }: { r: AttemptResult }) {
 
       {!r.review ? (
         <p className="mt-3 rounded-xl bg-zinc-50 px-4 py-3 text-[13.5px] text-muted">
-          {r.attemptsLeft === 0
-            ? "Your instructor hasn't shared the answers for this test."
-            : "Answers will be shown after your last attempt or when the test closes — if your instructor allows it."}
+          Your instructor hasn&apos;t shared the answers for this test.
         </p>
       ) : (
         <>
@@ -185,7 +183,7 @@ function Review({ r }: { r: AttemptResult }) {
                     aria-label={`Question ${q.position}, ${q.correct ? "correct" : "wrong"}`}
                     className={cx(
                       "grid h-10 w-full place-items-center rounded-xl text-[14px] font-semibold md:size-[42px]",
-                      q.correct ? "bg-[#e8f5ec] text-success" : "bg-danger-soft text-danger",
+                      q.correct ? "bg-success-soft text-success" : "bg-danger-soft text-danger",
                       on && "ring-2 ring-offset-1 " + (q.correct ? "ring-success" : "ring-danger"),
                     )}
                   >
@@ -200,7 +198,7 @@ function Review({ r }: { r: AttemptResult }) {
             <div
               className={cx(
                 "mt-4 rounded-xl border px-4 py-3.5",
-                item.correct ? "border-green-200 bg-[#f3faf5]" : "border-red-200 bg-[#fef5f5]",
+                item.correct ? "border-green-200 bg-success-soft/50" : "border-red-200 bg-danger-soft/50",
               )}
             >
               <div className="flex items-start justify-between gap-3">
@@ -210,7 +208,7 @@ function Review({ r }: { r: AttemptResult }) {
                 <span
                   className={cx(
                     "inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-0.5 text-[12px] font-semibold",
-                    item.correct ? "bg-[#e8f5ec] text-success" : "bg-danger-soft text-danger",
+                    item.correct ? "bg-success-soft text-success" : "bg-danger-soft text-danger",
                   )}
                 >
                   {item.correct ? <CheckIcon size={12} strokeWidth={3} /> : <XIcon size={12} strokeWidth={3} />}

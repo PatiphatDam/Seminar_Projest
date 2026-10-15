@@ -3,25 +3,13 @@ import { questionInput } from "../shared/contract";
 import { canRevealAnswers } from "./grading";
 import { anonymizedIdentityHashes, hmacSha256Hex } from "./identityHash";
 
-describe("canRevealAnswers (H-1: no answer leak while retakes are possible)", () => {
-  const base = { showAnswers: true, submitted: true, attemptsLeft: 1 as number | null, assignmentOpen: true };
-
-  it("hides answers while the test is open and attempts remain", () => {
-    expect(canRevealAnswers(base)).toBe(false);
-  });
-  it("reveals when no attempts are left", () => {
-    expect(canRevealAnswers({ ...base, attemptsLeft: 0 })).toBe(true);
-  });
-  it("reveals once the assignment is closed, even with attempts left", () => {
-    expect(canRevealAnswers({ ...base, assignmentOpen: false })).toBe(true);
-  });
-  it("unlimited attempts → only after the test closes", () => {
-    expect(canRevealAnswers({ ...base, attemptsLeft: null })).toBe(false);
-    expect(canRevealAnswers({ ...base, attemptsLeft: null, assignmentOpen: false })).toBe(true);
+describe("canRevealAnswers (\"Show answers after submit\")", () => {
+  it("reveals right after submitting when the switch is on", () => {
+    expect(canRevealAnswers({ showAnswers: true, submitted: true })).toBe(true);
   });
   it("never when show_answers is off or the attempt is not submitted", () => {
-    expect(canRevealAnswers({ ...base, attemptsLeft: 0, showAnswers: false })).toBe(false);
-    expect(canRevealAnswers({ ...base, attemptsLeft: 0, submitted: false })).toBe(false);
+    expect(canRevealAnswers({ showAnswers: false, submitted: true })).toBe(false);
+    expect(canRevealAnswers({ showAnswers: true, submitted: false })).toBe(false);
   });
 });
 

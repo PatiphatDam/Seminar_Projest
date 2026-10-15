@@ -66,7 +66,7 @@ function OnboardingForm() {
         </p>
         <div
           aria-labelledby="student-id-label"
-          className="mt-2.5 flex h-[46px] items-center justify-between gap-3 rounded-xl bg-[#f0f0f2] px-[15px]"
+          className="mt-2.5 flex h-[46px] items-center justify-between gap-3 rounded-xl bg-chip px-[15px]"
         >
           <span className="text-[15px] text-muted">{me.student.studentCode}</span>
           <span className="text-[12px] text-faint">from your email</span>

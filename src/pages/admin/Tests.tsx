@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { AdminTestDetail, AdminTestSaveResult, AdminTestSummary, SaveTestBody, TestKind } from "@shared/contract";
+import type { AdminTestDetail, AdminTestSaveResult, AdminTestSummary, SaveTestBody } from "@shared/contract";
 import { KindBadge } from "@/components/admin/KindBadge";
 import { api } from "@/lib/api";
 import { Button, Card, EmptyState, ErrorNote, Input, PageHeader, PageLoader, Select } from "@/components/ui";
@@ -155,7 +155,7 @@ function CreateTestModal({ open, onClose }: { open: boolean; onClose: () => void
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
-  const [kind, setKind] = useState<TestKind>("pretest");
+  const [kind, setKind] = useState<SaveTestBody["kind"]>("pretest");
   const [err, setErr] = useState<string | null>(null);
 
   const create = useMutation({
@@ -201,10 +201,9 @@ function CreateTestModal({ open, onClose }: { open: boolean; onClose: () => void
     >
       <form id="create-test-form" onSubmit={submit} className="space-y-4" noValidate>
         <Input name="test-title" label="Title" placeholder="e.g. Muscle tissue — Pretest" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} error={err ?? undefined} data-autofocus />
-        <Select name="test-kind" label="Kind" value={kind} onChange={(e) => setKind(e.target.value as TestKind)}>
+        <Select name="test-kind" label="Kind" value={kind} onChange={(e) => setKind(e.target.value as SaveTestBody["kind"])}>
           <option value="pretest">Pretest</option>
           <option value="posttest">Posttest</option>
-          <option value="other">Other</option>
         </Select>
         {create.isError && <ErrorNote>{errorMessage(create.error)}</ErrorNote>}
       </form>

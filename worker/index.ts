@@ -8,6 +8,7 @@ import type { AppEnv } from "./env";
 import { HttpError } from "./http";
 import { adminRoutes } from "./routes/admin";
 import { attemptRoutes } from "./routes/attempts";
+import { imageRoutes } from "./routes/images";
 import { publicRoutes } from "./routes/public";
 import { studentRoutes } from "./routes/student";
 
@@ -18,16 +19,18 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 // API responses are per-user JSON: never cache, never sniff.
 app.use("*", async (c, next) => {
   await next();
+  // Uploaded images (GET /api/images/:id) keep their own long-lived private cache header.
+  if (c.req.method === "GET" && /^\/api\/images\/\d+$/.test(c.req.path) && c.res.ok) return;
   c.header("Cache-Control", "no-store");
   c.header("X-Content-Type-Options", "nosniff");
   c.header("X-Frame-Options", "DENY");
 });
 
-/** Body size guard: 64 KB by default, 1 MB for the test builder and roster import. */
+/** Body size guard: 64 KB by default, 1 MB for the test builder, roster import and image upload. */
 const tooLarge = (c: Context) => c.json({ error: "The request is too large.", code: "payload_too_large" }, 413);
 const smallBody = bodyLimit({ maxSize: 64 * 1024, onError: tooLarge });
 const largeBody = bodyLimit({ maxSize: 1024 * 1024, onError: tooLarge });
-const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/classes\/\d+\/roster$/];
+const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/classes\/\d+\/roster$/, /^\/api\/admin\/images$/];
 app.use("*", async (c, next) => {
   if (SAFE_METHODS.has(c.req.method)) return next();
   const large = LARGE_BODY_PATHS.some((re) => re.test(c.req.path));
@@ -57,6 +60,7 @@ app.use("*", async (c, next) => {
 app.route("/", publicRoutes);
 app.route("/", studentRoutes);
 app.route("/", attemptRoutes);
+app.route("/", imageRoutes);
 app.route("/admin", adminRoutes);
 
 app.notFound((c) => c.json({ error: "Not found.", code: "not_found" }, 404));

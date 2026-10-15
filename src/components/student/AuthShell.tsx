@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Logo } from "@/components/ui";
 
 /**
@@ -10,7 +10,7 @@ import { Logo } from "@/components/ui";
  */
 export function AuthShell({ children, below }: { children: ReactNode; below?: ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-login-panel lg:grid lg:grid-cols-2">
+    <div className="dm-student flex min-h-dvh flex-col bg-login-panel lg:grid lg:grid-cols-2">
       <DesktopHero />
       <CompactHero />
 
@@ -25,10 +25,11 @@ export function AuthShell({ children, below }: { children: ReactNode; below?: Re
   );
 }
 
+/** Colours match the Home cards: card colour (--c) with a contrasting frame (--x). */
 const FEATURES = [
-  { title: "Web games", detail: "Balloon Pop · Group Sort · Diameter" },
-  { title: "Interactive 3D", detail: "Zoom into the sarcomere and contract it" },
-  { title: "Pretest & posttest", detail: "Instant results for you and your teacher" },
+  { title: "Web games", detail: "Balloon Pop · Group Sort · Diameter", c: "var(--color-games)", x: "var(--color-danger)" },
+  { title: "Interactive 3D", detail: "Zoom into the sarcomere and contract it", c: "var(--color-explore)", x: "var(--color-post)" },
+  { title: "Pretest & posttest", detail: "Instant results for you and your teacher", c: "var(--color-tests)", x: "var(--color-post)" },
 ];
 
 const HERO_ALT = "Three anatomical figures running: muscles, muscles over the skeleton, and the skeleton";
@@ -48,6 +49,8 @@ function DesktopHero() {
           className="absolute inset-0 size-full object-cover object-center"
         />
       </picture>
+      {/* Dark mode: dims the light photo so the text stays readable. */}
+      <div aria-hidden="true" className="absolute inset-0 bg-hero-veil" />
 
       <div className="relative flex h-full flex-col px-12 py-24 xl:px-24">
         <Logo variant="hero" size={56} withText={false} />
@@ -57,20 +60,23 @@ function DesktopHero() {
           <br />
           from whole muscle to sarcomere.
         </p>
-        <ol className="mt-[75px] space-y-[31px]">
+        <ol className="mt-[64px] space-y-7">
           {FEATURES.map((f, i) => (
-            <li key={f.title} className="flex items-center gap-4">
-              <span className="grid size-[45px] shrink-0 place-items-center rounded-xl border border-line bg-white/85 text-[15px] font-semibold text-ink">
+            <li key={f.title} className="flex items-center gap-5">
+              <span
+                className="clay-num grid size-[54px] shrink-0 place-items-center rounded-2xl text-[21px] font-bold"
+                style={{ "--c": f.c, "--x": f.x } as CSSProperties}
+              >
                 {i + 1}
               </span>
               <span className="leading-tight">
-                <span className="block text-[16.5px] font-bold text-ink">{f.title}</span>
-                <span className="mt-0.5 block text-[14px] text-ink">{f.detail}</span>
+                <span className="block text-[26px] font-bold tracking-[-0.01em] text-ink">{f.title}</span>
+                <span className="mt-1 block text-[17px] leading-snug text-ink/85">{f.detail}</span>
               </span>
             </li>
           ))}
         </ol>
-        <p className="mt-auto text-[12px] font-medium text-ink">Mae Fah Luang University · Key Point Book</p>
+        <p className="mt-auto text-[14px] font-medium text-ink">Mae Fah Luang University · Key Point Book</p>
       </div>
     </aside>
   );
@@ -92,6 +98,8 @@ function CompactHero() {
           className="absolute inset-0 size-full object-cover object-top"
         />
       </picture>
+      {/* Dark mode: dims the light photo so the text stays readable. */}
+      <div aria-hidden="true" className="absolute inset-0 bg-hero-veil" />
       <div className="relative flex flex-col items-center pt-12 text-center md:pt-[70px]">
         <span className="md:hidden">
           <Logo variant="hero" size={51} withText={false} />
@@ -109,7 +117,7 @@ function CompactHero() {
 /** Small pill shown at the top of the card ("Section 1 · 2569/1 · via QR", "Step 2 of 2"). */
 export function CardChip({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex h-[25px] items-center gap-1.5 rounded-full bg-[#e9eaee] px-3 text-[12px] font-medium text-gray-800">
+    <span className="inline-flex h-[25px] items-center gap-1.5 rounded-full bg-chip-strong px-3 text-[12px] font-medium text-gray-800">
       {children}
     </span>
   );

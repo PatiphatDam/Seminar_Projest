@@ -292,10 +292,21 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
               Data retention
             </h2>
             <ol className="mt-[17px] space-y-[13px]">
+              {/* Matches what the app does today: classes are deleted (Classes page), not archived. */}
               {[
-                { n: 1, title: "Withdraw", sub: "Per student · reversible" },
-                { n: 2, title: "Archive class", sub: "Whole section read-only · reversible" },
-                { n: 3, title: "Delete / anonymize", sub: "Export required first · type the student ID to confirm · not reversible", danger: true },
+                { n: 1, title: "Withdraw", sub: "Per student · hidden from results, can’t sign in · reversible (Reactivate)" },
+                {
+                  n: 2,
+                  title: "Delete / anonymize student",
+                  sub: "Row menu ⋯ · export first · type the student ID to confirm · not reversible",
+                  danger: true,
+                },
+                {
+                  n: 3,
+                  title: "Delete class",
+                  sub: "Classes page · removes the section, its roster and scores, and students who aren’t in another section · export option first · type the join code · not reversible",
+                  danger: true,
+                },
               ].map((s) => (
                 <li key={s.n} className="flex gap-3">
                   <span

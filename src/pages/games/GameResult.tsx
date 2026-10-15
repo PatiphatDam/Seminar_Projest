@@ -12,7 +12,7 @@ export default function GameResult() {
       requirementIds={["GAME-6"]}
       checklist={[
         "Read the result from router state (useLocation().state) — if it is missing (page refreshed), show an empty state + “Play again” link",
-        "Score ring (SVG circle, violet) with “x / y” and the percentage in the middle",
+        "Score ring (SVG circle, green) with “x / y” and the percentage in the middle",
         "Answer review list: your answer, correct answer, ✓ / ✕ and a WHY sentence from the Key Point Book",
         "Buttons: “Play again” (same game), “All games” (/games), “Back to Home”",
         "No API call — game scores are not stored yet (GAME-7 is Future)",

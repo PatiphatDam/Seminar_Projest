@@ -183,3 +183,41 @@ describe("question input (test builder)", () => {
     expect(r).toEqual({ ok: false, error: "Question 3: choose the correct option" });
   });
 });
+
+describe("layout blocks (title / image / section)", () => {
+  const block = (type: "text" | "image" | "section", over: Record<string, unknown> = {}) => ({
+    type,
+    prompt: "Part 2",
+    description: "Read the passage",
+    imageUrl: null,
+    options: [],
+    answer: "",
+    points: 5,
+    required: true,
+    ...over,
+  });
+
+  it("are stored with no answer, 0 points and not required", () => {
+    const r = normalizeQuestionInput(block("section"), 0);
+    expect(r).toMatchObject({ ok: true, question: { type: "section", points: 0, required: false, answer: "", options: [] } });
+  });
+  it("an image block needs an image; a text block needs a title or description", () => {
+    expect(normalizeQuestionInput(block("image"), 1).ok).toBe(false);
+    expect(normalizeQuestionInput(block("image", { imageUrl: "/api/images/3" }), 1).ok).toBe(true);
+    expect(normalizeQuestionInput(block("text", { prompt: "", description: "" }), 2).ok).toBe(false);
+  });
+  it("are skipped when grading", () => {
+    const g = gradeAttempt(
+      {
+        title: "t",
+        questions: [
+          { id: 1, position: 1, type: "section", prompt: "", imageUrl: null, options: [], answer: "", points: 0, required: false },
+          { id: 2, position: 2, type: "truefalse", prompt: "Q", imageUrl: null, options: [], answer: true, points: 2, required: true },
+        ],
+      },
+      { "2": true },
+    );
+    expect(g).toMatchObject({ score: 2, maxScore: 2 });
+    expect(g.items).toHaveLength(1);
+  });
+});

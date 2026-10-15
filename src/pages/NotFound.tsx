@@ -10,7 +10,7 @@ export default function NotFound() {
   const home = me.data?.role === "admin" ? { to: "/admin", label: "Go to the dashboard" } : me.data ? { to: "/", label: "Go Home" } : { to: "/login", label: "Go to sign in" };
 
   return (
-    <main className="grid min-h-dvh place-items-center bg-app px-4 py-10">
+    <main className="dm-student grid min-h-dvh place-items-center bg-app px-4 py-10">
       <div className="w-full max-w-md text-center">
         <div className="flex justify-center">
           <Logo withText={false} size={48} />
@@ -22,7 +22,7 @@ export default function NotFound() {
         </p>
         <Link
           to={home.to}
-          className="mt-8 inline-flex h-11 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-white hover:bg-zinc-700"
+          className="mt-8 inline-flex h-11 items-center justify-center rounded-xl bg-ink px-5 text-sm font-semibold text-on-ink hover:bg-zinc-700"
         >
           {home.label}
         </Link>

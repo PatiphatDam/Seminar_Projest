@@ -1,11 +1,12 @@
 /** Pure validation of admin question input (test builder). No Cloudflare imports. */
-import type { AnswerValue, QuestionType } from "../shared/contract";
+import { isLayoutType, type AnswerValue, type QuestionType } from "../shared/contract";
 import { TRUE_FALSE_OPTIONS, type QuestionOption } from "./grading";
 
 export interface RawQuestionInput {
   id?: number;
   type: QuestionType;
   prompt: string;
+  description?: string;
   imageUrl?: string | null;
   options: { id: string; text: string }[];
   answer: string | string[] | boolean;
@@ -17,6 +18,7 @@ export interface NormalizedQuestion {
   id?: number;
   type: QuestionType;
   prompt: string;
+  description: string;
   imageUrl: string | null;
   options: QuestionOption[];
   answer: AnswerValue;
@@ -30,17 +32,29 @@ export type QuestionCheck = { ok: true; question: NormalizedQuestion } | { ok: f
  * Validates one question and normalises its answer for storage:
  * single → option id · multi → unique option ids · truefalse → boolean (options fixed to True/False) ·
  * short → non-empty list of accepted answers.
+ * Layout blocks (text / image / section) are stored with no options, an empty answer, 0 points and not required.
  */
 export function normalizeQuestionInput(q: RawQuestionInput, index: number): QuestionCheck {
-  const label = `Question ${index + 1}`;
+  const label = `${isLayoutType(q.type) ? "Block" : "Question"} ${index + 1}`;
   const base = {
     id: q.id,
     type: q.type,
     prompt: q.prompt.trim(),
+    description: (q.description ?? "").trim(),
     imageUrl: q.imageUrl ?? null,
     points: q.points,
     required: q.required,
   };
+
+  if (isLayoutType(q.type)) {
+    const block = { ...base, options: [], answer: "", points: 0, required: false };
+    if (q.type === "text" && !block.prompt && !block.description) return { ok: false, error: `${label}: add a title or a description` };
+    if (q.type === "image" && !block.imageUrl) return { ok: false, error: `${label}: upload an image` };
+    if (q.type !== "image") block.imageUrl = null;
+    return { ok: true, question: block };
+  }
+
+  if (!base.prompt) return { ok: false, error: `${label}: write the question` };
 
   if (q.type === "truefalse") {
     let answer: boolean | null = null;

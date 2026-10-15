@@ -146,3 +146,12 @@ export function XIcon(p: IconProps) {
     </svg>
   );
 }
+
+export function BookIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M12 6.5c-1.8-1.3-4.3-2-7.5-2v13c3.2 0 5.7.7 7.5 2 1.8-1.3 4.3-2 7.5-2v-13c-3.2 0-5.7.7-7.5 2Z" />
+      <path d="M12 6.5v13" />
+    </svg>
+  );
+}

@@ -13,7 +13,7 @@ export default function GroupSort() {
       checklist={[
         "Match structure ↔ connective tissue: Muscle ↔ Epimysium · Fascicle ↔ Perimysium · Muscle fiber ↔ Endomysium; also sort items into “structure” vs “connective tissue”",
         "Card pool at the bottom, drop zones (pairs / groups) above — drag with @dnd-kit (pointer, touch and keyboard sensors)",
-        "Buttons: “Reset” (outline) and “Check answers” (violet, disabled until every card is placed)",
+        "Buttons: “Reset” (outline) and “Check answers” (green, disabled until every card is placed)",
         "After checking: correct slots green, wrong slots red, with a short WHY per item",
         "Key point panel (Key Point Book text) beside the board on desktop, collapsible under it on phones",
         "Share ONE drag-and-drop engine with Diameter (GAME-4), e.g. src/pages/games/dnd/, reading each puzzle from JSON",

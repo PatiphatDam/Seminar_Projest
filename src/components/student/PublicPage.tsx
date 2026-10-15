@@ -11,7 +11,7 @@ export function PublicPage({ title, intro, children }: { title: string; intro?: 
   const back = me.data?.role === "admin" ? { to: "/admin", label: "Dashboard" } : me.data ? { to: "/", label: "Home" } : { to: "/login", label: "Sign in" };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-app">
+    <div className="dm-student flex min-h-dvh flex-col bg-app">
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
           <Link to={back.to} className="rounded-lg" aria-label={`Digital Muscle — ${back.label}`}>

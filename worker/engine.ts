@@ -14,6 +14,7 @@ import type {
 import { nowIso, parseJson, queryAll, queryFirst, stmt } from "./db";
 import {
   canRevealAnswers,
+  gradedQuestions,
   displayCorrectAnswer,
   gradeAttempt,
   isAttemptExpired,
@@ -124,6 +125,7 @@ interface QuestionRow {
   position: number;
   type: SnapshotQuestion["type"];
   prompt: string;
+  description: string;
   image_url: string | null;
   options: string;
   answer: string;
@@ -134,7 +136,7 @@ interface QuestionRow {
 export async function loadQuestions(db: D1Database, testId: number): Promise<SnapshotQuestion[]> {
   const rows = await queryAll<QuestionRow>(
     db,
-    "SELECT id, position, type, prompt, image_url, options, answer, points, required FROM questions WHERE test_id = ? ORDER BY position, id",
+    "SELECT id, position, type, prompt, description, image_url, options, answer, points, required FROM questions WHERE test_id = ? ORDER BY position, id",
     testId,
   );
   return rows.map((r) => ({
@@ -142,6 +144,7 @@ export async function loadQuestions(db: D1Database, testId: number): Promise<Sna
     position: r.position,
     type: r.type,
     prompt: r.prompt,
+    description: r.description,
     imageUrl: r.image_url,
     options: parseJson(r.options, []),
     answer: parseJson<AnswerValue>(r.answer, ""),
@@ -166,7 +169,7 @@ export async function ensureCurrentVersion(db: D1Database, testId: number): Prom
   );
   if (existing) return existing.id;
   const questions = await loadQuestions(db, testId);
-  if (questions.length === 0) throw conflict("This test has no questions yet.", "empty_test");
+  if (gradedQuestions(questions).length === 0) throw conflict("This test has no questions yet.", "empty_test");
   const snapshot: TestSnapshot = { title: test.title, questions: questions.map((q, i) => ({ ...q, position: i + 1 })) };
   // INSERT OR IGNORE + re-select: two students starting at the same moment end up on the same snapshot.
   await stmt(
@@ -264,6 +267,7 @@ export function toStudentQuestion(q: SnapshotQuestion): StudentQuestion {
     position: q.position,
     type: q.type,
     prompt: q.prompt,
+    description: q.description ?? "",
     imageUrl: q.imageUrl,
     options: q.options.map((o) => ({ id: o.id, text: o.text })),
     points: q.points,
@@ -315,27 +319,22 @@ export async function toResult(
   snapshots: SnapshotCache,
   attemptNumber: number,
   submittedCount: number,
-  now: Date,
+  _now: Date,
 ): Promise<AttemptResult> {
   const snap = await snapshots.get(attempt.test_version_id);
   const answers = parseJson<Record<string, AnswerValue>>(attempt.answers, {});
   let review: AttemptResult["review"] = null;
   const attemptsLeft = asg.max_attempts === null ? null : Math.max(0, asg.max_attempts - submittedCount);
-  // Never reveal answers while they could still be used to improve the score (see canRevealAnswers).
-  const reveal = canRevealAnswers({
-    showAnswers: asg.show_answers === 1,
-    submitted: attempt.submitted_at !== null,
-    attemptsLeft,
-    assignmentOpen: isAssignmentOpen(windowOf(asg), now),
-  });
+  const reveal = canRevealAnswers({ showAnswers: asg.show_answers === 1, submitted: attempt.submitted_at !== null });
   if (reveal) {
     const g = gradeAttempt(snap, answers);
     const byId = new Map(g.items.map((i) => [i.questionId, i]));
-    review = snap.questions.map((q) => {
+    // Numbered among the graded questions only, so "Q3" matches the number the student saw.
+    review = gradedQuestions(snap.questions).map((q, i) => {
       const item = byId.get(q.id);
       return {
         questionId: q.id,
-        position: q.position,
+        position: i + 1,
         type: q.type,
         prompt: q.prompt,
         // Option texts let the result page show "Actin, Tropomyosin" instead of option ids.
@@ -393,7 +392,7 @@ export async function studentTestStates(db: D1Database, enrollmentId: number, cl
   const qStats = await queryAll<{ test_id: number; n: number; pts: number }>(
     db,
     `SELECT test_id, COUNT(*) AS n, COALESCE(SUM(points), 0) AS pts FROM questions
-      WHERE test_id IN (SELECT test_id FROM test_assignments WHERE class_id = ?) GROUP BY test_id`,
+      WHERE type NOT IN ('text', 'image', 'section') AND test_id IN (SELECT test_id FROM test_assignments WHERE class_id = ?) GROUP BY test_id`,
     classId,
   );
   const qByTest = new Map(qStats.map((q) => [q.test_id, q]));

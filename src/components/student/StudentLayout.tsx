@@ -1,9 +1,10 @@
 import { useEffect, useId, useRef, useState, type ComponentType } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useLogout } from "@/lib/auth";
+import { setTheme, useTheme, type ThemeChoice } from "@/lib/theme";
 import { cx, Logo } from "@/components/ui";
 import { RequireStudent, useStudentMe } from "./RequireStudent";
-import { BalloonIcon, ChecklistIcon, ClipboardCheckIcon, CubeIcon, HouseIcon } from "./icons";
+import { BalloonIcon, BookIcon, ChecklistIcon, ClipboardCheckIcon, CubeIcon, HouseIcon } from "./icons";
 
 type NavItem = {
   to: string;
@@ -17,6 +18,7 @@ const NAV: NavItem[] = [
   { to: "/", label: "Home", short: "Home", icon: HouseIcon, end: true },
   // Learning order: pretest first, then the activities, posttest last.
   { to: "/pretest", label: "Pretest", short: "Pretest", icon: ChecklistIcon },
+  { to: "/lessons", label: "Lessons", short: "Lessons", icon: BookIcon },
   { to: "/games", label: "Games", short: "Games", icon: BalloonIcon },
   { to: "/explore", label: "3D Explore", short: "3D", icon: CubeIcon },
   { to: "/posttest", label: "Posttest", short: "Posttest", icon: ClipboardCheckIcon },
@@ -40,10 +42,10 @@ function Shell() {
   }, [pathname]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-app">
+    <div className="dm-student flex min-h-dvh flex-col bg-app">
       <a
         href="#main"
-        className="sr-only z-50 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+        className="sr-only z-50 rounded-lg bg-ink px-3 py-2 text-sm font-semibold text-on-ink focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
       >
         Skip to content
       </a>
@@ -70,7 +72,7 @@ function TopBar({ phoneHidden }: { phoneHidden: boolean }) {
         </Link>
 
         <nav aria-label="Main" className="hidden flex-1 justify-center md:flex">
-          <ul className="flex items-stretch gap-6 lg:gap-14">
+          <ul className="flex items-stretch gap-3.5 lg:gap-8 xl:gap-12">
             {NAV.map((item) => (
               <li key={item.to} className="flex">
                 <NavLink
@@ -78,7 +80,7 @@ function TopBar({ phoneHidden }: { phoneHidden: boolean }) {
                     end={item.end}
                     className={({ isActive }) =>
                       cx(
-                        "relative flex h-[72px] items-center rounded-md text-[15px] transition-colors",
+                        "relative flex h-[72px] items-center rounded-md text-[14px] transition-colors lg:text-[15px]",
                         isActive ? "font-semibold text-gray-800" : "text-muted hover:text-ink",
                       )
                     }
@@ -148,7 +150,7 @@ function UserMenu() {
 
   return (
     <div ref={wrapRef} className="relative flex items-center gap-3">
-      <div className="hidden text-right md:block">
+      <div className="hidden text-right lg:block">
         <p className="max-w-[12rem] truncate text-[14px] font-semibold leading-5 text-ink">{firstName}</p>
         <p className="max-w-[12rem] truncate text-[12px] leading-4 text-muted">{className}</p>
       </div>
@@ -160,7 +162,7 @@ function UserMenu() {
         aria-controls={open ? menuId : undefined}
         aria-label={`Account menu for ${firstName}`}
         onClick={() => setOpen((o) => !o)}
-        className="grid size-9 place-items-center rounded-full bg-[#e9eaee] text-[14px] font-semibold text-gray-800 transition-shadow hover:ring-4 hover:ring-zinc-200"
+        className="grid size-9 place-items-center rounded-full bg-chip-strong text-[14px] font-semibold text-gray-800 transition-shadow hover:ring-4 hover:ring-zinc-200"
       >
         {initial}
       </button>
@@ -177,6 +179,7 @@ function UserMenu() {
             <p className="truncate text-xs text-muted">{me.student.studentCode}</p>
             <p className="truncate text-xs text-muted">{className}</p>
           </div>
+          <ThemePicker />
           <button
             ref={firstItemRef}
             type="button"
@@ -207,13 +210,47 @@ function UserMenu() {
   );
 }
 
+const THEMES: { value: ThemeChoice; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+];
+
+/** Light / Dark — saved on this device only (starts from the device setting). */
+function ThemePicker() {
+  const theme = useTheme();
+  return (
+    <div className="border-b border-line px-4 py-3">
+      <p id="theme-label" className="text-xs font-semibold text-muted">
+        Appearance
+      </p>
+      <div role="radiogroup" aria-labelledby="theme-label" className="mt-2 grid grid-cols-2 gap-1 rounded-xl bg-chip p-1">
+        {THEMES.map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            role="radio"
+            aria-checked={theme === t.value}
+            onClick={() => setTheme(t.value)}
+            className={cx(
+              "h-8 rounded-lg text-[13px] font-semibold transition-colors",
+              theme === t.value ? "bg-ink text-on-ink" : "text-muted hover:text-ink",
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BottomTabs() {
   return (
     <nav
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-5">
+      <ul className="grid grid-cols-6">
         {NAV.map(({ to, short, icon: Icon, end }) => (
           <li key={to}>
             <NavLink
@@ -221,7 +258,7 @@ function BottomTabs() {
               end={end}
               className={({ isActive }) =>
                 cx(
-                  "flex h-[75px] flex-col items-center justify-center gap-1.5 text-[11.5px] font-semibold transition-colors",
+                  "flex h-[75px] flex-col items-center justify-center gap-1.5 text-[11px] font-semibold transition-colors",
                   isActive ? "text-gray-800" : "text-faint hover:text-muted",
                 )
               }

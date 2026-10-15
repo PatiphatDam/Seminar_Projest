@@ -5,6 +5,7 @@ import { RouterProvider } from "react-router";
 import { router } from "./router";
 import { ApiRequestError } from "./lib/api";
 import { meKey } from "./lib/auth";
+import { initTheme } from "./lib/theme";
 import "./index.css";
 
 /**
@@ -25,6 +26,8 @@ const queryClient: QueryClient = new QueryClient({
     queries: { retry: (count, error) => !(error instanceof ApiRequestError && error.status < 500) && count < 1, refetchOnWindowFocus: false },
   },
 });
+
+initTheme();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

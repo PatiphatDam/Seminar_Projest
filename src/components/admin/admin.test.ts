@@ -47,6 +47,7 @@ describe("builder", () => {
   const q = (over: Partial<AdminQuestion>): AdminQuestion => ({
     id: 1,
     position: 1,
+    description: "",
     type: "single",
     prompt: "P",
     imageUrl: null,
@@ -94,13 +95,13 @@ describe("builder", () => {
 
   it("flags missing prompt / correct answer / title", () => {
     const blank = blankQuestion();
-    const v = validateDraft({ title: " ", description: "", kind: "other", questions: [blank] });
+    const v = validateDraft({ title: " ", description: "", kind: "pretest", questions: [blank] });
     expect(v.title).toBeTruthy();
     expect(v.byQuestion[blank.key]).toEqual(["Write the question.", "Mark the correct option."]);
     const tf = { ...blankQuestion("truefalse"), prompt: "x" };
-    expect(validateDraft({ title: "t", description: "", kind: "other", questions: [tf] }).byQuestion[tf.key]).toHaveLength(1);
+    expect(validateDraft({ title: "t", description: "", kind: "pretest", questions: [tf] }).byQuestion[tf.key]).toHaveLength(1);
     const short = { ...blankQuestion("short"), prompt: "x", accepted: ["  "] };
-    expect(validateDraft({ title: "t", description: "", kind: "other", questions: [short] }).byQuestion[short.key]).toEqual(["Add at least one accepted answer."]);
+    expect(validateDraft({ title: "t", description: "", kind: "pretest", questions: [short] }).byQuestion[short.key]).toEqual(["Add at least one accepted answer."]);
   });
 
   it("keeps answers when switching single ↔ multi", () => {
@@ -219,20 +220,20 @@ describe("QA fixes", () => {
     const keep = { ...blankQuestion(), id: 11, prompt: "a", single: "a" };
     const restored = { ...blankQuestion(), id: 12, prompt: "b", single: "a" }; // deleted on the server, restored by Undo
     const fresh = { ...blankQuestion(), prompt: "c", single: "a" };
-    const body = toSaveBody({ title: "t", description: "", kind: "other", questions: [keep, restored, fresh] }, new Set([11]));
+    const body = toSaveBody({ title: "t", description: "", kind: "pretest", questions: [keep, restored, fresh] }, new Set([11]));
     expect(body.questions.map((q) => q.id)).toEqual([11, undefined, undefined]);
     expect("id" in body.questions[1]).toBe(false);
     // without a server-id set everything is kept (initial behaviour)
-    expect(toSaveBody({ title: "t", description: "", kind: "other", questions: [restored] }).questions[0].id).toBe(12);
+    expect(toSaveBody({ title: "t", description: "", kind: "pretest", questions: [restored] }).questions[0].id).toBe(12);
   });
 
   it("M1: validates question count and image URLs", () => {
     const ok = { ...blankQuestion(), prompt: "p", single: "a" };
     const many = Array.from({ length: MAX_QUESTIONS + 1 }, () => ({ ...ok, key: Math.random().toString(36) }));
-    const v = validateDraft({ title: "t", description: "", kind: "other", questions: many });
+    const v = validateDraft({ title: "t", description: "", kind: "pretest", questions: many });
     expect(v.general).toHaveLength(1);
     expect(v.count).toBe(1);
-    const img = (imageUrl: string) => validateDraft({ title: "t", description: "", kind: "other", questions: [{ ...ok, imageUrl }] }).count;
+    const img = (imageUrl: string) => validateDraft({ title: "t", description: "", kind: "pretest", questions: [{ ...ok, imageUrl }] }).count;
     expect(img("https://example.com/a.png")).toBe(0);
     expect(img("/images/sarcomere.webp")).toBe(0);
     expect(img("http://insecure.test/a.png")).toBe(1);

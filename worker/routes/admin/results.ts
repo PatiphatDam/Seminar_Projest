@@ -3,7 +3,7 @@ import type { AdminResults, AnswerValue, EnrollmentStatus, ScorePolicy, TestKind
 import { parseJson, placeholders, queryAll, type SqlValue } from "../../db";
 import { SnapshotCache } from "../../engine";
 import type { AppEnv } from "../../env";
-import { histogram, isCorrect, pickCountedAttempt, round2, scoreStats } from "../../grading";
+import { gradedQuestions, histogram, isCorrect, pickCountedAttempt, round2, scoreStats } from "../../grading";
 import { badRequest } from "../../http";
 import { ANONYMIZED_LABEL, loadClassBasics } from "./common";
 
@@ -170,11 +170,11 @@ resultRoutes.get("/results", async (c) => {
     const parsed = list.map((a) => parseJson<Record<string, AnswerValue>>(a.answers, {}));
     itemAnalysis.push({
       testId: t.id,
-      items: snap.questions.map((q) => {
+      items: gradedQuestions(snap.questions).map((q, i) => {
         const correct = parsed.filter((ans) => isCorrect(q, ans[String(q.id)])).length;
         return {
           questionId: q.id,
-          position: q.position,
+          position: i + 1,
           prompt: q.prompt,
           percentCorrect: list.length ? Math.round((correct / list.length) * 1000) / 10 : 0,
           n: list.length,

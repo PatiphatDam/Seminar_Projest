@@ -16,6 +16,10 @@ const page = (load: () => Promise<{ default: React.ComponentType }>) => ({
 const studentRoutes: RouteObject[] = [
   { index: true, ...page(() => import("./pages/Home")) },
 
+  // Lessons (reading content in src/content/lessons.ts)
+  { path: "lessons", ...page(() => import("./pages/lessons/LessonsList")) },
+  { path: "lessons/:slug", ...page(() => import("./pages/lessons/Lesson")) },
+
   // 🧩 Games (teammate)
   { path: "games", ...page(() => import("./pages/games/GamesHub")) },
   { path: "games/balloon-pop", ...page(() => import("./pages/games/BalloonPop")) },

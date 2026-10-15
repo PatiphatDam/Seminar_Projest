@@ -12,7 +12,13 @@ export type Role = "student" | "admin";
 export type ClassStatus = "active" | "archived";
 export type EnrollmentStatus = "active" | "withdrawn";
 export type TestKind = "pretest" | "posttest" | "other";
-export type QuestionType = "single" | "multi" | "truefalse" | "short";
+export type QuestionType = "single" | "multi" | "truefalse" | "short" | LayoutType;
+/** Google-Forms-style blocks in the builder: no answer, no points, never graded. */
+export type LayoutType = "text" | "image" | "section";
+export const LAYOUT_TYPES: readonly LayoutType[] = ["text", "image", "section"];
+export const isLayoutType = (t: QuestionType): t is LayoutType => (LAYOUT_TYPES as readonly string[]).includes(t);
+/** Uploaded images are served by the Worker at /api/images/:id (see POST /api/admin/images). */
+export const UPLOADED_IMAGE_URL = /^\/api\/images\/\d+$/;
 export type ScorePolicy = "highest" | "latest" | "first";
 export type Availability = "manual" | "scheduled";
 
@@ -138,7 +144,8 @@ export interface StudentQuestion {
   id: number;
   position: number;
   type: QuestionType;
-  prompt: string;
+  prompt: string; // the title for text / section blocks, the caption for image blocks
+  description: string; // text / section blocks; "" otherwise
   imageUrl: string | null;
   options: { id: string; text: string }[]; // empty for 'short'; ["true","false"] ids for truefalse
   points: number;
@@ -182,8 +189,8 @@ export interface AttemptResult {
   attemptNumber: number;
   attemptsLeft: number | null;
   /**
-   * Only when the assignment has show_answers = 1 AND (the student has no attempts left OR the test is closed).
-   * Otherwise null — the UI should say "Answers will be shown after your last attempt or when the test closes".
+   * Only when the assignment has show_answers = 1 (shown right after submitting). Otherwise null.
+   * Graded questions only — title / image / section blocks are left out.
    */
   review: {
     questionId: number;
@@ -263,16 +270,21 @@ export const enrollStudentBody = z.object({ classId: z.number().int().positive()
 
 export const questionInput = z.object({
   id: z.number().int().positive().optional(), // omit for new questions
-  type: z.enum(["single", "multi", "truefalse", "short"]),
-  prompt: z.string().trim().min(1).max(2000),
-  /** https:// URL or a site-relative path under /images/ (no other schemes, no path traversal) */
+  type: z.enum(["single", "multi", "truefalse", "short", "text", "image", "section"]),
+  /** Required for questions; optional title / caption for layout blocks (checked in worker/questionInput.ts). */
+  prompt: z.string().trim().max(2000),
+  description: z.string().max(4000).default(""),
+  /** https:// URL, an uploaded image (/api/images/:id) or a site path under /images/ (no other schemes, no path traversal) */
   imageUrl: z
     .string()
     .trim()
     .max(500)
     .refine(
-      (v) => /^https:\/\/[a-z0-9.-]+(:\d+)?(\/[^\s]*)?$/i.test(v) || (/^\/images\/[^\s]*$/.test(v) && !v.includes("..") && !v.includes("//")),
-      { message: "Image URL must start with https:// or /images/" },
+      (v) =>
+        /^https:\/\/[a-z0-9.-]+(:\d+)?(\/[^\s]*)?$/i.test(v) ||
+        UPLOADED_IMAGE_URL.test(v) ||
+        (/^\/images\/[^\s]*$/.test(v) && !v.includes("..") && !v.includes("//")),
+      { message: "Image URL must start with https:// or /images/, or be an uploaded image" },
     )
     .nullable()
     .optional(),
@@ -287,7 +299,8 @@ export type QuestionInput = z.input<typeof questionInput>;
 export const saveTestBody = z.object({
   title: z.string().trim().min(1).max(200),
   description: z.string().max(2000).default(""),
-  kind: z.enum(["pretest", "posttest", "other"]),
+  // "other" can still exist in old rows (TestKind), but new / saved tests are a pretest or a posttest.
+  kind: z.enum(["pretest", "posttest"]),
   questions: z.array(questionInput).max(200),
 });
 export type SaveTestBody = z.input<typeof saveTestBody>;
@@ -297,6 +310,7 @@ export interface AdminQuestion {
   position: number;
   type: QuestionType;
   prompt: string;
+  description: string;
   imageUrl: string | null;
   options: { id: string; text: string }[];
   answer: AnswerValue;

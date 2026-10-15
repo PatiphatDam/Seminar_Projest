@@ -11,7 +11,7 @@ export default function GamesHub() {
       file="src/pages/games/GamesHub.tsx"
       requirementIds={["GAME-1", "GAME-2", "GAME-3", "GAME-5"]}
       checklist={[
-        "Three game cards (Balloon Pop · Group Sort · Diameter) in the Home card style: violet soft cover, title, one-line goal, LO tag (OL1 / OL2 / OL3), “Play” button",
+        "Three game cards (Balloon Pop · Group Sort · Diameter) in the Home card style: green soft cover, title, one-line goal, LO tag (OL1 / OL2 / OL3), “Play” button",
         "Cards link to /games/balloon-pop, /games/group-sort and /games/diameter",
         "Optional: best score of this session per game (local state only — saving to the DB is GAME-7, Future)",
         "Responsive: 3 columns ≥1024px, 1 column on phones (≥360px); touch targets ≥44px",

@@ -368,9 +368,14 @@ function AssignEditor({ test, assignments, classes }: { test: AdminTestDetail; a
                   </div>
                 </SettingRow>
 
-                <SettingRow label="Show answers after submit" helper="Students see the correct answers on their result page">
+                <SettingRow label="Show answers after submit" helper="Students see the correct answers on their result page right after they submit">
                   <Switch checked={form.showAnswers} onChange={(v) => setForm({ showAnswers: v })} label="Show answers after submit" />
                 </SettingRow>
+                {form.showAnswers && form.attemptsMode === "retakes" && (
+                  <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-[12px] leading-[18px] text-amber-900" role="note">
+                    Retakes are allowed, so students can see the answers before their next attempt. Choose “Once” for a pretest if that matters.
+                  </p>
+                )}
               </div>
 
               {errors[selected.id] && (

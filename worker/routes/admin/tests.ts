@@ -36,7 +36,7 @@ interface TestSummaryRow {
 
 const TEST_SUMMARY_SELECT = `
   SELECT t.id, t.title, t.description, t.kind, t.current_version, t.updated_at,
-         (SELECT COUNT(*) FROM questions q WHERE q.test_id = t.id) AS question_count,
+         (SELECT COUNT(*) FROM questions q WHERE q.test_id = t.id AND q.type NOT IN ('text', 'image', 'section')) AS question_count,
          (SELECT COALESCE(SUM(points), 0) FROM questions q WHERE q.test_id = t.id) AS max_score,
          (SELECT COUNT(*) FROM test_assignments ta WHERE ta.test_id = t.id) AS assigned,
          (SELECT COUNT(*) FROM attempts a JOIN test_assignments ta ON ta.id = a.assignment_id WHERE ta.test_id = t.id) AS attempt_count
@@ -84,7 +84,7 @@ async function loadTestDetail(db: D1Database, id: number): Promise<AdminTestDeta
   return {
     ...toSummary(row),
     description: row.description,
-    questions: questions.map<AdminQuestion>((q) => ({ ...q })),
+    questions: questions.map<AdminQuestion>((q) => ({ ...q, description: q.description ?? "" })),
     versionLocked: locked,
     versions: versions.map((v) => ({ versionNo: v.version_no, createdAt: v.created_at, attemptCount: v.attempt_count })),
   };
@@ -108,21 +108,22 @@ function normalizeAll(questions: Parameters<typeof normalizeQuestionInput>[0][])
 }
 
 /** Canonical content used to decide whether the question list really changed. */
-function contentKey(qs: Omit<NormalizedQuestion, "id">[]): string {
+function contentKey(qs: (Omit<NormalizedQuestion, "id" | "description"> & { description?: string })[]): string {
   return JSON.stringify(
-    qs.map((q) => [q.type, q.prompt, q.imageUrl ?? null, q.options, q.answer, q.points, q.required]),
+    qs.map((q) => [q.type, q.prompt, q.description ?? "", q.imageUrl ?? null, q.options, q.answer, q.points, q.required]),
   );
 }
 
 function insertQuestionStmt(db: D1Database, testId: number, q: NormalizedQuestion, position: number): D1PreparedStatement {
   return stmt(
     db,
-    `INSERT INTO questions (test_id, position, type, prompt, image_url, options, answer, points, required)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO questions (test_id, position, type, prompt, description, image_url, options, answer, points, required)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     testId,
     position,
     q.type,
     q.prompt,
+    q.description,
     q.imageUrl,
     JSON.stringify(q.options),
     JSON.stringify(q.answer),
@@ -218,11 +219,12 @@ testAdminRoutes.put("/tests/:id", async (c) => {
       statements.push(
         stmt(
           db,
-          `UPDATE questions SET position = ?, type = ?, prompt = ?, image_url = ?, options = ?, answer = ?, points = ?, required = ?
+          `UPDATE questions SET position = ?, type = ?, prompt = ?, description = ?, image_url = ?, options = ?, answer = ?, points = ?, required = ?
             WHERE id = ? AND test_id = ?`,
           i + 1,
           q.type,
           q.prompt,
+          q.description,
           q.imageUrl,
           JSON.stringify(q.options),
           JSON.stringify(q.answer),

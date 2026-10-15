@@ -2,7 +2,7 @@
  * Pure helpers shared by the student Tests pages (list · take · result).
  * No React here so they stay easy to unit-test (testHelpers.test.ts).
  */
-import type { AnswerValue, QuestionType, ScorePolicy, StudentQuestion, StudentTestItem, TestKind } from "@shared/contract";
+import { isLayoutType, type AnswerValue, type QuestionType, type ScorePolicy, type StudentQuestion, type StudentTestItem, type TestKind } from "@shared/contract";
 
 export const KIND_LABEL: Record<TestKind, string> = { pretest: "Pretest", posttest: "Posttest", other: "Other" };
 
@@ -20,6 +20,9 @@ export const TYPE_HINT: Record<QuestionType, string> = {
   multi: "Select all that apply",
   truefalse: "True or false",
   short: "Short answer",
+  text: "",
+  image: "",
+  section: "",
 };
 
 const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -96,6 +99,53 @@ export function canStart(t: StudentTestItem): boolean {
   if (!t.isOpen || t.status === "not_open" || t.status === "closed") return false;
   const left = attemptsLeft(t);
   return left === null || left > 0;
+}
+
+export interface TestPage {
+  /** The section block that starts this page (title + description), or null for the first page. */
+  section: StudentQuestion | null;
+  /** Questions (renumbered) plus title / image blocks, in order. */
+  items: StudentQuestion[];
+}
+
+/**
+ * Splits a test into pages (Google Forms style).
+ *  - With section blocks: one page per section; items before the first section form page 1.
+ *  - Without sections: one question per page (title / image blocks stay with the question after them).
+ * Questions are renumbered 1…n (position) so "Question 3" never counts layout blocks.
+ */
+export function buildPages(all: StudentQuestion[]): { questions: StudentQuestion[]; pages: TestPage[]; pageOfQuestion: number[] } {
+  let n = 0;
+  const items = all.map((q) => (isLayoutType(q.type) ? q : { ...q, position: ++n }));
+  const questions = items.filter((q) => !isLayoutType(q.type));
+  const pages: TestPage[] = [];
+
+  if (items.some((q) => q.type === "section")) {
+    let cur: TestPage = { section: null, items: [] };
+    for (const q of items) {
+      if (q.type === "section") {
+        if (cur.section || cur.items.length) pages.push(cur);
+        cur = { section: q, items: [] };
+      } else cur.items.push(q);
+    }
+    pages.push(cur);
+  } else {
+    let pending: StudentQuestion[] = [];
+    for (const q of items) {
+      pending.push(q);
+      if (!isLayoutType(q.type)) {
+        pages.push({ section: null, items: pending });
+        pending = [];
+      }
+    }
+    if (pending.length) {
+      if (pages.length) pages[pages.length - 1].items.push(...pending);
+      else pages.push({ section: null, items: pending });
+    }
+  }
+
+  const pageOfQuestion = questions.map((q) => pages.findIndex((p) => p.items.includes(q)));
+  return { questions, pages, pageOfQuestion };
 }
 
 /** Questions the student hasn't answered yet (1-based positions), split by required / optional. */

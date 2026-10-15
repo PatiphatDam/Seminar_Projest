@@ -63,7 +63,7 @@ export function RequireStudent({ children, allowOnboarding = false }: Props) {
 
 function CenteredShell({ children }: { children: ReactNode }) {
   return (
-    <main className="grid min-h-dvh place-items-center bg-app px-4 py-10">
+    <main className="dm-student grid min-h-dvh place-items-center bg-app px-4 py-10">
       <Card className="w-full max-w-md p-6 sm:p-8">
         <div className="mb-6">
           <Logo />
@@ -87,7 +87,7 @@ function AdminSessionNotice({ email }: { email: string }) {
       <div className="mt-6 flex flex-wrap gap-2">
         <Link
           to="/admin"
-          className="inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-zinc-700"
+          className="inline-flex h-10 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-on-ink hover:bg-zinc-700"
         >
           Go to the dashboard
         </Link>

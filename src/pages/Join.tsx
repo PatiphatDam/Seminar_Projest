@@ -67,7 +67,7 @@ export default function Join() {
           <InvalidCleanup />
           <Link
             to="/login"
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-zinc-700"
+            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-xl bg-ink px-4 text-sm font-semibold text-on-ink hover:bg-zinc-700"
           >
             Go to sign in
           </Link>

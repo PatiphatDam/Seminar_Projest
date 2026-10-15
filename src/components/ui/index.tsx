@@ -11,8 +11,8 @@ export { cx };
 
 const solid: Record<Accent, string> = {
   ink: "bg-gray-800 text-white hover:bg-gray-700",
-  games: "bg-games text-white hover:bg-violet-700",
-  explore: "bg-explore text-white hover:bg-teal-700",
+  games: "bg-games text-white hover:bg-green-700",
+  explore: "bg-explore text-white hover:bg-sky-700",
   tests: "bg-tests text-white hover:bg-blue-700",
   danger: "bg-danger text-white hover:bg-red-700",
   success: "bg-success text-white hover:bg-green-800",
@@ -55,7 +55,7 @@ export function Card({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
 
 const badgeTone: Record<Accent | "neutral", string> = {
   neutral: "bg-zinc-100 text-zinc-700",
-  ink: "bg-ink text-white",
+  ink: "bg-ink text-on-ink",
   games: "bg-games-soft text-games-ink",
   explore: "bg-explore-soft text-explore-ink",
   tests: "bg-tests-soft text-tests-ink",

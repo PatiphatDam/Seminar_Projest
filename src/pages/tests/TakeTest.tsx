@@ -8,7 +8,7 @@ import { RequireStudent } from "@/components/student/RequireStudent";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { studentTestsKey } from "@/components/student/queries";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ClockIcon, XIcon } from "@/components/student/icons";
-import { POLICY_SENTENCE, TYPE_HINT, clock, isAnswered, unanswered } from "@/components/student/testHelpers";
+import { POLICY_SENTENCE, TYPE_HINT, buildPages, clock, isAnswered, unanswered } from "@/components/student/testHelpers";
 
 /**
  * Figma "Tests – Taking a test" (Desktop 1440 / Tablet 834 / Phone 390). Full-screen: no student nav.
@@ -96,7 +96,7 @@ function TakeTestPage() {
 }
 
 function Shell({ children }: { children: ReactNode }) {
-  return <div className="min-h-dvh bg-app">{children}</div>;
+  return <div className="dm-student min-h-dvh bg-app">{children}</div>;
 }
 
 /* ───────────────────────── runner ───────────────────────── */
@@ -110,11 +110,13 @@ function Runner({
   item: StudentTestItem | null;
   onFinished: (r: AttemptResult) => void;
 }) {
-  const questions = attempt.questions;
+  // Questions renumbered 1…n, split into pages (one per section, or one question per page without sections).
+  const { questions, pages, pageOfQuestion } = useMemo(() => buildPages(attempt.questions), [attempt.questions]);
+  const sectioned = useMemo(() => attempt.questions.some((x) => x.type === "section"), [attempt.questions]);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => ({ ...attempt.answers }));
   const answersRef = useRef(answers);
   answersRef.current = answers;
-  const [index, setIndex] = useState(0);
+  const [pageIdx, setPageIdx] = useState(0);
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -290,16 +292,22 @@ function Runner({
     }
   };
 
-  const q = questions[index];
+  const page = pages[Math.min(pageIdx, pages.length - 1)];
+  const q = page?.items.find((x) => x.type !== "text" && x.type !== "image");
   const total = questions.length;
   const answeredCount = questions.filter((x) => isAnswered(answers[String(x.id)])).length;
   const missing = unanswered(questions, answers);
-  const isLast = index === total - 1;
+  const isLast = pageIdx >= pages.length - 1;
   const lowTime = remaining !== null && remaining <= 60_000;
   const subtitle = `Attempt ${attempt.attemptNumber} of ${attempt.maxAttempts ?? "∞"}${item && attempt.maxAttempts !== 1 ? ` · ${POLICY_SENTENCE[item.scorePolicy]}` : ""}`;
 
   const goTo = (i: number) => {
-    setIndex(Math.max(0, Math.min(total - 1, i)));
+    setPageIdx(pageOfQuestion[Math.max(0, Math.min(total - 1, i))] ?? 0);
+    setJumpOpen(false);
+    window.scrollTo({ top: 0 });
+  };
+  const goPage = (n: number) => {
+    setPageIdx(Math.max(0, Math.min(pages.length - 1, n)));
     setJumpOpen(false);
     window.scrollTo({ top: 0 });
   };
@@ -348,50 +356,66 @@ function Runner({
         <div className="min-w-0">
           {/* Progress */}
           <div className="flex items-center justify-between text-[12px] text-muted md:text-[13px]">
-            <span>
-              Question {index + 1} of {total}
-            </span>
-            <span>
-              {q.points} {q.points === 1 ? "point" : "points"}
-              {q.required ? " · required" : ""}
-            </span>
+            {sectioned ? (
+              <span>
+                Page {pageIdx + 1} of {pages.length}
+              </span>
+            ) : (
+              <>
+                <span>
+                  Question {q?.position ?? 1} of {total}
+                </span>
+                {q && (
+                  <span>
+                    {q.points} {q.points === 1 ? "point" : "points"}
+                    {q.required ? " · required" : ""}
+                  </span>
+                )}
+              </>
+            )}
           </div>
           <div className="mt-2 h-2 overflow-hidden rounded-full bg-zinc-200" aria-hidden="true">
-            <div className="h-full rounded-full bg-tests transition-[width]" style={{ width: `${((index + 1) / total) * 100}%` }} />
+            <div className="h-full rounded-full bg-tests transition-[width]" style={{ width: `${((pageIdx + 1) / pages.length) * 100}%` }} />
           </div>
 
-          {/* Question */}
-          <section aria-labelledby={`q-${q.id}`} className="mt-4 md:mt-[15px] md:rounded-[20px] md:border md:border-line md:bg-surface md:p-[19px] lg:p-[21px]">
-            <p className="text-[11.5px] font-bold uppercase tracking-wide text-tests">{TYPE_HINT[q.type]}</p>
-            <h2 id={`q-${q.id}`} className="mt-2 text-[21px] font-bold leading-[29px] text-ink md:text-[18px] md:leading-6 lg:text-[19px]">
-              {q.prompt}
-              {q.required && (
-                <span className="text-danger" aria-label="required">
-                  {" "}*
-                </span>
-              )}
-            </h2>
-            {q.imageUrl && (
-              <img src={q.imageUrl} alt="" loading="lazy" className="mt-3 max-h-72 w-auto max-w-full rounded-xl border border-line object-contain" />
-            )}
-            <div className="mt-4 md:mt-[15px]">
-              <QuestionInput q={q} value={answers[String(q.id)]} onChange={(v) => setAnswer(q, v)} disabled={!!finishing} />
-            </div>
-          </section>
+          {/* Section header (Google Forms style) */}
+          {page?.section && (page.section.prompt || page.section.description) && (
+            <section className="mt-4 rounded-[20px] border border-line border-t-4 border-t-tests bg-surface p-[19px] md:mt-[15px] lg:p-[21px]">
+              {page.section.prompt && <h2 className="text-[20px] font-bold leading-7 text-ink">{page.section.prompt}</h2>}
+              {page.section.description && <p className="mt-1.5 whitespace-pre-line text-[14px] leading-[21px] text-muted">{page.section.description}</p>}
+            </section>
+          )}
+
+          {/* Items on this page: title / image blocks and questions */}
+          {page?.items.map((it) =>
+            it.type === "text" ? (
+              <section key={it.id} className="mt-4 rounded-[20px] border border-line bg-surface p-[19px] md:mt-[15px] lg:p-[21px]">
+                {it.prompt && <h3 className="text-[17px] font-bold leading-6 text-ink">{it.prompt}</h3>}
+                {it.description && <p className={cx("whitespace-pre-line text-[14px] leading-[21px] text-muted", it.prompt && "mt-1")}>{it.description}</p>}
+              </section>
+            ) : it.type === "image" ? (
+              <figure key={it.id} className="mt-4 rounded-[20px] border border-line bg-surface p-3 md:mt-[15px]">
+                {it.imageUrl && <img src={it.imageUrl} alt={it.prompt} loading="lazy" className="mx-auto max-h-[420px] w-auto max-w-full rounded-xl object-contain" />}
+                {it.prompt && <figcaption className="mt-2 text-center text-[13px] text-muted">{it.prompt}</figcaption>}
+              </figure>
+            ) : (
+              <QuestionBlock key={it.id} q={it} showNumber={sectioned} value={answers[String(it.id)]} onChange={(v) => setAnswer(it, v)} disabled={!!finishing} />
+            ),
+          )}
 
           {/* Prev / Next (tablet + desktop) */}
           <div className="mt-[15px] hidden items-center justify-between md:flex">
             <button
               type="button"
-              onClick={() => goTo(index - 1)}
-              disabled={index === 0}
+              onClick={() => goPage(pageIdx - 1)}
+              disabled={pageIdx === 0}
               className="inline-flex h-[43px] items-center gap-1.5 rounded-xl border border-line bg-surface px-[25px] text-[14px] font-semibold text-ink hover:bg-zinc-50 disabled:opacity-40"
             >
               <ArrowLeftIcon size={15} /> Previous
             </button>
             <button
               type="button"
-              onClick={() => (isLast ? setReviewOpen(true) : goTo(index + 1))}
+              onClick={() => (isLast ? setReviewOpen(true) : goPage(pageIdx + 1))}
               className="inline-flex h-[43px] items-center gap-1.5 rounded-xl bg-tests px-9 text-[14px] font-semibold text-white hover:bg-blue-700"
             >
               {isLast ? "Review & submit" : "Next"} <ArrowRightIcon size={15} />
@@ -400,14 +424,14 @@ function Runner({
 
           {/* Navigator + submit (tablet: below the question) */}
           <div className="mt-[15px] hidden space-y-[15px] md:block lg:hidden">
-            <Navigator questions={questions} answers={answers} index={index} onPick={goTo} />
+            <Navigator questions={questions} answers={answers} isCurrent={(i) => pageOfQuestion[i] === pageIdx} onPick={goTo} />
             <SubmitCard onSubmit={() => setReviewOpen(true)} answered={answeredCount} total={total} row />
           </div>
         </div>
 
         {/* Desktop sidebar */}
         <aside className="hidden space-y-[15px] lg:block">
-          <Navigator questions={questions} answers={answers} index={index} onPick={goTo} />
+          <Navigator questions={questions} answers={answers} isCurrent={(i) => pageOfQuestion[i] === pageIdx} onPick={goTo} />
           <SubmitCard onSubmit={() => setReviewOpen(true)} answered={answeredCount} total={total} />
         </aside>
       </main>
@@ -417,29 +441,29 @@ function Runner({
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
-            onClick={() => goTo(index - 1)}
-            disabled={index === 0}
+            onClick={() => goPage(pageIdx - 1)}
+            disabled={pageIdx === 0}
             className="inline-flex h-[46px] items-center justify-center gap-1.5 rounded-xl border border-line bg-surface text-[15px] font-semibold text-ink disabled:opacity-40"
           >
             <ArrowLeftIcon size={16} /> Prev
           </button>
           <button
             type="button"
-            onClick={() => (isLast ? setReviewOpen(true) : goTo(index + 1))}
+            onClick={() => (isLast ? setReviewOpen(true) : goPage(pageIdx + 1))}
             className="inline-flex h-[46px] items-center justify-center gap-1.5 rounded-xl bg-tests text-[15px] font-semibold text-white"
           >
             {isLast ? "Submit" : "Next"} <ArrowRightIcon size={16} />
           </button>
         </div>
         <button type="button" onClick={() => setJumpOpen(true)} className="mt-2 w-full text-center text-[12px] text-muted underline-offset-2 hover:underline">
-          Tap {index + 1}/{total} to jump between questions
+          {sectioned ? `Page ${pageIdx + 1}/${pages.length} · tap to jump between questions` : `Tap ${q?.position ?? 1}/${total} to jump between questions`}
         </button>
       </div>
 
       {/* Phone: jump sheet */}
       {jumpOpen && (
         <Sheet title="Questions" onClose={() => setJumpOpen(false)}>
-          <Navigator questions={questions} answers={answers} index={index} onPick={goTo} bare />
+          <Navigator questions={questions} answers={answers} isCurrent={(i) => pageOfQuestion[i] === pageIdx} onPick={goTo} bare />
           <Button accent="ink" size="lg" block className="mt-4" onClick={() => { setJumpOpen(false); setReviewOpen(true); }}>
             Submit test
           </Button>
@@ -544,6 +568,49 @@ function SaveStatus({ state, savedAt, className }: { state: SaveState; savedAt: 
   );
 }
 
+/** One question card. With sections several are shown per page, so each also shows its number and points. */
+function QuestionBlock({
+  q,
+  showNumber,
+  value,
+  onChange,
+  disabled,
+}: {
+  q: StudentQuestion;
+  showNumber: boolean;
+  value: AnswerValue | undefined;
+  onChange: (v: AnswerValue | undefined) => void;
+  disabled: boolean;
+}) {
+  return (
+    <section aria-labelledby={`q-${q.id}`} className="mt-4 md:mt-[15px] md:rounded-[20px] md:border md:border-line md:bg-surface md:p-[19px] lg:p-[21px]">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[11.5px] font-bold uppercase tracking-wide text-tests">
+          {showNumber && `Question ${q.position} · `}
+          {TYPE_HINT[q.type]}
+        </p>
+        {showNumber && (
+          <p className="shrink-0 text-[12px] text-muted">
+            {q.points} {q.points === 1 ? "pt" : "pts"}
+          </p>
+        )}
+      </div>
+      <h2 id={`q-${q.id}`} className="mt-2 text-[21px] font-bold leading-[29px] text-ink md:text-[18px] md:leading-6 lg:text-[19px]">
+        {q.prompt}
+        {q.required && (
+          <span className="text-danger" aria-label="required">
+            {" "}*
+          </span>
+        )}
+      </h2>
+      {q.imageUrl && <img src={q.imageUrl} alt="" loading="lazy" className="mt-3 max-h-72 w-auto max-w-full rounded-xl border border-line object-contain" />}
+      <div className="mt-4 md:mt-[15px]">
+        <QuestionInput q={q} value={value} onChange={onChange} disabled={disabled} />
+      </div>
+    </section>
+  );
+}
+
 function QuestionInput({
   q,
   value,
@@ -628,13 +695,13 @@ function QuestionInput({
 function Navigator({
   questions,
   answers,
-  index,
+  isCurrent,
   onPick,
   bare,
 }: {
   questions: StudentQuestion[];
   answers: Record<string, AnswerValue>;
-  index: number;
+  isCurrent: (i: number) => boolean;
   onPick: (i: number) => void;
   bare?: boolean;
 }) {
@@ -653,7 +720,7 @@ function Navigator({
       </div>
       <ol className="mt-3 grid grid-cols-[repeat(auto-fill,minmax(36px,1fr))] gap-2 md:flex md:flex-wrap lg:grid lg:grid-cols-5">
         {questions.map((q, i) => {
-          const current = i === index;
+          const current = isCurrent(i);
           const answered = isAnswered(answers[String(q.id)]);
           return (
             <li key={q.id}>
@@ -691,7 +758,7 @@ function SubmitCard({ onSubmit, answered, total, row }: { onSubmit: () => void; 
       <button
         type="button"
         onClick={onSubmit}
-        className={cx("inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-[#18181b] px-6 text-[14px] font-semibold text-white hover:bg-zinc-700", !row && "mt-3 w-full")}
+        className={cx("inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-ink px-6 text-[14px] font-semibold text-on-ink hover:bg-zinc-700", !row && "mt-3 w-full")}
       >
         Submit test
       </button>

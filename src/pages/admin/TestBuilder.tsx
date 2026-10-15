@@ -4,12 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { saveTestBody, type AdminTestDetail, type AdminTestSaveResult, type QuestionType, type TestKind } from "@shared/contract";
+import { isLayoutType, saveTestBody, type AdminTestDetail, type AdminTestSaveResult, type LayoutType, type QuestionType, type TestKind } from "@shared/contract";
 import { api } from "@/lib/api";
 import { Badge, Button, Card, cx, EmptyState, ErrorNote, Input, PageLoader, Select } from "@/components/ui";
 import {
+  QUESTION_TYPES,
   TYPE_LABEL,
+  blankBlock,
   blankQuestion,
+  questionCount,
+  questionNumbers,
   changeType,
   draftFromServer,
   duplicateQuestion,
@@ -27,6 +31,7 @@ import { IconCheck, IconChevronDown, IconClose, IconDrag, IconPlus } from "@/com
 import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
+import { uploadImage } from "@/components/admin/imageUpload";
 
 const AUTOSAVE_MS = 1500;
 
@@ -74,6 +79,8 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
   const [focusKey, setFocusKey] = useState<string | null>(null);
   /** Which card is in edit mode ("title" or a question key) — Figma shows only one expanded editor. */
   const [active, setActive] = useState<string>(() => "title");
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   // Revision counters: rev increments on every edit; savedRev = last revision persisted.
   const [rev, setRev] = useState(0);
@@ -196,25 +203,47 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
   }, [focusKey]);
 
   const atMax = draft.questions.length >= MAX_QUESTIONS;
-  const addQuestion = (type: QuestionType = "single") => {
+  /** Like Google Forms: new items go right after the selected card (or at the end when the title card is selected). */
+  const insertItem = (item: DraftQuestion) => {
     if (draftRef.current.questions.length >= MAX_QUESTIONS) {
-      toast.show(`A test can have at most ${MAX_QUESTIONS} questions.`, "error");
+      toast.show(`A test can have at most ${MAX_QUESTIONS} items.`, "error");
       return;
     }
-    const q = blankQuestion(type);
-    update((d) => ({ ...d, questions: [...d.questions, q] }));
+    update((d) => {
+      const at = d.questions.findIndex((x) => x.key === activeRef.current);
+      const qs = [...d.questions];
+      qs.splice(at < 0 ? qs.length : at + 1, 0, item);
+      return { ...d, questions: qs };
+    });
     setTab("questions");
-    setFocusKey(q.key);
+    setActive(item.key);
+    setFocusKey(item.key);
+  };
+  const addQuestion = (type: QuestionType = "single") => insertItem(blankQuestion(type));
+  const addBlock = (type: Exclude<LayoutType, "image">) => insertItem(blankBlock(type));
+
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const addImage = async (file: File) => {
+    setUploading(true);
+    try {
+      insertItem(blankBlock("image", await uploadImage(file)));
+    } catch (e) {
+      toast.show(`Couldn’t add the image: ${errorMessage(e)}`, "error");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeQuestion = (key: string) => {
     const index = draft.questions.findIndex((q) => q.key === key);
     const removed = draft.questions[index];
     if (!removed) return;
+    const what = isLayoutType(removed.type) ? TYPE_LABEL[removed.type] : `Question ${questionNumbers(draft.questions)[index]}`;
     update((d) => ({ ...d, questions: d.questions.filter((q) => q.key !== key) }));
     toast.show(
       <span className="flex items-center justify-between gap-3">
-        Question {index + 1} deleted
+        {what} deleted
         <button
           type="button"
           className="rounded-md bg-white/15 px-2 py-0.5 text-xs font-semibold hover:bg-white/25"
@@ -254,6 +283,37 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
   };
 
   const maxScore = maxScoreOf(draft);
+  const nQuestions = questionCount(draft.questions);
+  const numbers = questionNumbers(draft.questions);
+  const sectionTotal = draft.questions.filter((q) => q.type === "section").length + 1;
+  const sectionNumbers = (() => {
+    let n = 1;
+    return draft.questions.map((q) => (q.type === "section" ? ++n : null));
+  })();
+  const tools: { label: string; short: string; glyph: ReactNode; onClick: () => void; disabled: boolean }[] = [
+    { label: "Add question", short: "Question", glyph: <IconPlus size={20} />, onClick: () => addQuestion(), disabled: atMax },
+    {
+      label: "Add title and description",
+      short: "Title",
+      glyph: <span className="text-[15px] font-bold leading-none">T</span>,
+      onClick: () => addBlock("text"),
+      disabled: atMax,
+    },
+    {
+      label: uploading ? "Uploading image…" : "Add image",
+      short: uploading ? "Uploading…" : "Image",
+      glyph: uploading ? <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <IconImage size={17} />,
+      onClick: () => imageInputRef.current?.click(),
+      disabled: atMax || uploading,
+    },
+    {
+      label: "Add section (new page for students)",
+      short: "Section",
+      glyph: <IconSection size={18} />,
+      onClick: () => addBlock("section"),
+      disabled: atMax,
+    },
+  ];
   const startedAttempts = server.versions.find((v) => v.versionNo === server.currentVersion)?.attemptCount ?? 0;
   const statusNode = saving ? (
     <span className="text-[12px] font-semibold text-muted">Saving…</span>
@@ -283,7 +343,8 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[32px] font-bold leading-10 text-ink">{draft.title || "Untitled test"}</h1>
           <p className="mt-1 text-[15px] leading-[22px] text-muted">
-            Test builder · {draft.questions.length} question{draft.questions.length === 1 ? "" : "s"} · {maxScore} point{maxScore === 1 ? "" : "s"}
+            Test builder · {nQuestions} question{nQuestions === 1 ? "" : "s"} · {maxScore} point{maxScore === 1 ? "" : "s"}
+            {sectionTotal > 1 && ` · ${sectionTotal} sections`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5 lg:mt-[15px]">
@@ -400,11 +461,32 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                 <SortableContext items={draft.questions.map((q) => q.key)} strategy={verticalListSortingStrategy}>
-                  {draft.questions.map((q, i) => (
+                  {draft.questions.map((q) =>
+                    isLayoutType(q.type) ? (
+                      <BlockCard
+                        key={q.key}
+                        q={q}
+                        sectionNo={sectionNumbers[draft.questions.indexOf(q)]}
+                        sectionTotal={sectionTotal}
+                        active={active === q.key}
+                        onActivate={() => setActive(q.key)}
+                        errors={showErrors ? validation.byQuestion[q.key] : undefined}
+                        onChange={(fn) => updateQuestion(q.key, fn)}
+                        onDuplicate={() =>
+                          update((d) => {
+                            if (d.questions.length >= MAX_QUESTIONS) return d;
+                            const qs = [...d.questions];
+                            qs.splice(qs.findIndex((x) => x.key === q.key) + 1, 0, duplicateQuestion(q));
+                            return { ...d, questions: qs };
+                          })
+                        }
+                        onDelete={() => removeQuestion(q.key)}
+                      />
+                    ) : (
                     <QuestionCard
                       key={q.key}
                       q={q}
-                      index={i}
+                      index={(numbers[draft.questions.indexOf(q)] ?? 1) - 1}
                       active={active === q.key}
                       onActivate={() => setActive(q.key)}
                       errors={showErrors ? validation.byQuestion[q.key] : undefined}
@@ -420,47 +502,57 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
                       }
                       onDelete={() => removeQuestion(q.key)}
                     />
-                  ))}
+                    ),
+                  )}
                 </SortableContext>
               </DndContext>
             )}
 
-            <div className="flex justify-center lg:hidden">
-              <Button variant="outline" onClick={() => addQuestion()} disabled={atMax}>
-                <IconPlus size={16} /> Add question
-              </Button>
+            <div className="flex flex-wrap justify-center gap-2 lg:hidden">
+              {tools.map((t) => (
+                <Button key={t.label} variant="outline" onClick={t.onClick} disabled={t.disabled}>
+                  {t.glyph} {t.short}
+                </Button>
+              ))}
             </div>
           </div>
 
-          {/* Floating toolbar (Figma: + · T · image · section). Only "add question" works today. */}
+          {/* Floating toolbar (Google Forms): add question · title and description · image · section */}
           <div className="hidden w-[55px] shrink-0 lg:block">
             <div
-              className="sticky top-6 flex flex-col items-center gap-3 rounded-[20px] border border-line bg-surface py-2.5"
+              className="sticky top-6 flex flex-col items-center gap-2 rounded-[20px] border border-line bg-surface py-2.5"
               role="toolbar"
-              aria-label="Question tools"
+              aria-label="Add to the test"
               aria-orientation="vertical"
             >
-              <button
-                type="button"
-                onClick={() => addQuestion()}
-                disabled={atMax}
-                className="grid size-9 place-items-center rounded-xl text-muted hover:bg-zinc-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="Add question"
-                title={atMax ? `Maximum ${MAX_QUESTIONS} questions` : "Add question"}
-              >
-                <IconPlus size={22} />
-              </button>
-              {[
-                { label: "Add title and description (coming soon)", glyph: <span className="text-[13px] font-bold">T</span> },
-                { label: "Add image (coming soon)", glyph: <IconImage size={14} /> },
-                { label: "Add section (coming soon)", glyph: <span className="text-[13px] font-bold leading-none">=</span> },
-              ].map((t) => (
-                <button key={t.label} type="button" disabled aria-label={t.label} title={t.label} className="grid size-7 cursor-not-allowed place-items-center rounded-lg text-muted opacity-70">
+              {tools.map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={t.onClick}
+                  disabled={t.disabled}
+                  aria-label={t.label}
+                  title={t.label}
+                  className="grid size-9 place-items-center rounded-xl text-muted hover:bg-zinc-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                >
                   {t.glyph}
                 </button>
               ))}
             </div>
           </div>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            aria-hidden="true"
+            tabIndex={-1}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void addImage(f);
+            }}
+          />
         </div>
       )}
 
@@ -487,9 +579,14 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
               />
             </label>
             <Select name="settings-kind" label="Kind" value={draft.kind} onChange={(e) => update((d) => ({ ...d, kind: e.target.value as TestKind }))}>
+              {/* Only shown for old tests saved as "other" — saving asks for Pretest or Posttest. */}
+              {draft.kind === "other" && (
+                <option value="other" disabled>
+                  Choose Pretest or Posttest
+                </option>
+              )}
               <option value="pretest">Pretest</option>
               <option value="posttest">Posttest</option>
-              <option value="other">Other</option>
             </Select>
             <p className="text-xs text-muted">Results compare one pretest with one posttest. Timing, attempts and availability are set per section when you assign the test.</p>
           </Card>
@@ -538,6 +635,15 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
         <p>{validation.count > 0 ? `You have unsaved changes with ${validation.count} issue(s) to fix.` : "You have unsaved changes."} They’ll be lost if you leave now.</p>
       </ConfirmDialog>
     </div>
+  );
+}
+
+function IconSection({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
+      <rect x="4" y="4" width="16" height="6" rx="1.5" />
+      <rect x="4" y="14" width="16" height="6" rx="1.5" />
+    </svg>
   );
 }
 
@@ -649,6 +755,7 @@ function QuestionCard({
             <p className="mt-[19px] whitespace-pre-line text-[15px] font-semibold leading-[22px] text-ink">
               {q.prompt || <span className="font-normal text-faint">(no question text — click to edit)</span>}
             </p>
+            {q.imageUrl && <img src={q.imageUrl} alt="" className="mt-3 max-h-48 rounded-xl border border-line object-contain" />}
             {q.type === "short" ? (
               <div className="mt-[18px] flex h-[43px] max-w-[359px] items-center rounded-[11.5px] border border-line px-[15px] text-[13px] text-faint">Short answer text</div>
             ) : (
@@ -680,7 +787,7 @@ function QuestionCard({
                   onChange={(e) => onChange((x) => changeType(x, e.target.value as QuestionType))}
                   className="h-[37px] w-full cursor-pointer appearance-none rounded-[11.5px] border border-line bg-surface pl-4 pr-8 text-[13px] text-ink outline-none focus:border-gray-800"
                 >
-                  {(Object.keys(TYPE_LABEL) as QuestionType[]).map((t) => (
+                  {QUESTION_TYPES.map((t) => (
                     <option key={t} value={t}>
                       {TYPE_LABEL[t]}
                     </option>
@@ -702,6 +809,8 @@ function QuestionCard({
               placeholder="Question"
               className="mt-[18px] field-sizing-content w-full resize-none rounded-md bg-transparent text-[17px] font-semibold leading-6 text-ink outline-none placeholder:text-faint focus:bg-zinc-50"
             />
+
+            <QuestionImage q={q} onChange={onChange} />
 
             {q.type === "short" ? (
               <div className="mt-4">
@@ -824,6 +933,212 @@ function QuestionCard({
   );
 }
 
+/** Upload (or replace / remove) a picture. Used inside a question and by image blocks. */
+function ImagePicker({
+  url,
+  onPicked,
+  onRemove,
+  addLabel,
+}: {
+  url: string | null;
+  onPicked: (url: string) => void;
+  onRemove?: () => void;
+  addLabel: string;
+}) {
+  const toast = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const pick = async (file: File) => {
+    setBusy(true);
+    try {
+      onPicked(await uploadImage(file));
+    } catch (e) {
+      toast.show(`Couldn’t upload the image: ${errorMessage(e)}`, "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-3">
+      {url && <img src={url} alt="" className="max-h-72 rounded-xl border border-line object-contain" />}
+      <div className={cx("flex flex-wrap items-center gap-3 text-[13px]", url && "mt-2")}>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 font-semibold text-tests hover:underline disabled:opacity-60"
+        >
+          <IconImage size={14} /> {busy ? "Uploading…" : url ? "Replace image" : addLabel}
+        </button>
+        {url && onRemove && (
+          <button type="button" onClick={onRemove} className="text-muted hover:text-danger">
+            Remove image
+          </button>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void pick(f);
+        }}
+      />
+    </div>
+  );
+}
+
+function QuestionImage({ q, onChange }: { q: DraftQuestion; onChange: (fn: (q: DraftQuestion) => DraftQuestion) => void }) {
+  return (
+    <ImagePicker
+      url={q.imageUrl}
+      addLabel="Add image to this question"
+      onPicked={(url) => onChange((x) => ({ ...x, imageUrl: url }))}
+      onRemove={() => onChange((x) => ({ ...x, imageUrl: null }))}
+    />
+  );
+}
+
+/* ───────────────────────── Layout blocks (Google Forms: title, image, section) ───────────────────────── */
+
+function BlockCard({
+  q,
+  sectionNo,
+  sectionTotal,
+  active,
+  onActivate,
+  errors,
+  onChange,
+  onDuplicate,
+  onDelete,
+}: {
+  q: DraftQuestion;
+  sectionNo: number | null;
+  sectionTotal: number;
+  active: boolean;
+  onActivate: () => void;
+  errors?: string[];
+  onChange: (fn: (q: DraftQuestion) => DraftQuestion) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: q.key });
+  const hasErrors = !!errors?.length;
+  const isSection = q.type === "section";
+  const kindLabel = isSection ? `Section ${sectionNo} of ${sectionTotal}` : TYPE_LABEL[q.type];
+
+  const handle = (
+    <button
+      type="button"
+      ref={setActivatorNodeRef}
+      {...attributes}
+      {...listeners}
+      aria-label={`Reorder ${kindLabel.toLowerCase()} (press space, then arrow keys)`}
+      className="-ml-0.5 cursor-grab touch-none rounded-md p-0.5 text-faint hover:bg-zinc-100 hover:text-ink active:cursor-grabbing"
+    >
+      <IconDrag size={18} />
+    </button>
+  );
+
+  return (
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={cx(isDragging && "relative z-10", isSection && "pt-3")}>
+      {isSection && (
+        <span className="inline-block rounded-t-xl bg-tests px-4 py-1.5 text-[12px] font-semibold text-white">{kindLabel}</span>
+      )}
+      <div
+        onFocusCapture={onActivate}
+        onClick={onActivate}
+        className={cx(
+          "relative overflow-hidden border bg-surface",
+          isSection ? "rounded-b-[19.5px] rounded-tr-[19.5px] border-t-4 border-t-tests" : "rounded-[19.5px]",
+          active ? "border-tests" : hasErrors ? "border-red-300" : "border-line",
+          isDragging && "shadow-xl",
+        )}
+      >
+        {active && <span className="absolute inset-y-0 left-0 w-1.5 bg-tests" aria-hidden="true" />}
+        <div className="px-[31px] pb-[18px] pt-[18px]">
+          <div className="flex items-center gap-2.5">
+            {handle}
+            <span className="text-[12px] font-semibold text-muted">{isSection ? "New page for students" : kindLabel}</span>
+          </div>
+
+          {q.type === "image" ? (
+            <>
+              <ImagePicker url={q.imageUrl} addLabel="Upload image" onPicked={(url) => onChange((x) => ({ ...x, imageUrl: url }))} />
+              <label htmlFor={`prompt-${q.key}`} className="sr-only">
+                Image caption
+              </label>
+              <input
+                id={`prompt-${q.key}`}
+                value={q.prompt}
+                maxLength={2000}
+                onChange={(e) => onChange((x) => ({ ...x, prompt: e.target.value }))}
+                placeholder="Image caption (optional)"
+                className="mt-3 w-full rounded-md bg-transparent text-[14px] text-ink outline-none placeholder:text-faint focus:bg-zinc-50"
+              />
+            </>
+          ) : (
+            <>
+              <label htmlFor={`prompt-${q.key}`} className="sr-only">
+                {isSection ? "Section title" : "Title"}
+              </label>
+              <input
+                id={`prompt-${q.key}`}
+                value={q.prompt}
+                maxLength={2000}
+                onChange={(e) => onChange((x) => ({ ...x, prompt: e.target.value }))}
+                placeholder={isSection ? "Section title (optional)" : "Title"}
+                className={cx(
+                  "mt-3 w-full rounded-md bg-transparent font-semibold text-ink outline-none placeholder:text-faint focus:bg-zinc-50",
+                  isSection ? "text-[20px] leading-7" : "text-[17px] leading-6",
+                )}
+              />
+              <label htmlFor={`desc-${q.key}`} className="sr-only">
+                Description
+              </label>
+              <textarea
+                id={`desc-${q.key}`}
+                value={q.description}
+                maxLength={4000}
+                rows={1}
+                onChange={(e) => onChange((x) => ({ ...x, description: e.target.value }))}
+                placeholder="Description (optional)"
+                className="mt-1.5 field-sizing-content w-full resize-none rounded-md bg-transparent text-[14px] leading-5 text-muted outline-none placeholder:text-faint focus:bg-zinc-50"
+              />
+            </>
+          )}
+
+          {hasErrors && (
+            <ul className="mt-3 space-y-0.5 text-xs text-danger" role="alert">
+              {errors!.map((e) => (
+                <li key={e}>• {e}</li>
+              ))}
+            </ul>
+          )}
+
+          {active && (
+            <div className="mt-4 flex items-center justify-end gap-[21px] border-t border-line pt-[13px] text-[12px] text-muted">
+              {!isSection && (
+                <button type="button" onClick={onDuplicate} className="hover:text-ink">
+                  Duplicate
+                </button>
+              )}
+              <button type="button" onClick={onDelete} className="hover:text-danger">
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ShortEditor({ q, onChange }: { q: DraftQuestion; onChange: (fn: (q: DraftQuestion) => DraftQuestion) => void }) {
   return (
     <fieldset>
@@ -870,13 +1185,31 @@ function PreviewModal({ open, onClose, draft }: { open: boolean; onClose: () => 
           <p className="text-xl font-bold">{draft.title || "Untitled test"}</p>
           {draft.description && <p className="mt-1 text-sm whitespace-pre-line text-zinc-700">{draft.description}</p>}
           <p className="mt-2 text-xs text-muted">
-            {draft.questions.length} questions · {maxScoreOf(draft)} points
+            {questionCount(draft.questions)} questions · {maxScoreOf(draft)} points
           </p>
         </div>
         {draft.questions.length === 0 && <p className="text-sm text-muted">No questions yet.</p>}
-        {draft.questions.map((q, i) => (
-          <PreviewQuestion key={q.key} q={q} n={i + 1} />
-        ))}
+        {draft.questions.map((q, i) =>
+          q.type === "section" ? (
+            <div key={q.key} className="rounded-2xl border-t-4 border-t-tests bg-app p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Next page</p>
+              {q.prompt && <p className="mt-1 text-lg font-bold">{q.prompt}</p>}
+              {q.description && <p className="mt-1 text-sm whitespace-pre-line text-zinc-700">{q.description}</p>}
+            </div>
+          ) : q.type === "text" ? (
+            <div key={q.key} className="rounded-2xl border border-line p-5">
+              {q.prompt && <p className="font-semibold">{q.prompt}</p>}
+              {q.description && <p className="mt-1 text-sm whitespace-pre-line text-zinc-700">{q.description}</p>}
+            </div>
+          ) : q.type === "image" ? (
+            <figure key={q.key} className="rounded-2xl border border-line p-4">
+              {q.imageUrl && <img src={q.imageUrl} alt={q.prompt} className="mx-auto max-h-80 rounded-lg object-contain" />}
+              {q.prompt && <figcaption className="mt-2 text-center text-sm text-muted">{q.prompt}</figcaption>}
+            </figure>
+          ) : (
+            <PreviewQuestion key={q.key} q={q} n={questionNumbers(draft.questions)[i] ?? i + 1} />
+          ),
+        )}
       </div>
     </Modal>
   );
@@ -895,6 +1228,7 @@ function PreviewQuestion({ q, n }: { q: DraftQuestion; n: number }): ReactNode {
           {q.points} pt{q.points === 1 ? "" : "s"}
         </span>
       </div>
+      {q.imageUrl && <img src={q.imageUrl} alt="" className="mt-3 max-h-64 rounded-lg object-contain" />}
       <div className="mt-3 space-y-2 text-sm">
         {(q.type === "single" || q.type === "multi") &&
           q.options.map((o) => (

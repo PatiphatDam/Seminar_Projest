@@ -5,17 +5,20 @@ import { cx } from "@/components/ui";
 import { useStudentMe } from "@/components/student/RequireStudent";
 import { describeAuthError, joinNoticeStore } from "@/components/student/authHelpers";
 import { useJoinClass } from "@/lib/auth";
+import { LESSONS } from "@/content/lessons";
 import { useStudentStatus } from "@/components/student/queries";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { InfoIcon } from "@/components/student/icons";
 
-type Accent = "games" | "explore" | "tests" | "post";
+type Accent = "tests" | "lessons" | "games" | "explore" | "post";
 
-const tone: Record<Accent, { soft: string; text: string; button: string }> = {
-  games: { soft: "bg-games-soft", text: "text-games", button: "bg-games hover:bg-violet-700" },
-  explore: { soft: "bg-explore-soft", text: "text-explore", button: "bg-explore hover:bg-teal-700" },
-  tests: { soft: "bg-tests-soft", text: "text-tests", button: "bg-tests hover:bg-blue-700" },
-  post: { soft: "bg-post-soft", text: "text-post", button: "bg-post hover:bg-orange-700" },
+/** Coastal Soft palette (src/index.css): sea blue = Pretest, lilac = Lessons, sea green = Games, sand = 3D Explore, coral = Posttest. */
+const coast: Record<Accent, string> = {
+  tests: "coast-pre",
+  lessons: "coast-lessons",
+  games: "coast-games",
+  explore: "coast-explore",
+  post: "coast-post",
 };
 
 export default function Home() {
@@ -70,48 +73,54 @@ export default function Home() {
       </div>
 
       <h2 className="mt-[35px] text-[17px] font-semibold leading-6 text-ink md:mt-[47px] md:text-[22px] md:leading-7 lg:mt-[62px]">Start learning</h2>
-      <ul className="mt-4 grid gap-[13px] md:mt-[23px] md:gap-[21px] lg:mt-[26px] lg:grid-cols-2 lg:gap-[25px] xl:grid-cols-4">
+      <ul className="mt-4 grid gap-[13px] md:mt-[23px] md:grid-cols-2 md:gap-[21px] lg:mt-[26px] lg:gap-[25px] xl:grid-cols-5 xl:gap-[18px]">
         {/* Learning order: pretest first (recommended, not locked), activities, posttest last. */}
         <MenuCard
           accent="tests"
-          image="/images/menu-tests.png"
           title="Pretest"
           subtitle="Do this first, before the lesson"
           chips={pretestChips(status.data, enrolled, status.isPending)}
           lo="Step 1"
           action="Open"
           to="/pretest"
+          badge={enrolled && status.data?.pretest && !status.data.pretest.submitted ? "Start here" : undefined}
+        />
+        <MenuCard
+          accent="lessons"
+          title="Lessons"
+          subtitle={`${LESSONS.length} short lessons from the Key Point Book`}
+          chips={["Muscle types", "Organization", "Nerve to muscle", "Sarcomere"].map(tag)}
+          lo="OL1–OL5"
+          action="Read"
+          to="/lessons"
         />
         <MenuCard
           accent="games"
-          image="/images/menu-games.png"
           title="Games"
           subtitle="Practice with quick 2D games"
-          chips={["Balloon Pop", "Group Sort", "Diameter"].map((label) => ({ label, tone: "games" }))}
+          chips={["Balloon Pop", "Group Sort", "Diameter"].map(tag)}
           lo="OL1–OL3"
           action="Play"
           to="/games"
         />
         <MenuCard
           accent="explore"
-          image="/images/menu-explore.png"
           title="3D Explore"
           subtitle="Zoom from muscle to sarcomere"
-          chips={["Muscle", "Fascicle", "Fiber", "Myofibril", "Sarcomere"].map((label) => ({ label, tone: "explore" }))}
-          compactChips="path"
+          chips={["Muscle", "Fascicle", "Fiber", "Myofibril", "Sarcomere"].map(tag)}
           lo="OL2–OL5"
           action="Explore"
           to="/explore"
         />
         <MenuCard
           accent="post"
-          image="/images/menu-posttest.svg"
           title="Posttest"
           subtitle="After the lesson — see how much you learned"
           chips={posttestChips(status.data, enrolled, status.isPending)}
           lo="Last step"
           action="Open"
           to="/posttest"
+          lastOdd
         />
       </ul>
     </div>
@@ -148,12 +157,12 @@ function JoinCodeForm({ onJoined }: { onJoined: (notice: string | undefined) => 
         autoCapitalize="characters"
         spellCheck={false}
         maxLength={20}
-        className="h-10 w-40 rounded-xl border border-amber-300 bg-white px-3 font-mono text-sm uppercase text-ink outline-none focus:border-amber-600"
+        className="h-10 w-40 rounded-xl border border-amber-300 bg-surface px-3 font-mono text-sm uppercase text-ink outline-none focus:border-amber-600"
       />
       <button
         type="submit"
         disabled={join.isPending || !code.trim()}
-        className="h-10 rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50"
+        className="h-10 rounded-xl bg-ink px-4 text-sm font-semibold text-on-ink hover:bg-zinc-700 disabled:opacity-50"
       >
         {join.isPending ? "Joining…" : "Join class"}
       </button>
@@ -168,17 +177,10 @@ function sectionLabel(className: string) {
   return m ? `${m[2]} (${m[1]})` : className;
 }
 
-type ChipTone = "games" | "explore" | "done" | "neutral" | "start" | "post";
+type ChipTone = "tag" | "done" | "neutral" | "start" | "post";
 type Chip = { label: string; tone: ChipTone };
 
-const chipTone: Record<ChipTone, string> = {
-  games: "bg-games-soft text-games-ink",
-  explore: "bg-explore-soft text-explore",
-  done: "bg-[#e8f5ec] text-success",
-  neutral: "bg-[#f0f0f2] text-muted",
-  start: "bg-tests-soft text-tests-ink",
-  post: "bg-post-soft text-post-ink",
-};
+const tag = (label: string): Chip => ({ label, tone: "tag" });
 
 const done = (score: number | null, max: number | null) => (score !== null && max !== null ? `Done ${score}/${max}` : "Done");
 const neutral = (label: string): Chip => ({ label, tone: "neutral" });
@@ -188,7 +190,7 @@ function pretestChips(s: StudentStatus | undefined, enrolled: boolean, pending: 
   if (pending || !s) return [neutral("Loading…")];
   const p = s.pretest;
   if (!p) return [neutral("Not assigned yet")];
-  return p.submitted ? [{ label: done(p.score, p.maxScore), tone: "done" }] : [{ label: "Start here", tone: "start" }];
+  return p.submitted ? [{ label: done(p.score, p.maxScore), tone: "done" }] : [{ label: "Not done yet", tone: "start" }];
 }
 
 function posttestChips(s: StudentStatus | undefined, enrolled: boolean, pending: boolean): Chip[] {
@@ -202,87 +204,110 @@ function posttestChips(s: StudentStatus | undefined, enrolled: boolean, pending:
 
 type MenuCardProps = {
   accent: Accent;
-  image: string;
   title: string;
   subtitle: string;
   chips: Chip[];
-  /** Phone only: show the chips as one "A › B › C" line instead (Figma 3D Explore card). */
-  compactChips?: "path";
   lo: string;
   action: string;
   to: string;
+  /** Coral pill on the cover, e.g. "Start here" on the Pretest card until it's done. */
+  badge?: string;
+  /** Tablet: the 5th card spans both columns so it doesn't sit alone. */
+  lastOdd?: boolean;
 };
 
 /*
- * Figma "Home" menu card.
- *   Phone  : 48 px tile + title row, chips below, "Action →" text link
- *   Tablet : 88 px tile on the left, everything else in the right column, 132×44 button
- *   Desktop: 180 px tinted cover with an 84 px icon, body below, 132×44 button pinned to the bottom
+ * Coastal Soft menu card (Downloads/Coastal Soft-html): tinted card, 18 px corners, thin edge,
+ * a soft coloured shadow, a darker tinted cover panel with the line icon, Playfair title, pill chips and a hairline footer.
+ * Phone: one column, shorter cover · tablet: 2 columns (Posttest spans both) · desktop (≥1280): all five in one row, in learning order.
  */
-function MenuCard({ accent, image, title, subtitle, chips, compactChips, lo, action, to }: MenuCardProps) {
-  const t = tone[accent];
-  const art = (size: string) => <img src={image} alt="" width={168} height={168} draggable={false} className={size} />;
-
+function MenuCard({ accent, title, subtitle, chips, lo, action, to, badge, lastOdd }: MenuCardProps) {
   return (
-    <li className="relative flex flex-col overflow-hidden rounded-[20px] border border-line bg-surface transition-colors hover:border-zinc-300 lg:min-h-[453px]">
-      {/* Desktop cover */}
-      <div className={cx("relative hidden h-[180px] shrink-0 items-center justify-center lg:flex", t.soft)}>{art("size-[84px]")}</div>
-
-      <div className="grid flex-1 grid-cols-[48px_1fr] gap-x-[15px] px-[17px] pb-4 pt-4 md:grid-cols-[88px_1fr] md:gap-x-[29px] md:p-7 lg:flex lg:flex-col lg:gap-x-0">
-        {/* Phone / tablet tile */}
-        <div
-          className={cx(
-            "relative col-start-1 row-start-1 grid size-12 place-items-center rounded-[14px] md:row-span-3 md:size-[88px] md:rounded-[20px] lg:hidden",
-            t.soft,
-          )}
-        >
-          {art("size-7 md:size-12")}
-        </div>
-
-        <div className="col-start-2 row-start-1 min-w-0 self-center md:self-start">
-          <h3 className="text-[17px] font-semibold leading-[22px] text-ink md:text-[22px] md:leading-7 lg:text-[26px] lg:leading-8">
-            {title}
-          </h3>
-          <p className="mt-0.5 text-[12px] leading-4 text-muted md:mt-[7px] md:text-[13px] md:leading-[18px] lg:mt-[9px] lg:text-[15px] lg:leading-[22px]">
-            {subtitle}
-          </p>
-        </div>
-
-        {compactChips === "path" && (
-          <p className="col-span-2 mt-3 text-[12px] font-semibold leading-4 text-explore md:hidden">
-            {chips.map((c) => c.label).join(" › ")}
-          </p>
+    <li className={cx("coast-card relative flex flex-col p-3 pb-4", coast[accent], lastOdd && "md:col-span-2 xl:col-span-1")}>
+      <div className="coast-panel relative flex h-[84px] items-center justify-center md:h-[108px]">
+        {badge && (
+          <span className="coast-badge absolute left-2.5 top-2.5 px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-[0.08em]">{badge}</span>
         )}
-        <ul
-          className={cx(
-            "col-span-2 mt-3 flex flex-wrap gap-x-2 gap-y-2 md:col-span-1 md:col-start-2 md:mt-3.5 lg:mt-[17px]",
-            compactChips === "path" && "hidden md:flex",
-          )}
-          aria-label={`${title} includes`}
-        >
+        <MenuIcon accent={accent} />
+      </div>
+      <div className="flex flex-1 flex-col gap-2 px-2 pt-[18px]">
+        <h3 className="coast-serif text-[23px] leading-7">{title}</h3>
+        <p className="coast-muted text-[14.5px] leading-[1.5]">{subtitle}</p>
+        <ul className="mt-1 flex flex-wrap gap-2" aria-label={`${title} includes`}>
           {chips.map((c) => (
-            <li key={c.label} className={cx("inline-flex h-[25px] items-center rounded-full px-3 text-[12px] font-semibold", chipTone[c.tone])}>
+            <li key={c.label} className="coast-chip px-3 py-[5px] text-[12.5px] font-bold">
+              {c.tone === "done" && <span aria-hidden="true">✓ </span>}
               {c.label}
             </li>
           ))}
         </ul>
-
-        <div className="col-span-2 mt-4 flex items-center justify-between gap-3 md:col-span-1 md:col-start-2 md:mt-[21px] lg:mt-auto lg:pt-[35px]">
-          <span className="text-[12px] font-semibold text-faint lg:text-[13px]">{lo}</span>
+        <div className="coast-foot mt-auto flex items-center justify-between gap-3 pt-3.5">
+          <span className="coast-muted text-[12px] font-extrabold uppercase tracking-[0.06em]">{lo}</span>
           <Link
             to={to}
             aria-label={`${action} — ${title}`}
-            className={cx(
-              // after:inset-0 stretches the link over the whole card, so tapping anywhere on the card opens it.
-              "inline-flex h-10 w-[112px] items-center justify-center rounded-xl text-[15px] font-semibold text-white transition-colors after:absolute after:inset-0 after:rounded-[20px] md:h-11 md:w-[132px]",
-              t.button,
-            )}
+            // after:inset-0 stretches the link over the whole card, so tapping anywhere on the card opens it.
+            className="coast-btn px-6 py-2.5 text-[14.5px] font-bold after:absolute after:inset-0 after:rounded-[18px]"
           >
             {action}
           </Link>
         </div>
       </div>
     </li>
+  );
+}
+
+/** Line icons from the Coastal Soft design (book icon added for Lessons); stroke follows the card accent. */
+function MenuIcon({ accent }: { accent: Accent }) {
+  const common = {
+    width: 50,
+    height: 50,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinejoin: "round" as const,
+    strokeLinecap: "round" as const,
+    "aria-hidden": true,
+  };
+  if (accent === "games")
+    return (
+      <svg {...common}>
+        <ellipse cx="12" cy="9.5" rx="5.5" ry="6.5" />
+        <path d="M11 16 H13 L12 17.4 Z" />
+        <path d="M12 17.4 C10.4 18.8 13.6 19.8 12 21.5" />
+      </svg>
+    );
+  if (accent === "lessons")
+    return (
+      <svg {...common}>
+        <path d="M12 6.5c-1.8-1.3-4.3-2-7.5-2v13c3.2 0 5.7.7 7.5 2 1.8-1.3 4.3-2 7.5-2v-13c-3.2 0-5.7.7-7.5 2Z" />
+        <path d="M12 6.5v13" />
+      </svg>
+    );
+  if (accent === "explore")
+    return (
+      <svg {...common}>
+        <path d="M12 2.5 L20 7 V16.5 L12 21 L4 16.5 V7 Z" />
+        <path d="M4 7 L12 11.5 L20 7" />
+        <path d="M12 11.5 V21" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <rect x="5" y="4" width="14" height="17" rx="3" />
+      <rect x="9" y="2.5" width="6" height="3" rx="1.2" />
+      {accent === "tests" ? (
+        <>
+          <path d="M8.5 10.5 L9.7 11.7 L11.7 9.5" />
+          <path d="M13.5 10.8 H15.8" />
+          <path d="M8.5 15.5 L9.7 16.7 L11.7 14.5" />
+          <path d="M13.5 15.8 H15.8" />
+        </>
+      ) : (
+        <path d="M12 9.5 L13.1 11.8 L15.6 12.1 L13.8 13.8 L14.3 16.3 L12 15 L9.7 16.3 L10.2 13.8 L8.4 12.1 L10.9 11.8 Z" />
+      )}
+    </svg>
   );
 }
 

@@ -2,7 +2,7 @@
  * Pure test-engine logic (no Cloudflare / D1 imports) so it can be unit-tested with vitest in Node.
  * Rules: docs/ARCHITECTURE.md §4.
  */
-import type { AnswerValue, Availability, QuestionType, ScorePolicy, ScoreStats } from "../shared/contract";
+import { isLayoutType, type AnswerValue, type Availability, type QuestionType, type ScorePolicy, type ScoreStats } from "../shared/contract";
 
 /** Seconds of grace after a deadline during which saves / submits are still accepted. */
 export const DEADLINE_GRACE_MS = 30_000;
@@ -18,9 +18,11 @@ export interface SnapshotQuestion {
   position: number;
   type: QuestionType;
   prompt: string;
+  /** Text / section blocks. Missing in snapshots frozen before migration 0005. */
+  description?: string;
   imageUrl: string | null;
   options: QuestionOption[];
-  /** single: option id · multi: option ids · truefalse: boolean · short: accepted answers */
+  /** single: option id · multi: option ids · truefalse: boolean · short: accepted answers · "" for layout blocks */
   answer: AnswerValue;
   points: number;
   required: boolean;
@@ -80,6 +82,8 @@ export function normalizeStudentAnswer(q: SnapshotQuestion, value: unknown): Ans
     case "short":
       if (typeof value !== "string") return { ok: false, error: `Question ${q.position}: expected text` };
       return { ok: true, value: value.slice(0, 500) };
+    default:
+      return { ok: false, error: "This item isn't a question and can't be answered" };
   }
 }
 
@@ -121,6 +125,8 @@ export function isCorrect(q: SnapshotQuestion, given: AnswerValue | undefined | 
       const accepted = Array.isArray(q.answer) ? q.answer : [String(q.answer)];
       return accepted.some((a) => normalizeShortAnswer(a) === g);
     }
+    default:
+      return false; // layout blocks are never graded
   }
 }
 
@@ -141,7 +147,7 @@ export function gradeAttempt(snapshot: TestSnapshot, answers: Record<string, Ans
   let score = 0;
   let maxScore = 0;
   const items: GradedQuestion[] = [];
-  for (const q of snapshot.questions) {
+  for (const q of gradedQuestions(snapshot.questions)) {
     const correct = isCorrect(q, answers[String(q.id)]);
     const earned = correct ? q.points : 0;
     score += earned;
@@ -158,20 +164,18 @@ export function displayCorrectAnswer(q: SnapshotQuestion): AnswerValue {
   return q.answer;
 }
 
+/** Questions that are answered and graded — title / image / section blocks are left out. */
+export function gradedQuestions<T extends { type: QuestionType }>(items: T[]): T[] {
+  return items.filter((q) => !isLayoutType(q.type));
+}
+
 /**
- * Answer review (correct answers) is revealed only when it can no longer be used to improve a score:
- * the attempt is submitted, the assignment allows it, AND (the student has no attempts left OR the
- * assignment is no longer open). Unlimited attempts (attemptsLeft = null) → only after the test closes.
+ * Answer review (correct answers) is shown right after submitting when the assignment's
+ * "Show answers after submit" switch is on. With retakes allowed, students can see the answers before
+ * their next attempt — the assignment page warns the instructor about that.
  */
-export function canRevealAnswers(p: {
-  showAnswers: boolean;
-  submitted: boolean;
-  attemptsLeft: number | null;
-  assignmentOpen: boolean;
-}): boolean {
-  if (!p.showAnswers || !p.submitted) return false;
-  const noAttemptsLeft = p.attemptsLeft !== null && p.attemptsLeft <= 0;
-  return noAttemptsLeft || !p.assignmentOpen;
+export function canRevealAnswers(p: { showAnswers: boolean; submitted: boolean }): boolean {
+  return p.showAnswers && p.submitted;
 }
 
 /* ───────────── time windows ───────────── */
