@@ -11,7 +11,7 @@ import { exportWholeClass } from "@/components/admin/exportResults";
 import { findOtherEnrollments } from "@/components/admin/students";
 import { errorMessage, formatDateTime } from "@/components/admin/format";
 import { adminKeys } from "@/components/admin/keys";
-import { LIVE_REFRESH_MS, LiveIndicator, isRecentJoin } from "@/components/admin/live";
+import { LiveIndicator, isRecentJoin, useLiveInterval } from "@/components/admin/live";
 import { RowMenu } from "@/components/admin/Menu";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
@@ -50,7 +50,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
     queryKey: adminKeys.students(cls.id, "all"),
     queryFn: () => api.get<AdminStudentRow[]>(`/admin/students?${new URLSearchParams({ classId: String(cls.id), status: "all" })}`),
     // Live during class: students appear here a few seconds after they scan the section's QR code and sign in.
-    refetchInterval: LIVE_REFRESH_MS,
+    refetchInterval: useLiveInterval(),
   });
   const [filter, setFilter] = useState<Filter>("active");
   const [search, setSearch] = useState("");
@@ -164,7 +164,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
         <Card className="min-w-0 px-[19px] pb-[15px] pt-[17px]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <FilterPills<Filter> label="Filter by status" value={filter} onChange={setFilter} options={pills} />
-            <LiveIndicator updatedAt={q.dataUpdatedAt} fetching={q.isFetching} />
+            <LiveIndicator updatedAt={q.dataUpdatedAt} fetching={q.isFetching} onRefresh={() => void qc.invalidateQueries({ queryKey: adminKeys.studentsRoot })} />
             <div className="w-full sm:w-[239px]">
               <SearchBox value={search} onChange={setSearch} placeholder="Search ID or name..." label="Search by student ID, name or e-mail" />
             </div>
@@ -459,7 +459,7 @@ function UnassignedStudents({ cls, onEnrolled }: { cls: AdminClass; onEnrolled: 
   const q = useQuery({
     queryKey: adminKeys.unassigned,
     queryFn: () => api.get<UnassignedStudent[]>("/admin/students/unassigned"),
-    refetchInterval: LIVE_REFRESH_MS,
+    refetchInterval: useLiveInterval(),
   });
   const enroll = useMutation({
     mutationFn: (s: UnassignedStudent) => api.post<unknown>(`/admin/students/${s.studentId}/enroll`, { classId: cls.id }),

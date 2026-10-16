@@ -1,5 +1,6 @@
 import { Hono, type Context } from "hono";
-import { saveAnswersBody, startAttemptBody, type AnswerValue } from "../../shared/contract";
+import { saveAnswersBody, startAttemptBody, submitAttemptBody, type AnswerValue } from "../../shared/contract";
+import type { TestSnapshot } from "../grading";
 import { requireStudent } from "../auth";
 import { nowIso, parseJson, stmt } from "../db";
 import {
@@ -27,6 +28,22 @@ attemptRoutes.use("/attempts", requireStudent);
 attemptRoutes.use("/attempts/*", requireStudent);
 
 const MAX_ANSWER_KEYS = 200;
+
+/** Validates incoming answers against the frozen test and returns the normalised patch. */
+function answerPatch(snap: TestSnapshot, answers: Record<string, unknown>): Record<string, AnswerValue> {
+  const entries = Object.entries(answers);
+  if (entries.length > MAX_ANSWER_KEYS) throw badRequest("Too many answers in one request.");
+  const byId = new Map(snap.questions.map((q) => [String(q.id), q]));
+  const patch: Record<string, AnswerValue> = {};
+  for (const [key, value] of entries) {
+    const q = byId.get(key);
+    if (!q) throw badRequest(`Unknown question id ${key.slice(0, 20)}.`);
+    const check = normalizeStudentAnswer(q, value);
+    if (!check.ok) throw badRequest(check.error);
+    patch[key] = check.value;
+  }
+  return patch;
+}
 
 function currentEnrollment(c: Context<AppEnv>) {
   const e = c.get("student").enrollment;
@@ -130,21 +147,10 @@ attemptRoutes.put("/attempts/:id/answers", async (c) => {
     throw conflict("Time is up — your saved answers were submitted automatically.", "expired");
   }
 
-  const entries = Object.entries(body.answers);
-  if (entries.length > MAX_ANSWER_KEYS) throw badRequest("Too many answers in one request.");
-  const snap = await snapshots.get(attempt.test_version_id);
-  const byId = new Map(snap.questions.map((q) => [String(q.id), q]));
-  const patch: Record<string, AnswerValue> = {};
-  for (const [key, value] of entries) {
-    const q = byId.get(key);
-    if (!q) throw badRequest(`Unknown question id ${key.slice(0, 20)}.`);
-    const check = normalizeStudentAnswer(q, value);
-    if (!check.ok) throw badRequest(check.error);
-    patch[key] = check.value;
-  }
+  const patch = answerPatch(await snapshots.get(attempt.test_version_id), body.answers);
 
   const savedAt = nowIso(now);
-  if (entries.length > 0) {
+  if (Object.keys(patch).length > 0) {
     // json_patch merges atomically in SQLite, so concurrent saves from two tabs never drop answers.
     const res = await stmt(
       db,
@@ -158,6 +164,16 @@ attemptRoutes.put("/attempts/:id/answers", async (c) => {
 });
 
 attemptRoutes.post("/attempts/:id/submit", async (c) => {
+  // Body is optional (older clients send none): { answers } = what is still only on the device.
+  const raw = (await c.req.text()).trim();
+  let json: unknown = {};
+  try {
+    if (raw) json = JSON.parse(raw);
+  } catch {
+    throw badRequest("Invalid JSON body.");
+  }
+  const parsed = submitAttemptBody.safeParse(json);
+  if (!parsed.success) throw badRequest("Invalid answers.");
   const { attempt, asg } = await ownAttempt(c, idParam(c));
   const db = c.env.DB;
   const now = new Date();
@@ -168,6 +184,11 @@ attemptRoutes.post("/attempts/:id/submit", async (c) => {
     const expired = isAttemptExpired(current.deadline_at, windowOf(asg), now);
     if (!expired) {
       const snap = await snapshots.get(current.test_version_id);
+      const patch = answerPatch(snap, parsed.data.answers ?? {});
+      if (Object.keys(patch).length > 0) {
+        await stmt(db, "UPDATE attempts SET answers = json_patch(answers, ?) WHERE id = ? AND submitted_at IS NULL", JSON.stringify(patch), current.id).run();
+        current = { ...current, answers: JSON.stringify({ ...parseJson<Record<string, AnswerValue>>(current.answers, {}), ...patch }) };
+      }
       const answers = parseJson<Record<string, AnswerValue>>(current.answers, {});
       const missing = snap.questions.filter((q) => q.required && !isAnswered(answers[String(q.id)]));
       if (missing.length > 0) {

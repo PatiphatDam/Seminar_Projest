@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addAdminBody, type AdminUser, type AuditEntry } from "@shared/contract";
+import { addAdminBody, type AdminUser, type AuditEntry, type UsageReport } from "@shared/contract";
 import { api } from "@/lib/api";
 import { useAppConfig, useMe } from "@/lib/auth";
 import { Badge, Button, Card, ErrorNote, Input, PageHeader, Spinner } from "@/components/ui";
@@ -18,10 +18,68 @@ export default function Settings() {
         <div className="space-y-6">
           <AdminsCard />
           <SignInCard />
+          <StorageCard />
         </div>
         <ActivityCard />
       </div>
     </>
+  );
+}
+
+/* ───────── Storage (Workers Free plan) ───────── */
+
+const mb = (b: number) => (b / (1024 * 1024)).toFixed(b < 10 * 1024 * 1024 ? 1 : 0);
+
+function StorageCard() {
+  const q = useQuery({ queryKey: adminKeys.usage, queryFn: () => api.get<UsageReport>("/admin/usage") });
+  const u = q.data;
+  const ratio = u ? Math.min(1, u.dbBytes / u.limitBytes) : 0;
+  const warn = !!u && ratio >= u.warnRatio;
+  return (
+    <Card className="p-5">
+      <CardTitle>Storage</CardTitle>
+      {q.isError ? (
+        <div className="mt-3">
+          <QueryError error={q.error} onRetry={() => void q.refetch()} what="storage usage" />
+        </div>
+      ) : !u ? (
+        <Spinner className="mt-3 size-5 text-muted" />
+      ) : (
+        <>
+          <p className="mt-3 text-sm">
+            Database <strong className="tabular-nums">{mb(u.dbBytes)} MB</strong> of {mb(u.limitBytes)} MB{" "}
+            <span className="text-muted">({Math.round(ratio * 100)}%)</span>
+          </p>
+          <div
+            className="mt-2 h-2.5 overflow-hidden rounded-full bg-zinc-200"
+            role="meter"
+            aria-label="Database size"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(ratio * 100)}
+          >
+            <div className={warn ? "h-full rounded-full bg-danger" : "h-full rounded-full bg-success"} style={{ width: `${Math.max(1, ratio * 100)}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-muted tabular-nums">
+            {u.classes} classes · about {u.approx.students.toLocaleString()} students · about {u.approx.attempts.toLocaleString()} test attempts ·{" "}
+            {u.approx.images} images
+          </p>
+          {warn && (
+            <div className="mt-3">
+              <ErrorNote>The database is over {Math.round(u.warnRatio * 100)}% full. Export the results of past semesters, then delete those classes.</ErrorNote>
+            </div>
+          )}
+          <details className="mt-3 text-xs text-muted">
+            <summary className="cursor-pointer font-semibold text-ink">End-of-semester checklist</summary>
+            <ol className="mt-2 list-decimal space-y-1 pl-5">
+              <li>Results → export each class to Excel and keep the files.</li>
+              <li>Classes → Delete class for sections that have finished (type the join code to confirm).</li>
+              <li>Automatic every week: activity older than 1 year and unused images are removed.</li>
+            </ol>
+          </details>
+        </>
+      )}
+    </Card>
   );
 }
 
@@ -210,7 +268,7 @@ function describeTarget(e: AuditEntry): string {
 }
 
 function ActivityCard() {
-  const q = useQuery({ queryKey: adminKeys.audit, queryFn: () => api.get<AuditEntry[]>("/admin/audit?limit=50"), refetchInterval: 60_000 });
+  const q = useQuery({ queryKey: adminKeys.audit, queryFn: () => api.get<AuditEntry[]>("/admin/audit?limit=50") });
   return (
     <Card className="p-5">
       <CardTitle right={q.isFetching && !q.isPending ? <Spinner className="size-4 text-muted" /> : undefined}>Recent activity</CardTitle>

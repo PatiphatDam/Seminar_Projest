@@ -226,6 +226,17 @@ export async function finalizeAttempt(
     auto ? 1 : 0,
     attempt.id,
   ).run();
+  if (claim.meta.changes) {
+    // Summary row for the admin Classes page (migration 0006): cheap to count per class.
+    await stmt(
+      db,
+      `INSERT OR IGNORE INTO enrollment_progress (enrollment_id, kind, first_submitted_at)
+         SELECT ?, t.kind, ? FROM test_assignments ta JOIN tests t ON t.id = ta.test_id WHERE ta.id = ?`,
+      attempt.enrollment_id,
+      nowIso(now),
+      attempt.assignment_id,
+    ).run();
+  }
   if (!claim.meta.changes) {
     // Someone else submitted first — make sure it is graded, then return their result.
     const other = await loadAttempt(db, attempt.id);

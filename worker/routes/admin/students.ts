@@ -176,6 +176,13 @@ studentAdminRoutes.post("/students/:id/enroll", async (c) => {
   return c.json(await loadStudentRow(db, enr.id));
 });
 
+/** Every enrollment of one student in any class (archived included) — used before a hard delete. */
+studentAdminRoutes.get("/students/:id/enrollments", async (c) => {
+  const id = idParam(c);
+  const rows = await queryAll<EnrollmentRowFull>(c.env.DB, `${ENROLLMENT_ROW_SELECT} WHERE s.id = ? ORDER BY e.id`, id);
+  return c.json(rows.map(toStudentRow));
+});
+
 interface EnrollmentCore {
   id: number;
   student_id: number;
@@ -297,6 +304,7 @@ studentAdminRoutes.delete("/students/:id", async (c) => {
   if (!s) throw notFound("Student not found.");
   const statements: D1PreparedStatement[] = [
     stmt(db, "DELETE FROM attempts WHERE enrollment_id IN (SELECT id FROM enrollments WHERE student_id = ?)", id),
+    stmt(db, "DELETE FROM enrollment_progress WHERE enrollment_id IN (SELECT id FROM enrollments WHERE student_id = ?)", id),
     stmt(db, "DELETE FROM enrollments WHERE student_id = ?", id),
   ];
   if (s.student_code) statements.push(stmt(db, "DELETE FROM class_roster WHERE student_code = ?", s.student_code));

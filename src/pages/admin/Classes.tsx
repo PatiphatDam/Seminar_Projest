@@ -1,13 +1,13 @@
 import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClassBody, type AdminClass, type AdminStudentRow } from "@shared/contract";
+import { createClassBody, type AdminClass, type AdminStudentRow, type ClassScope } from "@shared/contract";
 import { api } from "@/lib/api";
 import { Button, Card, cx, EmptyState, ErrorNote, Input, PageHeader, PageLoader, Select, Spinner } from "@/components/ui";
 import { useAdminClass } from "@/components/admin/adminClass";
 import { CardTitle, FilterPills, QueryError, SearchBox, StatusChip, Switch } from "@/components/admin/controls";
 import { copyText, errorMessage, formatDate, formatDateTime, relativeTime } from "@/components/admin/format";
-import { LIVE_REFRESH_MS, LiveIndicator, isRecentJoin } from "@/components/admin/live";
+import { LiveIndicator, isRecentJoin, useLiveInterval } from "@/components/admin/live";
 import { IconDownload, IconPlus } from "@/components/admin/icons";
 import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
@@ -27,10 +27,13 @@ function StatusBadge({ c }: { c: AdminClass }) {
 
 export default function Classes() {
   const { classId: currentId, setClassId } = useAdminClass();
+  const live = useLiveInterval();
+  // Default: only my classes (+ legacy classes without an owner) — keeps lists small with many instructors.
+  const [scope, setScope] = useState<ClassScope>("mine");
   const q = useQuery({
-    queryKey: adminKeys.classes("all"),
-    queryFn: () => api.get<AdminClass[]>("/admin/classes?status=all"),
-    refetchInterval: LIVE_REFRESH_MS, // student / pretest / posttest counts change during class
+    queryKey: adminKeys.classes("all", scope),
+    queryFn: () => api.get<AdminClass[]>(`/admin/classes?status=all&scope=${scope}`),
+    refetchInterval: live, // only while "Live" is on — counts change during class
   });
   const [tab, setTab] = useState<Tab>("active");
   const [search, setSearch] = useState("");
@@ -102,6 +105,18 @@ export default function Classes() {
                   { value: "active", label: `Active (${counts.active})` },
                   // Archiving was replaced by Delete; the tab only remains so old archived classes can be deleted.
                   ...(counts.archived > 0 ? [{ value: "archived" as Tab, label: `Archived (${counts.archived})` }] : []),
+                ]}
+              />
+              <FilterPills<ClassScope>
+                label="Whose classes"
+                value={scope}
+                onChange={(s) => {
+                  setScope(s);
+                  setSelectedId(null);
+                }}
+                options={[
+                  { value: "mine", label: "My classes" },
+                  { value: "all", label: "All classes" },
                 ]}
               />
               <div className="w-full sm:w-[259px]">
@@ -197,10 +212,11 @@ export default function Classes() {
 const RECENT_LIMIT = 6;
 
 function RecentJoins({ c }: { c: AdminClass }) {
+  const qc = useQueryClient();
   const q = useQuery({
     queryKey: adminKeys.students(c.id, "all"),
     queryFn: () => api.get<AdminStudentRow[]>(`/admin/students?${new URLSearchParams({ classId: String(c.id), status: "all" })}`),
-    refetchInterval: LIVE_REFRESH_MS,
+    refetchInterval: useLiveInterval(),
   });
   const recent = useMemo(
     () =>
@@ -215,7 +231,14 @@ function RecentJoins({ c }: { c: AdminClass }) {
     <Card className="p-[25px]">
       <div className="flex items-center justify-between gap-2">
         <CardTitle>Joined via QR</CardTitle>
-        <LiveIndicator updatedAt={q.dataUpdatedAt} fetching={q.isFetching} />
+        <LiveIndicator
+          updatedAt={q.dataUpdatedAt}
+          fetching={q.isFetching}
+          onRefresh={() => {
+            void q.refetch();
+            void qc.invalidateQueries({ queryKey: adminKeys.classesRoot });
+          }}
+        />
       </div>
       {q.isPending ? (
         <div className="py-6 text-center">

@@ -175,6 +175,12 @@ export const saveAnswersBody = z.object({
   answers: z.record(z.string(), z.union([z.string().max(500), z.array(z.string().max(100)).max(20), z.boolean()])),
 });
 
+/**
+ * POST /api/attempts/:id/submit — the body is optional: answers still on the student's device are saved and the
+ * attempt submitted in one request (answers are kept in the browser and only checkpointed every few minutes).
+ */
+export const submitAttemptBody = saveAnswersBody.partial();
+
 /** POST /api/attempts/:id/submit and GET /api/attempts/:id after submission */
 export interface AttemptResult {
   attemptId: number;
@@ -216,7 +222,12 @@ export interface AdminClass extends ClassSummary {
   posttestSubmitted: number;
   createdAt: string;
   archivedAt: string | null;
+  /** Instructor who created the class; null for classes made before owners were recorded (visible to everyone). */
+  ownerEmail: string | null;
 }
+
+/** Admin class lists: "mine" (default) = my classes + classes without an owner; "all" = every class. */
+export type ClassScope = "mine" | "all";
 
 export const createClassBody = z.object({
   academicYear: z.number().int().min(2500).max(2700),
@@ -411,6 +422,15 @@ export interface AdminUser {
 }
 
 export const addAdminBody = z.object({ email: z.string().trim().toLowerCase().email(), name: z.string().max(80).optional() });
+
+/** GET /api/admin/usage — Admin → Settings → Storage */
+export interface UsageReport {
+  dbBytes: number;
+  limitBytes: number;
+  warnRatio: number;
+  approx: { students: number; attempts: number; images: number };
+  classes: number;
+}
 
 export interface AuditEntry {
   id: number;

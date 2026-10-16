@@ -16,7 +16,8 @@ export function useMe() {
         throw e;
       }
     },
-    staleTime: 60_000,
+    // Sign-in, join and sign-out update this cache directly; any 401 elsewhere signs the user out (main.tsx).
+    staleTime: 300_000,
   });
 }
 

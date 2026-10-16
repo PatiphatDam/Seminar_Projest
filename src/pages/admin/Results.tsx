@@ -12,6 +12,7 @@ import { errorMessage, fmtNum, signed } from "@/components/admin/format";
 import { IconChevronDown, IconDownload } from "@/components/admin/icons";
 import { adminKeys } from "@/components/admin/keys";
 import { useToast } from "@/components/admin/toastContext";
+import { LiveIndicator, useLiveInterval } from "@/components/admin/live";
 
 type StatusFilter = "active" | "all";
 const MAX_PICKED_TESTS = 20;
@@ -51,7 +52,7 @@ export default function Results() {
     queryFn: () => api.get<AdminResults>(`/admin/results?${new URLSearchParams({ ...(classId ? { classId: String(classId) } : {}), testIds: testIds.join(","), status })}`),
     enabled: testIds.length > 0,
     placeholderData: (prev) => prev,
-    refetchInterval: 30_000, // scores arrive while students are taking the test
+    refetchInterval: useLiveInterval(30_000), // only while "Live" is on — scores arrive during a test
   });
 
   const classes = classesQ.data ?? [];
@@ -109,6 +110,9 @@ export default function Results() {
         subtitle="Pretest vs posttest · filtered by class"
         actions={
           <>
+            {testIds.length > 0 && (
+              <LiveIndicator updatedAt={resultsQ.dataUpdatedAt} fetching={resultsQ.isFetching} onRefresh={() => void resultsQ.refetch()} />
+            )}
             <Button
               accent="success"
               size="lg"

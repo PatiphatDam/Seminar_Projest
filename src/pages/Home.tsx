@@ -5,7 +5,7 @@ import { cx } from "@/components/ui";
 import { useStudentMe } from "@/components/student/RequireStudent";
 import { describeAuthError, joinNoticeStore } from "@/components/student/authHelpers";
 import { useJoinClass } from "@/lib/auth";
-import { LESSONS } from "@/content/lessons";
+import { TOPICS } from "@/content/lessons";
 import { useStudentStatus } from "@/components/student/queries";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { InfoIcon } from "@/components/student/icons";
@@ -80,7 +80,6 @@ export default function Home() {
           title="Pretest"
           subtitle="Do this first, before the lesson"
           chips={pretestChips(status.data, enrolled, status.isPending)}
-          lo="Step 1"
           action="Open"
           to="/pretest"
           badge={enrolled && status.data?.pretest && !status.data.pretest.submitted ? "Start here" : undefined}
@@ -88,9 +87,8 @@ export default function Home() {
         <MenuCard
           accent="lessons"
           title="Lessons"
-          subtitle={`${LESSONS.length} short lessons from the Key Point Book`}
-          chips={["Muscle types", "Organization", "Nerve to muscle", "Sarcomere"].map(tag)}
-          lo="OL1–OL5"
+          subtitle="Read about muscular tissues, any topic first"
+          chips={TOPICS.map((t) => tag(t.title))}
           action="Read"
           to="/lessons"
         />
@@ -99,7 +97,6 @@ export default function Home() {
           title="Games"
           subtitle="Practice with quick 2D games"
           chips={["Balloon Pop", "Group Sort", "Diameter"].map(tag)}
-          lo="OL1–OL3"
           action="Play"
           to="/games"
         />
@@ -108,7 +105,6 @@ export default function Home() {
           title="3D Explore"
           subtitle="Zoom from muscle to sarcomere"
           chips={["Muscle", "Fascicle", "Fiber", "Myofibril", "Sarcomere"].map(tag)}
-          lo="OL2–OL5"
           action="Explore"
           to="/explore"
         />
@@ -117,7 +113,6 @@ export default function Home() {
           title="Posttest"
           subtitle="After the lesson — see how much you learned"
           chips={posttestChips(status.data, enrolled, status.isPending)}
-          lo="Last step"
           action="Open"
           to="/posttest"
           lastOdd
@@ -207,7 +202,6 @@ type MenuCardProps = {
   title: string;
   subtitle: string;
   chips: Chip[];
-  lo: string;
   action: string;
   to: string;
   /** Coral pill on the cover, e.g. "Start here" on the Pretest card until it's done. */
@@ -221,7 +215,7 @@ type MenuCardProps = {
  * a soft coloured shadow, a darker tinted cover panel with the line icon, Playfair title, pill chips and a hairline footer.
  * Phone: one column, shorter cover · tablet: 2 columns (Posttest spans both) · desktop (≥1280): all five in one row, in learning order.
  */
-function MenuCard({ accent, title, subtitle, chips, lo, action, to, badge, lastOdd }: MenuCardProps) {
+function MenuCard({ accent, title, subtitle, chips, action, to, badge, lastOdd }: MenuCardProps) {
   return (
     <li className={cx("coast-card relative flex flex-col p-3 pb-4", coast[accent], lastOdd && "md:col-span-2 xl:col-span-1")}>
       <div className="coast-panel relative flex h-[84px] items-center justify-center md:h-[108px]">
@@ -241,8 +235,7 @@ function MenuCard({ accent, title, subtitle, chips, lo, action, to, badge, lastO
             </li>
           ))}
         </ul>
-        <div className="coast-foot mt-auto flex items-center justify-between gap-3 pt-3.5">
-          <span className="coast-muted text-[12px] font-extrabold uppercase tracking-[0.06em]">{lo}</span>
+        <div className="coast-foot mt-auto flex items-center justify-end gap-3 pt-3.5">
           <Link
             to={to}
             aria-label={`${action} — ${title}`}

@@ -5,7 +5,7 @@ import type { AppEnv } from "../../env";
 import { generateJoinCode } from "../../grading";
 import { badRequest, conflict, idParam, readBody } from "../../http";
 import { className } from "../../identity";
-import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow } from "./common";
+import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow, scopeWhere } from "./common";
 
 export const classRoutes = new Hono<AppEnv>();
 
@@ -27,8 +27,11 @@ async function freshJoinCode(db: D1Database): Promise<string> {
 classRoutes.get("/classes", async (c) => {
   const status = c.req.query("status") ?? "active";
   if (!["active", "archived", "all"].includes(status)) throw badRequest("status must be active, archived or all.");
-  const where = status === "all" ? "" : "WHERE c.status = ?";
-  const params = status === "all" ? [] : [status];
+  const scope = c.req.query("scope");
+  if (scope !== undefined && scope !== "mine" && scope !== "all") throw badRequest("scope must be mine or all.");
+  const own = scopeWhere(scope, c.get("admin").email);
+  const where = status === "all" ? `WHERE ${own.sql}` : `WHERE c.status = ? AND ${own.sql}`;
+  const params = status === "all" ? own.params : [status, ...own.params];
   const rows = await queryAll<AdminClassRow>(
     c.env.DB,
     `${ADMIN_CLASS_SELECT} ${where} ORDER BY c.academic_year DESC, c.semester DESC, c.section ASC`,
@@ -57,8 +60,8 @@ classRoutes.post("/classes", async (c) => {
       const [ins] = await db.batch([
         stmt(
           db,
-          `INSERT INTO classes (academic_year, semester, section, name, join_code, restrict_to_roster, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, 'active', ?) RETURNING id`,
+          `INSERT INTO classes (academic_year, semester, section, name, join_code, restrict_to_roster, status, created_at, owner_email)
+           VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?) RETURNING id`,
           body.academicYear,
           body.semester,
           body.section,
@@ -66,6 +69,7 @@ classRoutes.post("/classes", async (c) => {
           code,
           body.restrictToRoster ? 1 : 0,
           nowIso(),
+          admin.email,
         ),
         auditStmtForLastInsert(db, admin.email, "class.create", "class", { name, joinCode: code }),
       ]);
@@ -177,6 +181,7 @@ classRoutes.delete("/classes/:id", async (c) => {
             AND NOT EXISTS (SELECT 1 FROM enrollments o WHERE o.student_id = e.student_id AND o.class_id <> ?1))`,
       id,
     ),
+    stmt(db, "DELETE FROM enrollment_progress WHERE enrollment_id IN (SELECT id FROM enrollments WHERE class_id = ?)", id),
     stmt(db, "DELETE FROM enrollments WHERE class_id = ?", id),
     stmt(db, "DELETE FROM test_assignments WHERE class_id = ?", id),
     stmt(db, "DELETE FROM class_roster WHERE class_id = ?", id),

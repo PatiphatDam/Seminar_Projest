@@ -6,7 +6,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { Button, cx, ErrorNote, Logo, PageLoader } from "@/components/ui";
 import { RequireStudent } from "@/components/student/RequireStudent";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
-import { studentTestsKey } from "@/components/student/queries";
+import { studentStatusKey, studentTestsKey } from "@/components/student/queries";
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ClockIcon, XIcon } from "@/components/student/icons";
 import { POLICY_SENTENCE, TYPE_HINT, buildPages, clock, isAnswered, unanswered } from "@/components/student/testHelpers";
 
@@ -16,7 +16,9 @@ import { POLICY_SENTENCE, TYPE_HINT, buildPages, clock, isAnswered, unanswered }
  * Rules (docs/plan/02_REQUIREMENTS.md TEST-2…TEST-4, NFR-6):
  *  - POST /api/attempts starts the attempt or resumes the one in progress (answers are restored).
  *  - The countdown uses the SERVER clock: offset = serverNow − Date.now() once, then deadlineAt − (now + offset).
- *  - Answers autosave ~0.8 s after a change (PUT …/answers with only the changed questions).
+ *  - Answers are kept on the device at once (localStorage) and checkpointed to the server every 2 minutes, when the
+ *    tab is hidden, every 15 s in the last 90 s of a timed test, and with the submit itself (one request). This keeps
+ *    the API traffic low enough for the Workers Free plan (see docs on capacity) without losing answers on a reload.
  *  - Time up → the server submits the saved answers; we fetch the attempt and show the result.
  */
 export default function TakeTest() {
@@ -28,6 +30,39 @@ export default function TakeTest() {
 }
 
 type SaveState = "saved" | "saving" | "pending" | "offline";
+
+/** Server checkpoint of answers that are already safe on the device. */
+const CHECKPOINT_MS = 120_000;
+/** In the last LAST_STRETCH_MS of a timed test, checkpoint at least every FINAL_CHECKPOINT_MS. */
+const LAST_STRETCH_MS = 90_000;
+const FINAL_CHECKPOINT_MS = 15_000;
+
+type Backup = { answers: Record<string, AnswerValue>; dirty: string[] };
+const backupKey = (attemptId: number) => `dm_attempt_${attemptId}`;
+function readBackup(attemptId: number): Backup | null {
+  try {
+    const raw = localStorage.getItem(backupKey(attemptId));
+    return raw ? (JSON.parse(raw) as Backup) : null;
+  } catch {
+    return null;
+  }
+}
+/** Returns false when the browser can't store it (private mode, storage full). */
+function writeBackup(attemptId: number, answers: Record<string, AnswerValue>, dirty: Set<string>): boolean {
+  try {
+    localStorage.setItem(backupKey(attemptId), JSON.stringify({ answers, dirty: [...dirty] } satisfies Backup));
+    return true;
+  } catch {
+    return false;
+  }
+}
+function clearBackup(attemptId: number) {
+  try {
+    localStorage.removeItem(backupKey(attemptId));
+  } catch {
+    /* ignore */
+  }
+}
 
 function TakeTestPage() {
   const { assignmentId } = useParams();
@@ -88,7 +123,9 @@ function TakeTestPage() {
       attempt={attempt}
       item={item}
       onFinished={(result) => {
-        void queryClient.invalidateQueries({ queryKey: ["me"] });
+        // Only what a submit changes (status chips, test list) — not /api/me itself.
+        void queryClient.invalidateQueries({ queryKey: studentStatusKey });
+        void queryClient.invalidateQueries({ queryKey: studentTestsKey });
         navigate(`/tests/result/${result.attemptId}`, { replace: true });
       }}
     />
@@ -113,11 +150,17 @@ function Runner({
   // Questions renumbered 1…n, split into pages (one per section, or one question per page without sections).
   const { questions, pages, pageOfQuestion } = useMemo(() => buildPages(attempt.questions), [attempt.questions]);
   const sectioned = useMemo(() => attempt.questions.some((x) => x.type === "section"), [attempt.questions]);
-  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => ({ ...attempt.answers }));
+  const [backup] = useState(() => readBackup(attempt.attemptId));
+  const [answers, setAnswers] = useState<Record<string, AnswerValue>>(() => {
+    const merged: Record<string, AnswerValue> = { ...attempt.answers, ...(backup?.answers ?? {}) };
+    // A key cleared on the device is absent from the backup but may still be on the server.
+    for (const k of backup?.dirty ?? []) if (!(k in (backup?.answers ?? {}))) delete merged[k];
+    return merged;
+  });
   const answersRef = useRef(answers);
   answersRef.current = answers;
   const [pageIdx, setPageIdx] = useState(0);
-  const [saveState, setSaveState] = useState<SaveState>("saved");
+  const [saveState, setSaveState] = useState<SaveState>(() => (backup?.dirty.length ? "pending" : "saved"));
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
@@ -125,20 +168,30 @@ function Runner({
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState<null | "timeout">(null);
 
-  const dirty = useRef(new Set<string>());
+  const dirty = useRef(new Set<string>(backup?.dirty ?? []));
+  const backupOk = useRef(true);
+  const lastSync = useRef(Date.now());
   const inFlight = useRef<Promise<void> | null>(null);
   const done = useRef(false);
-  const debounce = useRef<number | undefined>(undefined);
+  const checkpoint = useRef<number | undefined>(undefined);
   const retry = useRef<number | undefined>(undefined);
 
   /* ── finishing: fetch the (server-submitted) result ── */
   // The server accepts saves/submits for 30 s after the deadline (DEADLINE_GRACE_MS) and finalises the attempt
   // on the next GET after that — so first try a normal submit, then poll until it reports "submitted".
+  const finish = useCallback(
+    (r: AttemptResult) => {
+      done.current = true;
+      clearBackup(attempt.attemptId);
+      onFinished(r);
+    },
+    [attempt.attemptId, onFinished],
+  );
+
   const fetchResult = useCallback(async () => {
     try {
       const r = await api.post<AttemptResult>(`/attempts/${attempt.attemptId}/submit`);
-      done.current = true;
-      onFinished(r);
+      finish(r);
       return;
     } catch {
       /* required questions left blank (400) or offline — wait for the server to auto-submit */
@@ -148,8 +201,7 @@ function Runner({
       try {
         const r = await api.get<AttemptInProgress | AttemptResult>(`/attempts/${attempt.attemptId}`);
         if (r.status === "submitted") {
-          done.current = true;
-          onFinished(r);
+          finish(r);
           return;
         }
       } catch {
@@ -158,9 +210,9 @@ function Runner({
       await new Promise((res) => setTimeout(res, 3000));
     }
     setSubmitError("Couldn't reach the server. Your saved answers are safe — reload the page to see your result.");
-  }, [attempt.attemptId, onFinished]);
+  }, [attempt.attemptId, finish]);
 
-  /* ── autosave ── */
+  /* ── device copy + server checkpoints ── */
   const flush = useCallback(async (): Promise<void> => {
     if (inFlight.current) await inFlight.current;
     if (done.current || dirty.current.size === 0) return;
@@ -176,6 +228,8 @@ function Runner({
       try {
         const r = await api.put<{ savedAt: string }>(`/attempts/${attempt.attemptId}/answers`, { answers: sent });
         for (const k of keys) if (answersRef.current[k] === sent[k] || (answersRef.current[k] === undefined && sent[k] === "")) dirty.current.delete(k);
+        lastSync.current = Date.now();
+        backupOk.current = writeBackup(attempt.attemptId, answersRef.current, dirty.current);
         setSavedAt(Date.parse(r.savedAt) || Date.now());
         setSaveState(dirty.current.size > 0 ? "pending" : "saved");
       } catch (err) {
@@ -204,22 +258,49 @@ function Runner({
 
   const setAnswer = (q: StudentQuestion, value: AnswerValue | undefined) => {
     if (done.current) return;
-    setAnswers((prev) => {
-      const next = { ...prev };
-      if (value === undefined) delete next[String(q.id)];
-      else next[String(q.id)] = value;
-      return next;
-    });
+    const next = { ...answersRef.current };
+    if (value === undefined) delete next[String(q.id)];
+    else next[String(q.id)] = value;
+    answersRef.current = next;
+    setAnswers(next);
     dirty.current.add(String(q.id));
+    backupOk.current = writeBackup(attempt.attemptId, next, dirty.current);
     setSaveState("pending");
-    window.clearTimeout(debounce.current);
-    debounce.current = window.setTimeout(() => void flush(), 800);
+    // Without a device copy, fall back to saving soon; otherwise a checkpoint at most every 2 minutes.
+    if (!backupOk.current) {
+      window.clearTimeout(checkpoint.current);
+      checkpoint.current = window.setTimeout(() => {
+        checkpoint.current = undefined;
+        void flush();
+      }, 1500);
+    } else if (checkpoint.current === undefined) {
+      checkpoint.current = window.setTimeout(() => {
+        checkpoint.current = undefined;
+        void flush();
+      }, CHECKPOINT_MS);
+    }
   };
+
+  // Checkpoint when the student leaves the tab or the app goes to the background (phones may kill it there).
+  const flushRef = useRef(flush);
+  flushRef.current = flush;
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden" && !done.current && dirty.current.size > 0) void flushRef.current();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onHide);
+    };
+  }, []);
 
   // Warn before leaving while answers are not saved yet.
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!done.current && dirty.current.size > 0) {
+      // Answers are on the device and come back after a reload, so only warn when that copy failed.
+      if (!done.current && dirty.current.size > 0 && !backupOk.current) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -227,7 +308,7 @@ function Runner({
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", onBeforeUnload);
-      window.clearTimeout(debounce.current);
+      window.clearTimeout(checkpoint.current);
       window.clearTimeout(retry.current);
     };
   }, []);
@@ -264,7 +345,12 @@ function Runner({
     const tick = () => {
       const n = Date.now();
       setNow(n);
-      if (deadline - (n + offset) <= 0) onTimeout.current();
+      const left = deadline - (n + offset);
+      if (left <= 0) onTimeout.current();
+      else if (left <= LAST_STRETCH_MS && dirty.current.size > 0 && n - lastSync.current >= FINAL_CHECKPOINT_MS) {
+        lastSync.current = n;
+        void flushRef.current();
+      }
     };
     tick();
     const t = window.setInterval(tick, 500);
@@ -280,12 +366,13 @@ function Runner({
     setSubmitting(true);
     setSubmitError(null);
     try {
-      window.clearTimeout(debounce.current);
-      await flush();
-      if (dirty.current.size > 0) throw new Error("Some answers haven't been saved yet. Check your connection and try again.");
-      const r = await api.post<AttemptResult>(`/attempts/${attempt.attemptId}/submit`);
-      done.current = true;
-      onFinished(r);
+      window.clearTimeout(checkpoint.current);
+      checkpoint.current = undefined;
+      if (inFlight.current) await inFlight.current;
+      const pending: Record<string, AnswerValue> = {};
+      for (const k of dirty.current) pending[k] = answersRef.current[k] ?? "";
+      const r = await api.post<AttemptResult>(`/attempts/${attempt.attemptId}/submit`, { answers: pending });
+      finish(r);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Couldn't submit. Please try again.");
       setSubmitting(false);
@@ -562,8 +649,13 @@ function SaveStatus({ state, savedAt, className }: { state: SaveState; savedAt: 
           <CheckIcon size={13} /> Saved{agoText}
         </span>
       )}
-      {(state === "saving" || state === "pending") && <span className="text-muted">Saving…</span>}
-      {state === "offline" && <span className="text-amber-700">Offline — will retry</span>}
+      {state === "pending" && (
+        <span className="inline-flex items-center gap-1 text-success">
+          <CheckIcon size={13} /> Saved on this device
+        </span>
+      )}
+      {state === "saving" && <span className="text-muted">Syncing…</span>}
+      {state === "offline" && <span className="text-amber-700">Offline — answers kept on this device</span>}
     </p>
   );
 }

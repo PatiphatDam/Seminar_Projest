@@ -2,6 +2,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "digital-muscle",
   "main": "./worker/index.ts",
+  // Weekly clean-up (worker/maintenance.ts): Sunday 20:00 UTC = Monday 03:00 in Thailand.
+  "triggers": { "crons": ["0 20 * * 0"] },
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
@@ -27,6 +29,7 @@
   "vars": {
     "ALLOWED_STUDENT_DOMAIN": "lamduan.mfu.ac.th,mfu.ac.th",
     "GOOGLE_CLIENT_ID": "802030159205-1tm8v14uihqi060us1iinnrh8iop9se3.apps.googleusercontent.com",
-    "ADMIN_EMAILS": ""
+    // Instructors who may sign in to /admin with Google (comma-separated). More can be added in Admin → Settings.
+    "ADMIN_EMAILS": "keerakarn.som@mfu.ac.th,wacharawan.int@mfu.ac.th"
   }
 }

@@ -15,23 +15,23 @@ export interface AdminClassRow {
   restrict_to_roster: number;
   created_at: string;
   archived_at: string | null;
+  owner_email: string | null;
   student_count: number;
   roster_count: number;
   pretest_submitted: number;
   posttest_submitted: number;
 }
 
+/** Active students of the class who submitted a test of this kind — reads ≤ 2 × class size rows (migration 0006). */
 const submittedOfKind = (kind: "pretest" | "posttest") => `
-  (SELECT COUNT(DISTINCT a.enrollment_id)
-     FROM attempts a
-     JOIN enrollments e ON e.id = a.enrollment_id
-     JOIN test_assignments ta ON ta.id = a.assignment_id
-     JOIN tests t ON t.id = ta.test_id
-    WHERE e.class_id = c.id AND e.status = 'active' AND a.submitted_at IS NOT NULL AND t.kind = '${kind}')`;
+  (SELECT COUNT(*)
+     FROM enrollments e
+     JOIN enrollment_progress p ON p.enrollment_id = e.id AND p.kind = '${kind}'
+    WHERE e.class_id = c.id AND e.status = 'active')`;
 
 export const ADMIN_CLASS_SELECT = `
   SELECT c.id, c.name, c.academic_year, c.semester, c.section, c.join_code, c.status, c.restrict_to_roster,
-         c.created_at, c.archived_at,
+         c.created_at, c.archived_at, c.owner_email,
          (SELECT COUNT(*) FROM enrollments e WHERE e.class_id = c.id AND e.status = 'active') AS student_count,
          (SELECT COUNT(*) FROM class_roster r WHERE r.class_id = c.id) AS roster_count,
          ${submittedOfKind("pretest")} AS pretest_submitted,
@@ -54,6 +54,7 @@ export function toAdminClass(r: AdminClassRow): AdminClass {
     posttestSubmitted: r.posttest_submitted,
     createdAt: r.created_at,
     archivedAt: r.archived_at,
+    ownerEmail: r.owner_email,
   };
 }
 
@@ -79,6 +80,12 @@ export async function loadClassBasics(db: D1Database, id: number): Promise<Class
   );
   if (!row) throw notFound("Class not found.");
   return row;
+}
+
+/** SQL filter (alias c) for an admin's class scope: their own classes plus legacy classes without an owner. */
+export function scopeWhere(scope: string | undefined, adminEmail: string): { sql: string; params: string[] } {
+  if (scope === "all") return { sql: "1 = 1", params: [] };
+  return { sql: "(c.owner_email = ? OR c.owner_email IS NULL)", params: [adminEmail] };
 }
 
 /** Archived classes are read-only (docs/plan/02 §8 level 2). */

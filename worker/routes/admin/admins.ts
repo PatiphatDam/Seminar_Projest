@@ -3,6 +3,7 @@ import { addAdminBody, type AdminUser, type AuditEntry } from "../../../shared/c
 import { auditStmt, auditStmtForLastInsert, nowIso, parseJson, queryAll, queryFirst, stmt } from "../../db";
 import { envAdminEmails, type AppEnv } from "../../env";
 import { conflict, idParam, notFound, readBody } from "../../http";
+import { usage } from "../../maintenance";
 
 export const adminUserRoutes = new Hono<AppEnv>();
 
@@ -56,6 +57,9 @@ adminUserRoutes.delete("/admins/:id", async (c) => {
   ]);
   return c.json({ ok: true as const });
 });
+
+/** Admin → Settings → Storage: database size against the Free-plan limit and rough row counts. */
+adminUserRoutes.get("/usage", async (c) => c.json(await usage(c.env.DB)));
 
 adminUserRoutes.get("/audit", async (c) => {
   const raw = Number(c.req.query("limit") ?? 50);

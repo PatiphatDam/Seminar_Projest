@@ -24,6 +24,17 @@ export function LessonBlockView({ block, id }: { block: LessonBlock; id?: string
           {block.text}
         </h2>
       );
+    case "sub":
+      return <h3 className="mt-7 text-[19px] font-extrabold leading-7 text-[var(--c-text)] md:text-[20px]">{block.text}</h3>;
+    case "minor":
+      return <h4 className="mt-5 text-[16px] font-extrabold uppercase tracking-[0.04em] text-[var(--c-accent)]">{block.text}</h4>;
+    case "extra":
+      return (
+        <aside className="mt-6 rounded-2xl border border-dashed border-[var(--c-edge)] bg-surface/60 p-4 md:p-5" aria-label="More detail">
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.1em] text-[var(--c-accent)]">More detail · not in the lecture sheet</p>
+          <p className="mt-2 text-[15.5px] leading-[1.65]">{rich(block.text)}</p>
+        </aside>
+      );
     case "p":
       return <p className="mt-4 text-[17px] leading-[1.7]">{rich(block.text)}</p>;
     case "list":
@@ -74,7 +85,7 @@ export function LessonBlockView({ block, id }: { block: LessonBlock; id?: string
     case "keypoints":
       return (
         <aside className="coast-panel mt-8 p-5 text-[var(--c-text)] md:p-6" aria-label="Key points">
-          <p className="text-[12px] font-extrabold uppercase tracking-[0.1em] text-[var(--c-accent)]">Key points</p>
+          <p className="text-[12px] font-extrabold uppercase tracking-[0.1em] text-[var(--c-accent)]">{block.title ?? "Key points"}</p>
           <ul className="mt-3 space-y-2 text-[16px] leading-[1.6]">
             {block.items.map((it, i) => (
               <li key={i} className="flex gap-3">

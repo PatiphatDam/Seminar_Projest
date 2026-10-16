@@ -12,7 +12,8 @@ export function useStudentStatus(enabled = true) {
     queryKey: studentStatusKey,
     queryFn: () => api.get<StudentStatus>("/me/status"),
     enabled,
-    staleTime: 30_000,
+    // Changes only when a test is submitted (TakeTest invalidates ["me"]) or an instructor changes an assignment.
+    staleTime: 120_000,
   });
 }
 
@@ -22,6 +23,6 @@ export function useStudentTests(enabled = true) {
     queryKey: studentTestsKey,
     queryFn: () => api.get<StudentTestItem[]>("/me/tests"),
     enabled,
-    staleTime: 15_000,
+    staleTime: 60_000,
   });
 }

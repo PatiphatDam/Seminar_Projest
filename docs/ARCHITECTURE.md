@@ -126,3 +126,35 @@ Every admin mutation writes an `audit_log` row.
 ## 6. Performance budget (from docs/plan/03_TECH_STACK.md §4)
 Login/Home JS ≤ 150 KB gzip · every page lazy-loaded · `xlsx`, `qrcode` only imported inside admin pages ·
 3D libraries only inside `pages/explore/*` · hero image WebP (19 KB / 39 KB).
+
+## 7. Capacity (Workers Free plan)
+
+Free-plan quotas (Cloudflare docs, Oct 2026): 100,000 Worker requests/day · D1 5 M rows read and 100,000 rows written/day ·
+5 GB D1 storage per account · 10 ms CPU per request. Static assets (the SPA, images in `public/`) are free and unlimited.
+Daily quotas reset at 00:00 UTC (07:00 in Thailand); D1 enforces them since 1 Sep 2026.
+
+Design rules that keep ~4,000 students / 100 instructors / a pre+post test every day inside those quotas:
+
+| Area | Rule | Where |
+|---|---|---|
+| Taking a test | Answers live in the browser (localStorage) and survive a reload; the server gets a checkpoint every 2 min, when the tab is hidden, every 15 s in the last 90 s of a timed test, and the rest **with the submit** (`POST /attempts/:id/submit { answers }`) | `TakeTest.tsx`, `routes/attempts.ts` |
+| Admin lists | No automatic polling unless the instructor turns **Live** on (15 s, switches itself off after 2 h); otherwise a Refresh button | `components/admin/live.tsx` |
+| Classes page counts | Read from `enrollment_progress` (one row per enrollment × test kind, written when an attempt is finalised) instead of scanning attempts | migration 0006, `engine.finalizeAttempt`, `admin/common.ts` |
+| Many instructors | Class lists default to **my classes** (`classes.owner_email`, legacy NULL = everyone); "All classes" on demand | `admin/common.ts scopeWhere` |
+| Student pages | `/me` cached 5 min, status 2 min, test list 1 min; a submit refreshes status + tests only | `lib/auth.tsx`, `student/queries.ts` |
+| Storage | Weekly Cron (Sun 20:00 UTC) prunes audit log > 1 year, login-throttle rows, unused images > 1 day; Settings → Storage shows size vs 500 MB and warns at 80 %; end of semester: export, then Delete class | `worker/maintenance.ts`, `wrangler.jsonc` |
+
+Rough budget for the scenario above: ~70,000 requests, ~50,000 rows written and ~1 M rows read per day; ~400 MB of data per
+semester before clean-up. If usage grows past that, move to Workers Paid or an MFU-hosted server.
+
+### 7.1 Decisions for ~1,000 students / ~30 instructors (16 Oct 2026, not implemented yet)
+
+Analysis: fits the Workers Free plan (~45–60 % of daily requests, ~30 % of writes, ~160 MB per semester).
+Instructor "Live" polling is the largest consumer; Results-in-Live is the only read-quota risk.
+
+| # | Decision | Implementation notes |
+|---|---|---|
+| A | **Instructors edit/delete only their own classes and tests; no head/super admin.** Others' items stay viewable ("All classes"). | `tests.owner_email` (like `classes.owner_email`); enforce on class PATCH/DELETE/roster, enrollment actions, test PUT/DELETE/assign (assign only to own classes). Open point: who owns legacy rows (production is empty today) and what the emergency password account may do. |
+| B | **Section numbers may repeat across instructors.** Name shows the instructor: "2569/1 · Section 1 · Keerakarn". | Rebuild `classes` with `UNIQUE(owner_email, academic_year, semester, section)`; student pages already parse "year/sem · rest". |
+| C | **Keep the username/password account for emergencies; throttle per IP + username** (campus NAT shares one IP). | Add `username` to `admin_login_attempts`; count failures per (ip, username). |
+| D | **Keep Live as is** (15 s; Results 30 s; auto-off after 2 h). | Revisit if daily reads approach 5 M. |

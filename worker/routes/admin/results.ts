@@ -5,7 +5,7 @@ import { SnapshotCache } from "../../engine";
 import type { AppEnv } from "../../env";
 import { gradedQuestions, histogram, isCorrect, pickCountedAttempt, round2, scoreStats } from "../../grading";
 import { badRequest } from "../../http";
-import { ANONYMIZED_LABEL, loadClassBasics } from "./common";
+import { ANONYMIZED_LABEL, loadClassBasics, scopeWhere } from "./common";
 
 export const resultRoutes = new Hono<AppEnv>();
 
@@ -45,8 +45,9 @@ resultRoutes.get("/results", async (c) => {
     classId = Number(classIdRaw);
     await loadClassBasics(db, classId);
   }
-  const classWhere = classId === null ? "c.status = 'active'" : "c.id = ?";
-  const classParams: SqlValue[] = classId === null ? [] : [classId];
+  const own = scopeWhere(c.req.query("scope"), c.get("admin").email);
+  const classWhere = classId === null ? `c.status = 'active' AND ${own.sql}` : "c.id = ?";
+  const classParams: SqlValue[] = classId === null ? own.params : [classId];
 
   // Tests: explicit list or every test assigned to the selected classes.
   let testIds: number[];

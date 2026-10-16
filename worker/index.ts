@@ -6,6 +6,7 @@ import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { AppEnv } from "./env";
 import { HttpError } from "./http";
+import { pruneOldData } from "./maintenance";
 import { adminRoutes } from "./routes/admin";
 import { attemptRoutes } from "./routes/attempts";
 import { imageRoutes } from "./routes/images";
@@ -30,7 +31,7 @@ app.use("*", async (c, next) => {
 const tooLarge = (c: Context) => c.json({ error: "The request is too large.", code: "payload_too_large" }, 413);
 const smallBody = bodyLimit({ maxSize: 64 * 1024, onError: tooLarge });
 const largeBody = bodyLimit({ maxSize: 1024 * 1024, onError: tooLarge });
-const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/classes\/\d+\/roster$/, /^\/api\/admin\/images$/];
+const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/classes\/\d+\/roster$/, /^\/api\/admin\/images$/, /^\/api\/attempts\/\d+\/(answers|submit)$/];
 app.use("*", async (c, next) => {
   if (SAFE_METHODS.has(c.req.method)) return next();
   const large = LARGE_BODY_PATHS.some((re) => re.test(c.req.path));
@@ -72,4 +73,12 @@ app.onError((err, c) => {
   return c.json({ error: "Something went wrong. Please try again.", code: "internal" }, 500);
 });
 
-export default app;
+export default {
+  fetch: app.fetch,
+  /** Weekly clean-up (wrangler.jsonc → triggers.crons): old audit entries, login throttle rows, orphan images. */
+  async scheduled(_event: ScheduledController, env: AppEnv["Bindings"], ctx: ExecutionContext) {
+    ctx.waitUntil(
+      pruneOldData(env.DB).then((r) => console.log("Weekly clean-up:", JSON.stringify(r))),
+    );
+  },
+} satisfies ExportedHandler<AppEnv["Bindings"]>;
