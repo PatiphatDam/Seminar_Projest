@@ -142,19 +142,19 @@ Design rules that keep ~4,000 students / 100 instructors / a pre+post test every
 | Classes page counts | Read from `enrollment_progress` (one row per enrollment × test kind, written when an attempt is finalised) instead of scanning attempts | migration 0006, `engine.finalizeAttempt`, `admin/common.ts` |
 | Many instructors | Class lists default to **my classes** (`classes.owner_email`, legacy NULL = everyone); "All classes" on demand | `admin/common.ts scopeWhere` |
 | Student pages | `/me` cached 5 min, status 2 min, test list 1 min; a submit refreshes status + tests only | `lib/auth.tsx`, `student/queries.ts` |
-| Storage | Weekly Cron (Sun 20:00 UTC) prunes audit log > 1 year, login-throttle rows, unused images > 1 day; Settings → Storage shows size vs 500 MB and warns at 80 %; end of semester: export, then Delete class | `worker/maintenance.ts`, `wrangler.jsonc` |
+| Storage | Daily Cron (20:00 UTC) prunes audit log > 1 year, login-throttle rows, unused images > 1 day, unowned tests that are empty and unedited for 7 days; Settings → Storage shows size vs 500 MB and warns at 80 %; end of semester: export, then Delete class | `worker/maintenance.ts`, `wrangler.jsonc` |
 
 Rough budget for the scenario above: ~70,000 requests, ~50,000 rows written and ~1 M rows read per day; ~400 MB of data per
 semester before clean-up. If usage grows past that, move to Workers Paid or an MFU-hosted server.
 
-### 7.1 Decisions for ~1,000 students / ~30 instructors (16 Oct 2026, not implemented yet)
+### 7.1 Decisions for ~1,000 students / ~30 instructors (16 Oct 2026, implemented in migration 0007)
 
 Analysis: fits the Workers Free plan (~45–60 % of daily requests, ~30 % of writes, ~160 MB per semester).
 Instructor "Live" polling is the largest consumer; Results-in-Live is the only read-quota risk.
 
 | # | Decision | Implementation notes |
 |---|---|---|
-| A | **Instructors edit/delete only their own classes and tests; no head/super admin.** Others' items stay viewable ("All classes"). | `tests.owner_email` (like `classes.owner_email`); enforce on class PATCH/DELETE/roster, enrollment actions, test PUT/DELETE/assign (assign only to own classes). Open point: who owns legacy rows (production is empty today) and what the emergency password account may do. |
-| B | **Section numbers may repeat across instructors.** Name shows the instructor: "2569/1 · Section 1 · Keerakarn". | Rebuild `classes` with `UNIQUE(owner_email, academic_year, semester, section)`; student pages already parse "year/sem · rest". |
-| C | **Keep the username/password account for emergencies; throttle per IP + username** (campus NAT shares one IP). | Add `username` to `admin_login_attempts`; count failures per (ip, username). |
+| A | **Instructors edit/delete only their own classes and tests; no head/super admin.** Others' items stay viewable ("All classes"). | `tests.owner_email` (like `classes.owner_email`); server checks in `worker/routes/admin/common.ts` (`assertOwner`, 403 `not_owner`) on class PATCH/archive/DELETE/roster, enrollment actions, student anonymize/delete (must own all their sections), test PUT/DELETE, assignment PUT/DELETE (any test may be used, only in your own classes). The UI hides edit/delete for others. **The emergency password account may change everything.** Rows with no owner (made before 0007) can be changed only by the emergency account; unowned tests that are empty and unedited for 7 days are deleted by the daily cron. |
+| B | **Section numbers may repeat across instructors.** Name shows the instructor: "2569/1 · Section 1 · Keerakarn". | Rebuilt `classes` with `UNIQUE(owner_email, academic_year, semester, section)` (dependent rows copied aside and restored — dropping a table runs its cascades); student pages already parse "year/sem · rest". |
+| C | **Keep the username/password account for emergencies; throttle per IP + username** (campus NAT shares one IP). | `admin_login_attempts.username`; max 5 failures per (ip, username) in 15 min. |
 | D | **Keep Live as is** (15 s; Results 30 s; auto-off after 2 h). | Revisit if daily reads approach 5 M. |

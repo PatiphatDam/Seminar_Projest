@@ -14,6 +14,7 @@ import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { downloadDataUrl, useQrDataUrl } from "@/components/admin/qr";
 import { exportWholeClass } from "@/components/admin/exportResults";
 import { useToast } from "@/components/admin/toastContext";
+import { ownerNote, useCanChange } from "@/components/admin/ownership";
 
 type Tab = "active" | "archived";
 
@@ -284,6 +285,7 @@ function SelectedClass({ c }: { c: AdminClass }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
+  const mine = useCanChange()(c.ownerEmail); // decision A: only the owner (or the emergency account) changes a class
 
   const remove = useMutation({
     mutationFn: () => api.del<{ ok: true; deleted: { students: number; attempts: number } }>(`/admin/classes/${c.id}`),
@@ -368,22 +370,26 @@ function SelectedClass({ c }: { c: AdminClass }) {
         </>
       )}
 
-      <div className="mt-[35px] grid grid-cols-2 gap-[11px]">
-        {c.status === "active" ? (
-          <button type="button" onClick={() => setEditOpen(true)} className="h-[37px] rounded-xl border border-line bg-surface text-[13px] font-semibold text-ink hover:bg-zinc-50">
-            Edit
+      {mine ? (
+        <div className="mt-[35px] grid grid-cols-2 gap-[11px]">
+          {c.status === "active" ? (
+            <button type="button" onClick={() => setEditOpen(true)} className="h-[37px] rounded-xl border border-line bg-surface text-[13px] font-semibold text-ink hover:bg-zinc-50">
+              Edit
+            </button>
+          ) : (
+            <span />
+          )}
+          <button
+            type="button"
+            onClick={() => setDeleteOpen(true)}
+            className="h-[37px] rounded-xl border border-red-200 bg-surface text-[13px] font-semibold text-danger hover:bg-red-50"
+          >
+            Delete class
           </button>
-        ) : (
-          <span />
-        )}
-        <button
-          type="button"
-          onClick={() => setDeleteOpen(true)}
-          className="h-[37px] rounded-xl border border-red-200 bg-surface text-[13px] font-semibold text-danger hover:bg-red-50"
-        >
-          Delete class
-        </button>
-      </div>
+        </div>
+      ) : (
+        <p className="mt-[35px] rounded-xl bg-zinc-100 px-3 py-2 text-center text-[12px] leading-[18px] text-zinc-700">{ownerNote(c.ownerEmail)}</p>
+      )}
 
       {editOpen && <EditClassModal c={c} onClose={() => setEditOpen(false)} />}
 
@@ -587,7 +593,7 @@ function CreateClassModal({ open, onClose, onCreated }: { open: boolean; onClose
           </span>
         </label>
         <p className="text-xs text-muted">
-          Preview: <span className="font-semibold text-ink">{`${year || "—"}/${semester} · Section ${section || "—"}`}</span>
+          Preview: <span className="font-semibold text-ink">{`${year || "—"}/${semester} · Section ${section || "—"} · your name`}</span>
         </p>
         {create.isError && <ErrorNote>{errorMessage(create.error)}</ErrorNote>}
       </form>

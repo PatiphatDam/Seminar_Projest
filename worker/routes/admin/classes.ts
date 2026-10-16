@@ -5,7 +5,7 @@ import type { AppEnv } from "../../env";
 import { generateJoinCode } from "../../grading";
 import { badRequest, conflict, idParam, readBody } from "../../http";
 import { className } from "../../identity";
-import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow, scopeWhere } from "./common";
+import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow, scopeWhere, assertOwner, ownerLabel } from "./common";
 
 export const classRoutes = new Hono<AppEnv>();
 
@@ -44,14 +44,16 @@ classRoutes.post("/classes", async (c) => {
   const body = await readBody(c, createClassBody);
   const db = c.env.DB;
   const admin = c.get("admin");
+  // Decision B: section numbers may repeat across instructors, so duplicates are checked per owner.
   const dup = await queryFirst(
     db,
-    "SELECT 1 AS one FROM classes WHERE academic_year = ? AND semester = ? AND section = ?",
+    "SELECT 1 AS one FROM classes WHERE owner_email = ? AND academic_year = ? AND semester = ? AND section = ?",
+    admin.email,
     body.academicYear,
     body.semester,
     body.section,
   );
-  const name = className(body.academicYear, body.semester, body.section);
+  const name = `${className(body.academicYear, body.semester, body.section)} · ${ownerLabel(admin)}`;
   if (dup) throw conflict(`${name} already exists.`);
 
   for (let i = 0; i < JOIN_CODE_ATTEMPTS; i++) {
@@ -82,7 +84,8 @@ classRoutes.post("/classes", async (c) => {
       if (
         await queryFirst(
           db,
-          "SELECT 1 AS one FROM classes WHERE academic_year = ? AND semester = ? AND section = ?",
+          "SELECT 1 AS one FROM classes WHERE owner_email = ? AND academic_year = ? AND semester = ? AND section = ?",
+          admin.email,
           body.academicYear,
           body.semester,
           body.section,
@@ -102,6 +105,7 @@ classRoutes.patch("/classes/:id", async (c) => {
   const body = await readBody(c, updateClassBody);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
   const admin = c.get("admin");
   const statements: D1PreparedStatement[] = [];
@@ -126,6 +130,7 @@ classRoutes.post("/classes/:id/archive", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   if (cls.status !== "archived") {
     await db.batch([
       stmt(db, "UPDATE classes SET status = 'archived', archived_at = ? WHERE id = ?", nowIso(), id),
@@ -139,6 +144,7 @@ classRoutes.post("/classes/:id/unarchive", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   if (cls.status === "archived") {
     await db.batch([
       stmt(db, "UPDATE classes SET status = 'active', archived_at = NULL WHERE id = ?", id),
@@ -157,6 +163,7 @@ classRoutes.delete("/classes/:id", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   const counts = await queryFirst<{ students: number; attempts: number }>(
     db,
     `SELECT (SELECT COUNT(*) FROM enrollments WHERE class_id = ?1) AS students,
@@ -226,6 +233,7 @@ classRoutes.post("/classes/:id/roster", async (c) => {
   const body = await readBody(c, rosterBody);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
 
   // De-duplicate by student code (last entry wins).
@@ -255,6 +263,7 @@ classRoutes.delete("/classes/:id/roster", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
   const cls = await loadClassBasics(db, id);
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
   const [del] = await db.batch([
     stmt(db, "DELETE FROM class_roster WHERE class_id = ?", id),

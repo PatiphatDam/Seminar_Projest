@@ -2,8 +2,8 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "digital-muscle",
   "main": "./worker/index.ts",
-  // Weekly clean-up (worker/maintenance.ts): Sunday 20:00 UTC = Monday 03:00 in Thailand.
-  "triggers": { "crons": ["0 20 * * 0"] },
+  // Daily clean-up (worker/maintenance.ts): 20:00 UTC = 03:00 in Thailand.
+  "triggers": { "crons": ["0 20 * * *"] },
   "compatibility_date": "2026-09-25",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },

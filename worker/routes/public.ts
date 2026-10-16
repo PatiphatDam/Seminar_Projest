@@ -224,7 +224,11 @@ publicRoutes.post("/auth/dev", async (c) => {
   return loginStudent(c, body.email, body.joinCode);
 });
 
-/* Username + password instructor account (ADMIN_USERNAME / ADMIN_PASSWORD_HASH). Max 5 failures per IP per 15 min. */
+/*
+ * Username + password instructor account (ADMIN_USERNAME / ADMIN_PASSWORD_HASH) — kept for emergencies.
+ * Max 5 failures per IP + username per 15 min: everyone on campus shares one public IP, so a per-IP lock would let
+ * one person's typos lock everybody out (decision C, docs/ARCHITECTURE.md §7.1).
+ */
 const ADMIN_LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const ADMIN_LOGIN_MAX_FAILURES = 5;
 
@@ -238,8 +242,9 @@ publicRoutes.post("/auth/admin-password", async (c) => {
 
   const recent = await queryFirst<{ n: number }>(
     db,
-    "SELECT COUNT(*) AS n FROM admin_login_attempts WHERE ip = ? AND success = 0 AND attempted_at > ?",
+    "SELECT COUNT(*) AS n FROM admin_login_attempts WHERE ip = ? AND username = ? AND success = 0 AND attempted_at > ?",
     ip,
+    body.username.trim().toLowerCase().slice(0, 100),
     since,
   );
   if ((recent?.n ?? 0) >= ADMIN_LOGIN_MAX_FAILURES) {
@@ -251,7 +256,7 @@ publicRoutes.post("/auth/admin-password", async (c) => {
   const ok = passwordOk && body.username === local.username;
   await c.env.DB.batch([
     stmt(db, "DELETE FROM admin_login_attempts WHERE attempted_at < ?", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()),
-    stmt(db, "INSERT INTO admin_login_attempts (ip, success, attempted_at) VALUES (?, ?, ?)", ip, ok ? 1 : 0, nowIso()),
+    stmt(db, "INSERT INTO admin_login_attempts (ip, username, success, attempted_at) VALUES (?, ?, ?, ?)", ip, body.username.trim().toLowerCase().slice(0, 100), ok ? 1 : 0, nowIso()),
     ...(ok ? [auditStmt(db, LOCAL_ADMIN_PREFIX + local.username, "admin.login", "admin", local.username, { method: "password" })] : []),
   ]);
   if (!ok) throw new HttpError(401, "invalid_credentials", "Incorrect username or password.");

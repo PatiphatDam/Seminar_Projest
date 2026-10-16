@@ -121,7 +121,7 @@ function UserMenu() {
   const firstName = me.student.firstName ?? me.student.studentCode;
   const initial = (me.student.firstName?.trim()[0] ?? "S").toUpperCase();
   // Figma top bar shows "Section 1 · 2569/1" (section first); className is "2569/1 · Section 1".
-  const className = me.enrollment ? me.enrollment.className.split(" · ").reverse().join(" · ") : "No class yet";
+  const className = me.enrollment ? me.enrollment.className.replace(/^([^·]+?) · (.+)$/, "$2 · $1") : "No class yet";
 
   useEffect(() => {
     if (!open) return;

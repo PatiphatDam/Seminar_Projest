@@ -64,6 +64,7 @@ describe("builder", () => {
     id: 9,
     title: "T",
     kind: "posttest",
+    ownerEmail: null,
     questionCount: questions.length,
     maxScore: 0,
     currentVersion: 1,
@@ -288,5 +289,18 @@ describe("QA fixes", () => {
     const rows = [row(1, 7, 10), row(2, 7, 11), row(3, 8, 12), row(4, null, null)];
     expect(otherEnrollments(rows, 7, 1).map((r) => r.classId)).toEqual([2]);
     expect(otherEnrollments(rows, 7, 2).map((r) => r.classId)).toEqual([1]);
+  });
+});
+
+describe("ownership (decision A)", () => {
+  const admin = (email: string) => ({ role: "admin" as const, admin: { id: 1, email, name: null } });
+  it("owner and emergency account can change; others and unowned can't", async () => {
+    const { canChange } = await import("./ownership");
+    expect(canChange("a@mfu.ac.th", admin("a@mfu.ac.th"))).toBe(true);
+    expect(canChange("a@mfu.ac.th", admin("b@mfu.ac.th"))).toBe(false);
+    expect(canChange(null, admin("a@mfu.ac.th"))).toBe(false);
+    expect(canChange("a@mfu.ac.th", admin("local:admin123"))).toBe(true);
+    expect(canChange(null, admin("local:admin123"))).toBe(true);
+    expect(canChange("a@mfu.ac.th", null)).toBe(false);
   });
 });

@@ -333,6 +333,8 @@ export interface AdminTestSummary {
   id: number;
   title: string;
   kind: TestKind;
+  /** Instructor who created the test; only they (or the emergency account) can edit or delete it. */
+  ownerEmail: string | null;
   questionCount: number;
   maxScore: number;
   currentVersion: number;

@@ -32,6 +32,7 @@ import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
 import { uploadImage } from "@/components/admin/imageUpload";
+import { ownerNote, useCanChange } from "@/components/admin/ownership";
 
 const AUTOSAVE_MS = 1500;
 
@@ -98,13 +99,16 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
   const dirty = rev !== savedRev;
   const validation = useMemo(() => validateDraft(draft), [draft]);
   const locked = server.versionLocked;
+  // Decision A: other instructors' tests open read-only (view, preview, assign to your own sections — no edits).
+  const readOnly = !useCanChange()(initial.ownerEmail);
 
   const update = useCallback((fn: (d: DraftTest) => DraftTest) => {
+    if (readOnly) return;
     setDraft(fn);
     setSaveError(null);
     revRef.current += 1;
     setRev(revRef.current);
-  }, []);
+  }, [readOnly]);
 
   const updateQuestion = useCallback(
     (key: string, fn: (q: DraftQuestion) => DraftQuestion) => update((d) => ({ ...d, questions: d.questions.map((q) => (q.key === key ? fn(q) : q)) })),
@@ -315,7 +319,9 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
     },
   ];
   const startedAttempts = server.versions.find((v) => v.versionNo === server.currentVersion)?.attemptCount ?? 0;
-  const statusNode = saving ? (
+  const statusNode = readOnly ? (
+    <span className="text-[12px] font-semibold text-muted">View only</span>
+  ) : saving ? (
     <span className="text-[12px] font-semibold text-muted">Saving…</span>
   ) : saveError ? (
     <span className="max-w-[260px] text-[12px] font-semibold text-danger">
@@ -351,7 +357,7 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
           <span aria-live="polite" className="px-1">
             {statusNode}
           </span>
-          {(locked || saveError) && (
+          {!readOnly && (locked || saveError) && (
             <button
               type="button"
               onClick={() => void save(true)}
@@ -403,7 +409,13 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
         ))}
       </div>
 
-      {locked && (
+      {readOnly && (
+        <p className="mt-[39px] rounded-[13.5px] border border-line bg-zinc-100 px-5 py-[15px] text-[12px] font-semibold leading-[18px] text-zinc-700" role="note">
+          {ownerNote(initial.ownerEmail)}. You can preview it and assign it to your own sections; only its owner can change the questions.
+        </p>
+      )}
+
+      {!readOnly && locked && (
         <p className="mt-[39px] rounded-[13.5px] border border-violet-200 bg-violet-50 px-5 py-[15px] text-[12px] font-semibold leading-[18px] text-games-ink" role="note">
           {startedAttempts > 0 ? `${startedAttempts} student${startedAttempts === 1 ? "" : "s"}` : "Students"} already started version {server.currentVersion}. Your edits create
           version {server.currentVersion + 1} — their attempts keep using the version they started. Autosave is paused; press Save when you’re done.
@@ -416,8 +428,9 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
         </div>
       )}
 
+      <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
       {tab === "questions" && (
-        <div role="tabpanel" id="panel-questions" aria-labelledby="tab-questions" className={cx("flex gap-[21px]", locked ? "mt-[27px]" : "mt-[39px]")}>
+        <div role="tabpanel" id="panel-questions" aria-labelledby="tab-questions" className={cx("flex gap-[21px]", locked || readOnly ? "mt-[27px]" : "mt-[39px]")}>
           <div className="min-w-0 max-w-[859px] flex-1 space-y-4">
             {/* Title card */}
             <div
@@ -455,7 +468,7 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
             </div>
 
             {draft.questions.length === 0 ? (
-              <EmptyState title="No questions yet" action={<Button onClick={() => addQuestion()} disabled={atMax}>+ Add question</Button>}>
+              <EmptyState title="No questions yet" action={readOnly ? undefined : <Button onClick={() => addQuestion()} disabled={atMax}>+ Add question</Button>}>
                 Add single-choice, multiple-choice, true/false or short-answer questions.
               </EmptyState>
             ) : (
@@ -508,7 +521,7 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
               </DndContext>
             )}
 
-            <div className="flex flex-wrap justify-center gap-2 lg:hidden">
+            <div className={cx("flex flex-wrap justify-center gap-2 lg:hidden", readOnly && "hidden")}>
               {tools.map((t) => (
                 <Button key={t.label} variant="outline" onClick={t.onClick} disabled={t.disabled}>
                   {t.glyph} {t.short}
@@ -518,7 +531,7 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
           </div>
 
           {/* Floating toolbar (Google Forms): add question · title and description · image · section */}
-          <div className="hidden w-[55px] shrink-0 lg:block">
+          <div className={cx("hidden w-[55px] shrink-0", !readOnly && "lg:block")}>
             <div
               className="sticky top-6 flex flex-col items-center gap-2 rounded-[20px] border border-line bg-surface py-2.5"
               role="toolbar"
@@ -592,6 +605,7 @@ function Builder({ testId, initial }: { testId: number; initial: AdminTestDetail
           </Card>
         </div>
       )}
+      </fieldset>
 
       {tab === "versions" && (
         <div role="tabpanel" id="panel-versions" aria-labelledby="tab-versions" className="mt-[39px]">

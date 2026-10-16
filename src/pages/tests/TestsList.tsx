@@ -52,7 +52,7 @@ export function TestsListView({ kind }: { kind?: Kind }) {
   const tests = useStudentTests(enrolled);
   const [filter, setFilter] = useState<ListFilter>("all");
 
-  const section = me.enrollment ? me.enrollment.className.split(" · ").reverse().join(" · ") : null;
+  const section = me.enrollment ? me.enrollment.className.replace(/^([^·]+?) · (.+)$/, "$2 · $1") : null;
   const ofKind = tests.data?.filter((t) => !kind || t.kind === kind);
   const list = ofKind?.filter((t) => matchesFilter(t, filter)) ?? [];
 

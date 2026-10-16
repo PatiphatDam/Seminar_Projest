@@ -12,6 +12,7 @@ import { anonymizedIdentityHashes } from "../../identityHash";
 import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
 import {
   ENROLLMENT_ROW_SELECT,
+  assertOwner,
   assertWritable,
   loadClassBasics,
   loadStudentRow,
@@ -155,6 +156,7 @@ studentAdminRoutes.post("/students/:id/enroll", async (c) => {
   if (!student) throw notFound("Student not found.");
   if (student.anonymized_at) throw conflict("This student has been anonymized.");
   const cls = await loadClassBasics(db, body.classId);
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
   const existing = await queryFirst(db, "SELECT 1 AS one FROM enrollments WHERE student_id = ? AND class_id = ?", id, cls.id);
   if (existing) throw conflict(`The student is already enrolled in ${cls.name}.`);
@@ -203,6 +205,7 @@ studentAdminRoutes.patch("/enrollments/:id", async (c) => {
   const db = c.env.DB;
   const enr = await loadEnrollment(db, id);
   const cls = await loadClassBasics(db, enr.class_id);
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
   if (enr.status !== body.status) {
     if (body.status === "active") {
@@ -242,8 +245,10 @@ studentAdminRoutes.post("/enrollments/:id/move", async (c) => {
   const enr = await loadEnrollment(db, id);
   if (enr.class_id === body.classId) throw badRequest("The student is already in that section.");
   const from = await loadClassBasics(db, enr.class_id);
+  assertOwner(from.owner_email, c.get("admin"));
   assertWritable(from);
   const to = await loadClassBasics(db, body.classId);
+  assertOwner(to.owner_email, c.get("admin"));
   if (to.status === "archived") throw conflict(`${to.name} is archived.`, "class_archived");
   const already = await queryFirst(
     db,
@@ -264,9 +269,20 @@ studentAdminRoutes.post("/enrollments/:id/move", async (c) => {
 });
 
 /** PDPA: remove student code / e-mail / name (and roster entries with that code) but keep scores. */
+/** Anonymize / delete touch every section of the student, so the admin must own all of them. */
+async function assertOwnsAllSections(db: D1Database, studentId: number, admin: { email: string }) {
+  const owners = await queryAll<{ owner_email: string | null }>(
+    db,
+    "SELECT DISTINCT c.owner_email FROM enrollments e JOIN classes c ON c.id = e.class_id WHERE e.student_id = ?",
+    studentId,
+  );
+  for (const o of owners) assertOwner(o.owner_email, admin, "student's section");
+}
+
 studentAdminRoutes.post("/students/:id/anonymize", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
+  await assertOwnsAllSections(db, id, c.get("admin"));
   const s = await queryFirst<{ student_code: string | null; email: string | null; anonymized_at: string | null }>(
     db,
     "SELECT student_code, email, anonymized_at FROM students WHERE id = ?",
@@ -300,6 +316,7 @@ studentAdminRoutes.post("/students/:id/anonymize", async (c) => {
 studentAdminRoutes.delete("/students/:id", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
+  await assertOwnsAllSections(db, id, c.get("admin"));
   const s = await queryFirst<{ student_code: string | null }>(db, "SELECT student_code FROM students WHERE id = ?", id);
   if (!s) throw notFound("Student not found.");
   const statements: D1PreparedStatement[] = [

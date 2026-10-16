@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Button, Card, cx, EmptyState, ErrorNote, PageHeader, PageLoader, Spinner } from "@/components/ui";
 import { useAdminClass } from "@/components/admin/adminClass";
 import { FilterPills, QueryError, SearchBox, StatusChip } from "@/components/admin/controls";
+import { ownerNote, useCanChange } from "@/components/admin/ownership";
 import { MAX_ROSTER_ENTRIES, parseRosterCsv, type RosterParseResult } from "@/components/admin/csv";
 import { exportWholeClass } from "@/components/admin/exportResults";
 import { findOtherEnrollments } from "@/components/admin/students";
@@ -62,6 +63,8 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
   const [removeOpen, setRemoveOpen] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(false);
   const [deleteBlockedBy, setDeleteBlockedBy] = useState<AdminStudentRow[] | null>(null);
+  const canEdit = useCanChange();
+  const mine = canEdit(cls.ownerEmail); // decision A: other instructors' sections are view-only
 
   /** Delete wipes attempts in every section, but the export covers only this one → block when enrolled elsewhere. */
   async function requestDelete(r: AdminStudentRow) {
@@ -146,7 +149,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
         title="Students"
         subtitle={`${cls.name} · ${counts.active} active · ${withdrawn} withdrawn`}
         actions={
-          <>
+          mine && (
             <button
               type="button"
               onClick={() => setImportOpen(true)}
@@ -154,11 +157,11 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             >
               Import roster (CSV)
             </button>
-          </>
+          )
         }
       />
 
-      <UnassignedStudents cls={cls} onEnrolled={invalidate} />
+      {mine && <UnassignedStudents cls={cls} onEnrolled={invalidate} />}
 
       <div className="grid items-start gap-[25px] xl:grid-cols-[minmax(0,1fr)_339px]">
         <Card className="min-w-0 px-[19px] pb-[15px] pt-[17px]">
@@ -178,7 +181,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             </div>
           ) : all.length === 0 ? (
             <div className="mt-4">
-              <EmptyState title="No students yet" action={<Button onClick={() => setImportOpen(true)}>Import roster (CSV)</Button>}>
+              <EmptyState title="No students yet" action={mine ? <Button onClick={() => setImportOpen(true)}>Import roster (CSV)</Button> : undefined}>
                 Share the section’s QR code from <Link to="/admin/classes" className="underline">Classes</Link> — students appear here after they sign in.
               </EmptyState>
             </div>
@@ -243,13 +246,15 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
                             active={isSel}
                             items={[
                               { label: "Select", onSelect: () => setSelectedKey(k) },
-                              ...(r.status === "active"
+                              ...(!mine
+                                ? []
+                                : r.status === "active"
                                 ? [{ label: "Withdraw", onSelect: () => setStatus.mutate({ r, status: "withdrawn" }) }]
                                 : r.status === "withdrawn"
                                   ? [{ label: "Reactivate", onSelect: () => setStatus.mutate({ r, status: "active" }) }]
                                   : []),
-                              ...(r.enrollmentId !== null ? [{ label: "Move to section…", onSelect: () => setSelectedKey(k) }] : []),
-                              ...(r.studentId !== null
+                              ...(mine && r.enrollmentId !== null ? [{ label: "Move to section…", onSelect: () => setSelectedKey(k) }] : []),
+                              ...(mine && r.studentId !== null
                                 ? [
                                     {
                                       label: "Delete / anonymize…",
@@ -278,7 +283,8 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             key={selected ? rowKey(selected) : "none"}
             r={selected}
             cls={cls}
-            classes={classes}
+            classes={classes.filter((c) => canEdit(c.ownerEmail))}
+            readOnly={!mine}
             busy={setStatus.isPending}
             onStatus={(status) => selected && setStatus.mutate({ r: selected, status })}
             onMoved={() => {
@@ -529,13 +535,16 @@ function StudentActions({
   r,
   cls,
   classes,
+  readOnly,
   busy,
   onStatus,
   onMoved,
 }: {
   r: AdminStudentRow | null;
   cls: AdminClass;
+  /** Sections the admin may move students into (their own). */
   classes: AdminClass[];
+  readOnly: boolean;
   busy: boolean;
   onStatus: (s: "active" | "withdrawn") => void;
   onMoved: () => void;
@@ -561,7 +570,9 @@ function StudentActions({
         {r ? `Actions · ${r.firstName ?? "No name"} (${r.studentCode})` : "Actions"}
       </h2>
 
-      {!r ? (
+      {readOnly ? (
+        <p className="mt-3 rounded-[10px] bg-app p-3 text-[13px] text-muted">{ownerNote(cls.ownerEmail)}</p>
+      ) : !r ? (
         <p className="mt-3 text-[13px] text-muted">Select a student in the table to move, withdraw or reactivate them.</p>
       ) : r.enrollmentId === null ? (
         <p className="mt-3 rounded-[10px] bg-app p-3 text-[13px] text-muted">

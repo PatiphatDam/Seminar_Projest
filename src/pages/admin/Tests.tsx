@@ -11,11 +11,13 @@ import { IconPlus, IconTrash } from "@/components/admin/icons";
 import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
+import { useCanChange } from "@/components/admin/ownership";
 
 export default function Tests() {
   const q = useQuery({ queryKey: adminKeys.tests, queryFn: () => api.get<AdminTestSummary[]>("/admin/tests") });
   const [createOpen, setCreateOpen] = useState(false);
   const [toDelete, setToDelete] = useState<AdminTestSummary | null>(null);
+  const canEdit = useCanChange(); // decision A: anyone may view and assign a test; only its owner edits or deletes it
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -75,53 +77,59 @@ export default function Tests() {
                 </tr>
               </thead>
               <tbody>
-                {tests.map((t) => (
-                  <tr key={t.id} className="border-b border-line last:border-b-0 hover:bg-zinc-50">
-                    <td className="px-5 py-3">
-                      <Link to={`/admin/tests/${t.id}`} className="font-semibold hover:underline">
-                        {t.title}
-                      </Link>
-                    </td>
-                    <td className="px-3 py-3">
-                      <KindBadge kind={t.kind} />
-                    </td>
-                    <td className="px-3 py-3 text-right tabular-nums">{t.questionCount}</td>
-                    <td className="px-3 py-3 text-right tabular-nums">{t.maxScore}</td>
-                    <td className="px-3 py-3 font-mono text-xs">v{t.currentVersion}</td>
-                    <td className="px-3 py-3 text-right tabular-nums">{t.assignedClassCount}</td>
-                    <td className="px-3 py-3 text-right tabular-nums">{t.attemptCount}</td>
-                    <td className="px-3 py-3 text-muted" title={formatDateTime(t.updatedAt)}>
-                      {relativeTime(t.updatedAt)}
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex justify-end gap-1.5">
-                        <Link to={`/admin/tests/${t.id}`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-100">
-                          Edit
+                {tests.map((t) => {
+                  const mine = canEdit(t.ownerEmail);
+                  return (
+                    <tr key={t.id} className="border-b border-line last:border-b-0 hover:bg-zinc-50">
+                      <td className="px-5 py-3">
+                        <Link to={`/admin/tests/${t.id}`} className="font-semibold hover:underline">
+                          {t.title}
                         </Link>
-                        <Link to={`/admin/tests/${t.id}/assign`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-tests hover:bg-tests-soft">
-                          Assign
-                        </Link>
-                        <span title={t.attemptCount > 0 ? "Can’t delete: students have already taken this test" : undefined}>
-                          <button
-                            type="button"
-                            onClick={() => setToDelete(t)}
-                            disabled={t.attemptCount > 0}
-                            aria-label={`Delete ${t.title}`}
-                            aria-describedby={t.attemptCount > 0 ? `del-hint-${t.id}` : undefined}
-                            className="rounded-lg p-1.5 text-muted hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
-                          >
-                            <IconTrash size={16} />
-                          </button>
-                          {t.attemptCount > 0 && (
-                            <span id={`del-hint-${t.id}`} className="sr-only">
-                              Can’t delete: students have already taken this test
+                        {!mine && <span className="block text-xs text-muted">by {t.ownerEmail ?? "no owner"} · view only</span>}
+                      </td>
+                      <td className="px-3 py-3">
+                        <KindBadge kind={t.kind} />
+                      </td>
+                      <td className="px-3 py-3 text-right tabular-nums">{t.questionCount}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{t.maxScore}</td>
+                      <td className="px-3 py-3 font-mono text-xs">v{t.currentVersion}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{t.assignedClassCount}</td>
+                      <td className="px-3 py-3 text-right tabular-nums">{t.attemptCount}</td>
+                      <td className="px-3 py-3 text-muted" title={formatDateTime(t.updatedAt)}>
+                        {relativeTime(t.updatedAt)}
+                      </td>
+                      <td className="px-5 py-3">
+                        <div className="flex justify-end gap-1.5">
+                          <Link to={`/admin/tests/${t.id}`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-100">
+                            {mine ? "Edit" : "View"}
+                          </Link>
+                          <Link to={`/admin/tests/${t.id}/assign`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-tests hover:bg-tests-soft">
+                            Assign
+                          </Link>
+                          {mine && (
+                            <span title={t.attemptCount > 0 ? "Can’t delete: students have already taken this test" : undefined}>
+                              <button
+                                type="button"
+                                onClick={() => setToDelete(t)}
+                                disabled={t.attemptCount > 0}
+                                aria-label={`Delete ${t.title}`}
+                                aria-describedby={t.attemptCount > 0 ? `del-hint-${t.id}` : undefined}
+                                className="rounded-lg p-1.5 text-muted hover:bg-danger-soft hover:text-danger disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted"
+                              >
+                                <IconTrash size={16} />
+                              </button>
+                              {t.attemptCount > 0 && (
+                                <span id={`del-hint-${t.id}`} className="sr-only">
+                                  Can’t delete: students have already taken this test
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

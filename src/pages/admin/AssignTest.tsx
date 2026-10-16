@@ -11,12 +11,16 @@ import { IconCheck } from "@/components/admin/icons";
 import { errorMessage, formatDateTime, isApiStatus } from "@/components/admin/format";
 import { adminKeys } from "@/components/admin/keys";
 import { useToast } from "@/components/admin/toastContext";
+import { useCanChange } from "@/components/admin/ownership";
 
 export default function AssignTest() {
   const params = useParams();
   const testId = Number(params.testId);
   const valid = Number.isInteger(testId) && testId > 0;
-  const { classes, loading: classesLoading } = useAdminClass();
+  const { classes: allClasses, loading: classesLoading } = useAdminClass();
+  // Decision A: any test may be assigned, but only to your own sections (the server enforces the same).
+  const canEdit = useCanChange();
+  const classes = allClasses.filter((c) => canEdit(c.ownerEmail));
 
   const testQ = useQuery({ queryKey: adminKeys.test(testId), queryFn: () => api.get<AdminTestDetail>(`/admin/tests/${testId}`), enabled: valid });
   const asgQ = useQuery({ queryKey: adminKeys.assignments(testId), queryFn: () => api.get<AdminAssignment[]>(`/admin/tests/${testId}/assignments`), enabled: valid });
@@ -257,7 +261,7 @@ function AssignEditor({ test, assignments, classes }: { test: AdminTestDetail; a
             <Card className="px-[30px] pb-6 pt-[26px]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-[22px] font-semibold leading-8 text-ink">{selected.name.split(" · ").pop()} settings</h2>
+                  <h2 className="text-[22px] font-semibold leading-8 text-ink">{selected.name.split(" · ")[1] ?? selected.name} settings</h2>
                   {!checked.has(selected.id) && <p className="text-[12px] text-muted">Not assigned — tick the section on the left to assign it</p>}
                 </div>
                 <div className="flex items-center gap-2 pt-1">

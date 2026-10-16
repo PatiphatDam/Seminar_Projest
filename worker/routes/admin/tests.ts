@@ -15,7 +15,7 @@ import type { AppEnv } from "../../env";
 import { isAssignmentOpen } from "../../grading";
 import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
 import { normalizeQuestionInput, type NormalizedQuestion } from "../../questionInput";
-import { assertWritable, loadClassBasics } from "./common";
+import { assertWritable, loadClassBasics, assertOwner } from "./common";
 
 export const testAdminRoutes = new Hono<AppEnv>();
 
@@ -28,6 +28,7 @@ interface TestSummaryRow {
   kind: TestKind;
   current_version: number;
   updated_at: string;
+  owner_email: string | null;
   question_count: number;
   max_score: number;
   assigned: number;
@@ -35,7 +36,7 @@ interface TestSummaryRow {
 }
 
 const TEST_SUMMARY_SELECT = `
-  SELECT t.id, t.title, t.description, t.kind, t.current_version, t.updated_at,
+  SELECT t.id, t.title, t.description, t.kind, t.current_version, t.updated_at, t.owner_email,
          (SELECT COUNT(*) FROM questions q WHERE q.test_id = t.id AND q.type NOT IN ('text', 'image', 'section')) AS question_count,
          (SELECT COALESCE(SUM(points), 0) FROM questions q WHERE q.test_id = t.id) AS max_score,
          (SELECT COUNT(*) FROM test_assignments ta WHERE ta.test_id = t.id) AS assigned,
@@ -47,6 +48,7 @@ function toSummary(r: TestSummaryRow): AdminTestSummary {
     id: r.id,
     title: r.title,
     kind: r.kind,
+    ownerEmail: r.owner_email,
     questionCount: r.question_count,
     maxScore: r.max_score,
     currentVersion: r.current_version,
@@ -139,12 +141,13 @@ testAdminRoutes.post("/tests", async (c) => {
   const now = nowIso();
   const created = await stmt(
     db,
-    "INSERT INTO tests (title, description, kind, current_version, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?) RETURNING id",
+    "INSERT INTO tests (title, description, kind, current_version, created_at, updated_at, owner_email) VALUES (?, ?, ?, 1, ?, ?, ?) RETURNING id",
     body.title,
     body.description,
     body.kind,
     now,
     now,
+    c.get("admin").email,
   ).first<{ id: number }>();
   if (!created) throw new Error("Test insert returned no id");
   const id = created.id;
@@ -169,8 +172,13 @@ testAdminRoutes.put("/tests/:id", async (c) => {
   const id = idParam(c);
   const body = await readBody(c, saveTestBody);
   const db = c.env.DB;
-  const test = await queryFirst<{ current_version: number }>(db, "SELECT current_version FROM tests WHERE id = ?", id);
+  const test = await queryFirst<{ current_version: number; owner_email: string | null }>(
+    db,
+    "SELECT current_version, owner_email FROM tests WHERE id = ?",
+    id,
+  );
   if (!test) throw notFound("Test not found.");
+  assertOwner(test.owner_email, c.get("admin"), "test");
 
   const incoming = normalizeAll(body.questions);
   const existing = await loadQuestions(db, id);
@@ -252,8 +260,9 @@ testAdminRoutes.put("/tests/:id", async (c) => {
 testAdminRoutes.delete("/tests/:id", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
-  const t = await queryFirst<{ title: string }>(db, "SELECT title FROM tests WHERE id = ?", id);
+  const t = await queryFirst<{ title: string; owner_email: string | null }>(db, "SELECT title, owner_email FROM tests WHERE id = ?", id);
   if (!t) throw notFound("Test not found.");
+  assertOwner(t.owner_email, c.get("admin"), "test");
   const used = await queryFirst(
     db,
     "SELECT 1 AS one FROM attempts a JOIN test_assignments ta ON ta.id = a.assignment_id WHERE ta.test_id = ? LIMIT 1",
@@ -346,6 +355,7 @@ testAdminRoutes.put("/tests/:id/assignments/:classId", async (c) => {
   const test = await queryFirst<{ title: string }>(db, "SELECT title FROM tests WHERE id = ?", testId);
   if (!test) throw notFound("Test not found.");
   const cls = await loadClassBasics(db, classId);
+  assertOwner(cls.owner_email, c.get("admin")); // any test may be used, but only in your own classes
   assertWritable(cls);
 
   const opensAt = s.opensAt ? new Date(s.opensAt).toISOString() : null;
@@ -390,6 +400,7 @@ testAdminRoutes.delete("/tests/:id/assignments/:classId", async (c) => {
   const testId = idParam(c);
   const classId = idParam(c, "classId");
   const db = c.env.DB;
+  assertOwner((await loadClassBasics(db, classId)).owner_email, c.get("admin"));
   const asg = await queryFirst<{ id: number }>(
     db,
     "SELECT id FROM test_assignments WHERE test_id = ? AND class_id = ?",

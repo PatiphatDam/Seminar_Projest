@@ -1,6 +1,7 @@
 import type { AdminClass, AdminStudentRow, EnrollmentStatus } from "../../../shared/contract";
+import { LOCAL_ADMIN_PREFIX, type AdminContext } from "../../env";
 import { queryFirst } from "../../db";
-import { conflict, notFound } from "../../http";
+import { conflict, forbidden, notFound } from "../../http";
 
 export const ANONYMIZED_LABEL = "(anonymized)";
 
@@ -70,16 +71,41 @@ export interface ClassBasics {
   academic_year: number;
   semester: number;
   status: "active" | "archived";
+  owner_email: string | null;
 }
 
 export async function loadClassBasics(db: D1Database, id: number): Promise<ClassBasics> {
   const row = await queryFirst<ClassBasics>(
     db,
-    "SELECT id, name, academic_year, semester, status FROM classes WHERE id = ?",
+    "SELECT id, name, academic_year, semester, status, owner_email FROM classes WHERE id = ?",
     id,
   );
   if (!row) throw notFound("Class not found.");
   return row;
+}
+
+/**
+ * Decision A (docs/ARCHITECTURE.md §7.1): instructors change only what they created; everything stays viewable.
+ * The username/password account is the emergency account and may change anything (e.g. an instructor has left).
+ * Items without an owner (made before owners were recorded) can only be changed by the emergency account.
+ */
+export const isEmergencyAdmin = (admin: Pick<AdminContext, "email">) => admin.email.startsWith(LOCAL_ADMIN_PREFIX);
+
+export function canChange(ownerEmail: string | null, admin: Pick<AdminContext, "email">): boolean {
+  return isEmergencyAdmin(admin) || (ownerEmail !== null && ownerEmail === admin.email);
+}
+
+export function assertOwner(ownerEmail: string | null, admin: Pick<AdminContext, "email">, what = "class"): void {
+  if (!canChange(ownerEmail, admin)) {
+    throw forbidden(`This ${what} belongs to ${ownerEmail ?? "no instructor"} — only its owner can change it.`, "not_owner");
+  }
+}
+
+/** Short instructor name shown in class names: "Keerakarn" (admin name, else e-mail before the first dot). */
+export function ownerLabel(admin: Pick<AdminContext, "email" | "name">): string {
+  if (isEmergencyAdmin(admin)) return "Admin";
+  const base = (admin.name?.trim().split(/\s+/)[0] || admin.email.split("@")[0].split(/[._-]/)[0] || "").trim();
+  return base ? base.charAt(0).toUpperCase() + base.slice(1) : admin.email;
 }
 
 /** SQL filter (alias c) for an admin's class scope: their own classes plus legacy classes without an owner. */
