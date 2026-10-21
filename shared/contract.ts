@@ -212,6 +212,57 @@ export interface AttemptResult {
   }[] | null;
 }
 
+/* ───────────── games: scores (GAME-7) ───────────── */
+
+export const GAME_SCORE_KEYS = ["balloon-pop", "group-sort:memory", "group-sort:conveyor", "diameter"] as const;
+export type GameScoreKey = (typeof GAME_SCORE_KEYS)[number];
+export const GAME_SCORE_LABELS: Record<GameScoreKey, string> = {
+  "balloon-pop": "Balloon Pop",
+  "group-sort:memory": "Group Sort · Picture Match",
+  "group-sort:conveyor": "Group Sort · Conveyor",
+  diameter: "Diameter",
+};
+
+const shortText = z.string().max(400);
+
+/** POST /api/me/game-runs — the `run` object sent by the games module's onGameFinish. */
+export const gameRunBody = z.object({
+  runId: z.string().trim().min(8).max(64).regex(/^[\w-]+$/),
+  scoreKey: z.enum(GAME_SCORE_KEYS),
+  score: z.number().int().min(0).max(100_000),
+  stars: z.number().int().min(0).max(3),
+  completed: z.boolean().default(true),
+  summary: shortText.default(""),
+  achievements: z.array(z.string().max(40)).max(30).default([]),
+  mistakes: z
+    .array(z.object({ prompt: shortText, yours: shortText, answer: shortText, why: shortText.optional() }))
+    .max(100)
+    .default([]),
+});
+export type GameRunBody = z.input<typeof gameRunBody>;
+
+export interface GameBest {
+  scoreKey: GameScoreKey;
+  best: number;
+  stars: number;
+  plays: number;
+  lastPlayedAt: string;
+}
+
+/** GET /api/admin/game-results?classId=&status= */
+export interface AdminGameResults {
+  classId: number | null;
+  keys: { scoreKey: GameScoreKey; label: string; players: number; plays: number; meanBest: number | null }[];
+  rows: {
+    studentCode: string;
+    firstName: string | null;
+    className: string;
+    enrollmentStatus: EnrollmentStatus;
+    /** key = scoreKey; null when never played */
+    games: Record<string, { best: number; stars: number; plays: number; lastPlayedAt: string } | null>;
+  }[];
+}
+
 /* ───────────── admin: classes ───────────── */
 
 export interface AdminClass extends ClassSummary {
