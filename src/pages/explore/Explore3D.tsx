@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
 import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { ArrowRightIcon, BookIcon, InfoIcon, XIcon } from "@/components/student/icons";
@@ -10,6 +10,7 @@ import { partInfo, type PartInfo } from "@/content/exploreParts";
 import { AnimPanel, PendingBadge } from "./anim/AnimPanel";
 import { Timeline } from "./anim/timeline";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
+import { backState } from "./shared/backLink";
 
 // three.js + R3F + the model loader live in their own chunk.
 const ZoomScene = lazy(() => import("./zoom/ZoomScene"));
@@ -31,6 +32,7 @@ const FOOTNOTE: Record<TopicId, string> = {
 export default function Explore3D() {
   useDocumentTitle("3D Explore");
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
   const topic = topicById(params.get("topic"));
   const chain = topic.chain.map((id) => levelById(id)!);
   const level = chain.find((l) => l.id === params.get("level")) ?? chain[0];
@@ -251,7 +253,7 @@ export default function Explore3D() {
             {level.cta && (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--c-hair)] px-5 py-3">
                 <p className="coast-muted text-[14px]">See which bands get shorter when it contracts — and which don’t.</p>
-                <Link to={level.cta.to} className="coast-btn inline-flex items-center gap-2 px-4 py-2 text-[14px] font-bold">
+                <Link to={level.cta.to} state={backState(location)} className="coast-btn inline-flex items-center gap-2 px-4 py-2 text-[14px] font-bold">
                   {level.cta.label} <ArrowRightIcon size={16} />
                 </Link>
               </div>
@@ -381,6 +383,7 @@ function Details({
   busy: boolean;
   sheet?: boolean;
 }) {
+  const location = useLocation();
   const box = sheet
     ? "max-h-[55vh] overflow-y-auto rounded-t-[22px] border-t border-[var(--c-edge)] bg-surface px-5 pb-[calc(20px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_30px_rgba(0,0,0,0.18)]"
     : "coast-card p-5";
@@ -482,7 +485,7 @@ function Details({
           </button>
         )}
         {hotspot.link && (
-          <Link to={hotspot.link.to} className="coast-btn inline-flex items-center gap-1.5 px-4 py-2 text-[14px] font-bold">
+          <Link to={hotspot.link.to} state={backState(location)} className="coast-btn inline-flex items-center gap-1.5 px-4 py-2 text-[14px] font-bold">
             {hotspot.link.label} <ArrowRightIcon size={16} />
           </Link>
         )}
@@ -496,6 +499,7 @@ function Details({
 
 /** No WebGL: keep the chain usable as text (the list and info panel still work). */
 function NoWebGL({ level }: { level: ZoomLevel }) {
+  const location = useLocation();
   return (
     <div className="flex h-full flex-col justify-center gap-3 p-6 text-[var(--c-text)]">
       <p className="flex items-center gap-2 text-[14px] font-semibold">
@@ -505,7 +509,7 @@ function NoWebGL({ level }: { level: ZoomLevel }) {
         Use the list “On this level” to read about each part of the {level.crumb.toLowerCase()} and to zoom to the next level.
       </p>
       {level.cta && (
-        <Link to={level.cta.to} className="coast-btn inline-flex w-fit items-center gap-2 px-4 py-2 text-[14px] font-bold">
+        <Link to={level.cta.to} state={backState(location)} className="coast-btn inline-flex w-fit items-center gap-2 px-4 py-2 text-[14px] font-bold">
           {level.cta.label} <ArrowRightIcon size={16} />
         </Link>
       )}

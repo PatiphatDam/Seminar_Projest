@@ -1,14 +1,15 @@
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
-import { InfoIcon } from "@/components/student/icons";
+import { ArrowLeftIcon, InfoIcon } from "@/components/student/icons";
 import { Spinner } from "@/components/ui";
 import { BANDS, CONTRACTION_LESSON, CONTRACTION_STEPS, MOTION_VIDEO, PARTS, partById, type PartId } from "@/content/explore";
 import { bandsAt, formatUm, THICK_UM, THIN_UM } from "./sarcomere/model";
 import { SarcomereDiagram } from "./sarcomere/SarcomereDiagram";
 import { InfoPanel } from "./shared/InfoPanel";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
+import { exploreBack } from "./shared/backLink";
 
 // three.js + R3F live in their own chunk, so the page shell (slider, cards, text) shows before the 3D code arrives.
 const SarcomereScene = lazy(() => import("./sarcomere/SarcomereScene"));
@@ -19,6 +20,7 @@ const SarcomereScene = lazy(() => import("./sarcomere/SarcomereScene"));
  */
 export default function Sarcomere() {
   useDocumentTitle("Sarcomere");
+  const back = exploreBack(useLocation().state);
   const [pct, setPct] = useState(0);
   const [selected, setSelected] = useState<PartId | null>(null);
   const [showBands, setShowBands] = useState(true);
@@ -63,10 +65,14 @@ export default function Sarcomere() {
         title="Sarcomere"
         subtitle="Contract a sarcomere and see what changes — and what doesn't."
         phoneSubtitle="OL4 · OL5"
-        crumbs={[{ to: "/", label: "Home" }, { to: "/explore", label: "3D Explore" }, { label: "Sarcomere" }]}
-        back="/explore"
+        crumbs={[{ to: "/", label: "Home" }, { to: back.to, label: "3D Explore" }, { label: "Sarcomere" }]}
+        back={back.to}
         right={
-          <span className="flex gap-2">
+          <span className="flex flex-wrap items-center justify-end gap-2">
+            {/* back to the exact 3D Explore level the student came from (the "Contract it" button) */}
+            <Link to={back.to} className="coast-btn inline-flex items-center gap-1.5 px-4 py-2 text-[14px] font-bold" title={`Back to 3D Explore — ${back.label}`}>
+              <ArrowLeftIcon size={16} /> Back to 3D Explore
+            </Link>
             <span className="coast-chip px-3 py-1 text-[12px] font-bold">OL4</span>
             <span className="coast-chip px-3 py-1 text-[12px] font-bold">OL5</span>
           </span>
