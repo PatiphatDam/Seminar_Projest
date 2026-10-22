@@ -5,7 +5,9 @@
  * the MFU Key Point Book "The skeletal muscle". Every heading and sub-heading of the sheet (Overview … §21) appears
  * below with the sheet's own wording; the sheet's numbers are left out because lessons can be read in any order.
  * Not included on purpose: lesson plan, teaching plan, instructional materials, §22 review questions (→ a test).
- * "extra" blocks are additions that are NOT in the sheet; they are shown as "More detail".
+ * "extra" blocks are additions that are NOT in the sheet; they are shown as "More detail". Extras on cardiac and smooth
+ * muscle come from the team document "กล้ามเนื้อถูกจำแนกออกเป็น 3 ประเภทหลัก" — the same source as the 3D Explore levels
+ * (src/content/exploreZoom.ts), so the lesson and the 3D model describe the same parts.
  *
  * Writing format: `**bold**` inside any text is shown in bold.
  */
@@ -18,7 +20,7 @@ export type LessonBlock =
   | { kind: "list"; items: string[] }
   | { kind: "table"; caption: string; head: string[]; rows: string[][] }
   | { kind: "keypoints"; items: string[]; title?: string } // title defaults to "Key points"
-  | { kind: "extra"; text: string }
+  | { kind: "extra"; text: string; items?: string[]; table?: { caption: string; head: string[]; rows: string[][] } }
   | { kind: "figure"; src: string; alt: string; caption: string };
 
 export type TopicId = "basics" | "structure" | "contraction" | "clinical";
@@ -166,6 +168,19 @@ export const LESSONS: Lesson[] = [
           "**Gap junctions** let ions and electrical signals pass between adjacent cells, so cardiac muscle is activated in a coordinated way.",
         ],
       },
+      {
+        kind: "extra",
+        text: "Cardiac muscle from the heart wall down to the myofilaments — the levels of **3D Explore → Cardiac muscle**:",
+        items: [
+          "**Epicardium / pericardium** — the outermost tissue layer covering the heart wall.",
+          "**Myocardium** — the thick muscle layer of the heart wall, made of cardiac muscle cells working together. (The 3D model also shows the **endocardium**, the thin inner lining of the heart wall.)",
+          "**Endomysium** — connective tissue around each cardiac muscle cell, with **dense capillaries**.",
+          "**Cardiomyocyte** — a short, branched, cylindrical cell with **1–2 central nuclei** (usually one).",
+          "**Intercalated disc** — desmosomes add strength; gap junctions pass the electrical signal.",
+          "**Sarcolemma and sarcoplasm** — the T-tubules are **larger** than in skeletal muscle.",
+          "**Myofibril → sarcomere** (Z disc, A band, I band, as in skeletal muscle) → **myofilaments**: thick = myosin; thin = actin + tropomyosin + troponin.",
+        ],
+      },
 
       { kind: "h", text: "Smooth Muscle Tissue" },
       { kind: "p", text: "Smooth muscle is generally controlled **involuntarily** and is widely distributed throughout the body. Two functional patterns are described:" },
@@ -200,6 +215,19 @@ export const LESSONS: Lesson[] = [
           "In many smooth muscle tissues **gap junctions** link neighboring cells and coordinate contraction.",
         ],
       },
+      {
+        kind: "extra",
+        text: "Smooth muscle from the organ wall down to the myofilaments — the levels of **3D Explore → Smooth muscle**:",
+        items: [
+          "**Muscle layers** in the wall of a hollow organ — in the intestine a **longitudinal** layer (cells run along the tube; contraction shortens it) and a **circular** layer (cells run around the tube; contraction narrows it).",
+          "**Extracellular matrix / endomysium-like layer** — a thin connective tissue around each cell.",
+          "**Smooth muscle cell** — spindle-shaped with tapered ends and **one central nucleus**.",
+          "**Sarcolemma** — no T-tubules; **caveolae** (small invaginations) help take up and store Ca²⁺; **gap junctions** link neighboring cells.",
+          "**Dense bodies** — protein anchoring points scattered through the cytoplasm and on the membrane; they take the place of **Z discs**.",
+          "**Intermediate filaments** such as **desmin** link the dense bodies and spread the force of contraction through the cell.",
+          "**Myofilaments** in an oblique, criss-cross lattice (no sarcomeres): thick = myosin; thin = actin + tropomyosin, with **no troponin** — **calmodulin** binds Ca²⁺ instead.",
+        ],
+      },
 
       { kind: "h", text: "Summary: Three Types of Muscle Tissue" },
       {
@@ -218,6 +246,21 @@ export const LESSONS: Lesson[] = [
           ["Major Ca²⁺ regulatory protein", "Troponin", "Troponin", "Calmodulin"],
           ["Major function", "Body movement and posture", "Pumping blood", "Movement / regulation of substances within organs"],
         ],
+      },
+      {
+        kind: "extra",
+        text: "Levels of organization in the three types — the levels you zoom through in **3D Explore**:",
+        table: {
+          caption: "Levels of organization in skeletal, cardiac and smooth muscle",
+          head: ["Level", "Skeletal muscle", "Cardiac muscle", "Smooth muscle"],
+          rows: [
+            ["Connective tissue wrapping", "Epimysium → Perimysium → Endomysium", "Epicardium → Endomysium", "Muscle layer → ECM / endomysium-like layer"],
+            ["Cell", "Muscle fiber (long cylinder, many nuclei)", "Cardiomyocyte (branched, intercalated discs)", "Smooth muscle cell (spindle-shaped, one nucleus)"],
+            ["Inside the cell", "Myofibrils", "Myofibrils", "Dense bodies & intermediate filaments"],
+            ["Contractile unit", "Sarcomere", "Sarcomere", "Protein lattice (no sarcomere)"],
+            ["Myofilaments", "Myosin / actin + tropomyosin + troponin", "Myosin / actin + tropomyosin + troponin", "Myosin / actin + tropomyosin (calmodulin instead of troponin)"],
+          ],
+        },
       },
     ],
   },
