@@ -12,3 +12,6 @@ Thumbs.db
 .idea/
 coverage/
 .claude/
+
+# Production database backups (never commit)
+prod-backup-*.sql
