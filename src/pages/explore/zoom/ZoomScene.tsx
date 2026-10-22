@@ -31,6 +31,7 @@ import { useTimelinePlaying, type Timeline } from "../anim/timeline";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { LevelAnimation } from "./anims";
 import { Marker } from "./marker";
+import { RedrawOnVisible } from "../shared/RedrawOnVisible";
 
 /**
  * One level of the /explore zoom chain (3D-1 … 3D-4). Loads the level's .glb (meshopt-compressed), scales it to a
@@ -479,6 +480,7 @@ export default function ZoomScene(props: ZoomSceneProps) {
         </Suspense>
         {props.timeline && <TimelineDriver tl={props.timeline} />}
         <CameraControls makeDefault minDistance={0.6} maxDistance={30} smoothTime={0.45} />
+        <RedrawOnVisible />
         {Perf && showPerf && (
           <Suspense fallback={null}>
             <Perf position="top-left" style={{ position: "absolute", top: 8, left: 8, zIndex: 5 }} />

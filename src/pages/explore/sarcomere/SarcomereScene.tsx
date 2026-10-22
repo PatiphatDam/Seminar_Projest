@@ -14,6 +14,7 @@ import {
 } from "three";
 import { BANDS, PARTS, type PartId } from "@/content/explore";
 import { bandsAt, RELAXED_UM, THICK_UM, THIN_UM } from "./model";
+import { RedrawOnVisible } from "../shared/RedrawOnVisible";
 
 /**
  * Interactive sarcomere built entirely in code (3D-5). Long axis = x, M line at x = 0, 1 µm = K world units.
@@ -355,6 +356,7 @@ export default function SarcomereScene(props: SceneProps) {
       <Model {...props} />
       <FitCamera />
       <OrbitControls makeDefault enableDamping={false} minDistance={3.5} maxDistance={30} target={[0, 0.3, 0]} />
+      <RedrawOnVisible />
       {Perf && showPerf && (
         <Suspense fallback={null}>
           {/* dev-only fps / draw-call meter (?perf), pinned inside the viewer card (it clips anything outside) */}
