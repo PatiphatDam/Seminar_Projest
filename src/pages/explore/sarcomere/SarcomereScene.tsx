@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import {
@@ -15,6 +15,8 @@ import {
 import { BANDS, PARTS, type PartId } from "@/content/explore";
 import { bandsAt, RELAXED_UM, THICK_UM, THIN_UM } from "./model";
 import { RedrawOnVisible } from "../shared/RedrawOnVisible";
+import { GL_OPTIONS as GL } from "../shared/webgl";
+import { ContextLost } from "../shared/WebGLHelp";
 
 /**
  * Interactive sarcomere built entirely in code (3D-5). Long axis = x, M line at x = 0, 1 µm = K world units.
@@ -28,7 +30,6 @@ const BARE_ZONE = 0.3; // central part of the thick filament without heads (arou
 const CAMERA_DIR = new Vector3(1.6, 2.6, 9.2).normalize();
 // Stable objects: R3F re-applies a new `camera` object on every Canvas render, which would reset the user's view.
 const CAMERA = { position: [1.6, 2.6, 9.2] as [number, number, number], fov: 40, near: 0.1, far: 100 };
-const GL = { antialias: true, powerPreference: "high-performance" as const };
 
 // Hexagonal filament lattice seen end-on (y, z): 7 thick filaments, 12 thin filaments in the trigonal positions.
 const R = 0.55;
@@ -340,29 +341,34 @@ export type SceneProps = {
 };
 
 export default function SarcomereScene(props: SceneProps) {
+  const [lost, setLost] = useState(false);
   return (
-    <Canvas
-      // ?perf renders every frame so the meter measures the worst case; normal use renders only on change
-      frameloop={showPerf ? "always" : "demand"}
-      dpr={[1, 1.5]}
-      camera={CAMERA}
-      gl={GL}
-      onPointerMissed={() => props.onSelect(null)}
-      aria-label="Interactive 3D sarcomere"
-    >
-      <ambientLight intensity={0.75} />
-      <directionalLight position={[4, 6, 5]} intensity={1.6} />
-      <directionalLight position={[-5, -2, -4]} intensity={0.45} />
-      <Model {...props} />
-      <FitCamera />
-      <OrbitControls makeDefault enableDamping={false} minDistance={3.5} maxDistance={30} target={[0, 0.3, 0]} />
-      <RedrawOnVisible />
-      {Perf && showPerf && (
-        <Suspense fallback={null}>
-          {/* dev-only fps / draw-call meter (?perf), pinned inside the viewer card (it clips anything outside) */}
-          <Perf position="top-left" style={{ position: "absolute", top: 8, left: 8, zIndex: 5 }} />
-        </Suspense>
-      )}
-    </Canvas>
+    <>
+      <Canvas
+        // ?perf renders every frame so the meter measures the worst case; normal use renders only on change
+        frameloop={showPerf ? "always" : "demand"}
+        dpr={[1, 1.5]}
+        camera={CAMERA}
+        gl={GL}
+        onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", () => setLost(true))}
+        onPointerMissed={() => props.onSelect(null)}
+        aria-label="Interactive 3D sarcomere"
+      >
+        <ambientLight intensity={0.75} />
+        <directionalLight position={[4, 6, 5]} intensity={1.6} />
+        <directionalLight position={[-5, -2, -4]} intensity={0.45} />
+        <Model {...props} />
+        <FitCamera />
+        <OrbitControls makeDefault enableDamping={false} minDistance={3.5} maxDistance={30} target={[0, 0.3, 0]} />
+        <RedrawOnVisible />
+        {Perf && showPerf && (
+          <Suspense fallback={null}>
+            {/* dev-only fps / draw-call meter (?perf), pinned inside the viewer card (it clips anything outside) */}
+            <Perf position="top-left" style={{ position: "absolute", top: 8, left: 8, zIndex: 5 }} />
+          </Suspense>
+        )}
+      </Canvas>
+      {lost && <ContextLost />}
+    </>
   );
 }

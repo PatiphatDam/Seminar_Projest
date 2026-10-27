@@ -32,6 +32,8 @@ import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js
 import { LevelAnimation } from "./anims";
 import { Marker } from "./marker";
 import { RedrawOnVisible } from "../shared/RedrawOnVisible";
+import { GL_OPTIONS as GL } from "../shared/webgl";
+import { ContextLost } from "../shared/WebGLHelp";
 
 /**
  * One level of the /explore zoom chain (3D-1 … 3D-4). Loads the level's .glb (meshopt-compressed), scales it to a
@@ -45,7 +47,6 @@ const CAMERA = {
   near: 0.05,
   far: 200,
 };
-const GL = { antialias: true, powerPreference: "high-performance" as const };
 // Direction the camera looks from when a level opens (model space after normalising).
 const VIEW: Partial<Record<LevelId, [number, number, number]>> = {
   muscle: [-0.6, 0.12, 1],
@@ -428,6 +429,7 @@ const showPerf = typeof window !== "undefined" && new URLSearchParams(window.loc
 
 export default function ZoomScene(props: ZoomSceneProps) {
   const [failed, setFailed] = useState<string | null>(null);
+  const [lost, setLost] = useState(false);
   const code = props.level.scene ?? (props.molecular ? props.level.molecular : undefined);
   const key = props.level.id + (code ? `:${code}` : "");
   const CodeLevel = code ? CODE_SCENES[code] : null;
@@ -463,6 +465,7 @@ export default function ZoomScene(props: ZoomSceneProps) {
         dpr={[1, 1.5]}
         camera={CAMERA}
         gl={GL}
+        onCreated={({ gl }) => gl.domElement.addEventListener("webglcontextlost", () => setLost(true))}
         onPointerMissed={() => {
           props.onSelect(null);
           props.onPick?.(null);
@@ -487,6 +490,7 @@ export default function ZoomScene(props: ZoomSceneProps) {
           </Suspense>
         )}
       </Canvas>
+      {lost && <ContextLost />}
       {failed === key && (
         <div className="absolute inset-0 grid place-items-center p-6 text-center text-[14px] font-semibold text-[var(--c-muted)]">
           This level’s 3D model isn’t available yet.

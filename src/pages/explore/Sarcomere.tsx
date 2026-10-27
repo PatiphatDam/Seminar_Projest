@@ -10,6 +10,7 @@ import { SarcomereDiagram } from "./sarcomere/SarcomereDiagram";
 import { InfoPanel } from "./shared/InfoPanel";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
 import { exploreBack } from "./shared/backLink";
+import { WebGLHelp } from "./shared/WebGLHelp";
 
 // three.js + R3F live in their own chunk, so the page shell (slider, cards, text) shows before the 3D code arrives.
 const SarcomereScene = lazy(() => import("./sarcomere/SarcomereScene"));
@@ -102,6 +103,7 @@ export default function Sarcomere() {
                     <InfoIcon size={18} /> 3D isn’t available on this device, so here is the same sarcomere in 2D.
                   </p>
                   <SarcomereDiagram t={t} rows={5} className="w-full" />
+                  <WebGLHelp />
                 </div>
               )}
               {webgl && (

@@ -11,6 +11,7 @@ import { AnimPanel, PendingBadge } from "./anim/AnimPanel";
 import { Timeline } from "./anim/timeline";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
 import { backState } from "./shared/backLink";
+import { WebGLHelp } from "./shared/WebGLHelp";
 
 // three.js + R3F + the model loader live in their own chunk.
 const ZoomScene = lazy(() => import("./zoom/ZoomScene"));
@@ -508,6 +509,7 @@ function NoWebGL({ level }: { level: ZoomLevel }) {
       <p className="coast-muted text-[14px]">
         Use the list “On this level” to read about each part of the {level.crumb.toLowerCase()} and to zoom to the next level.
       </p>
+      <WebGLHelp />
       {level.cta && (
         <Link to={level.cta.to} state={backState(location)} className="coast-btn inline-flex w-fit items-center gap-2 px-4 py-2 text-[14px] font-bold">
           {level.cta.label} <ArrowRightIcon size={16} />
