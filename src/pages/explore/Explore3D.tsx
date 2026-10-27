@@ -120,7 +120,8 @@ export default function Explore3D() {
       />
 
       {/* Topic picker (3D-1, 3D-10) — a type still being built shows its status instead of opening (3D-11) */}
-      <div role="group" aria-label="Muscle type" className="-mx-4 mt-2 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:mt-5 md:flex-wrap md:px-0">
+      {/* phone: three equal buttons that always fit the screen; wider screens: pills in a row */}
+      <div role="group" aria-label="Muscle type" className="mt-2 grid grid-cols-3 gap-2 md:mt-5 md:flex md:flex-wrap">
         {TOPICS.map((t) =>
           t.status === "open" ? (
             <button
@@ -129,27 +130,30 @@ export default function Explore3D() {
               aria-pressed={t.id === topic.id}
               onClick={() => t.id !== topic.id && goTo(t.chain[0], t.id)}
               className={
-                "shrink-0 px-4 py-1.5 text-[13.5px] " +
+                "min-w-0 px-2 py-1.5 text-[13.5px] md:shrink-0 md:px-4 " +
                 (t.id === topic.id ? "coast-btn font-bold" : "coast-chip font-semibold text-[var(--c-text)] hover:bg-[var(--c-panel)]")
               }
             >
-              {t.name}
+              {/* "Skeletal" on phones, "Skeletal muscle" from md up */}
+              <span className="md:hidden">{t.name.replace(/ muscle$/, "")}</span>
+              <span className="hidden md:inline">{t.name}</span>
             </button>
           ) : (
-            <span key={t.id} aria-disabled="true" className="coast-chip shrink-0 cursor-not-allowed px-4 py-1.5 text-[13.5px] font-semibold opacity-70">
+            <span key={t.id} aria-disabled="true" className="coast-chip min-w-0 cursor-not-allowed px-2 py-1.5 text-center md:shrink-0 md:px-4 text-[13.5px] font-semibold opacity-70">
               {t.name} · <span className="coast-muted">{t.status}</span>
             </span>
           ),
         )}
       </div>
 
-      {/* Level breadcrumb (3D-2) — every crumb jumps straight to its level */}
-      <nav aria-label="Zoom level" className="mt-4 overflow-x-auto">
-        <ol className="flex min-w-max items-center gap-1.5 text-[13.5px]">
+      {/* Level breadcrumb (3D-2) — every crumb jumps straight to its level. Phones: the steps wrap onto a second line
+          instead of scrolling sideways, so every level stays visible. */}
+      <nav aria-label="Zoom level" className="mt-4 md:overflow-x-auto">
+        <ol className="flex flex-wrap items-center gap-1.5 text-[13.5px] md:min-w-max md:flex-nowrap">
           {chain.map((l, i) => (
             <li key={l.id} className="flex items-center gap-1.5">
               {i > 0 && (
-                <span aria-hidden="true" className="coast-muted">
+                <span aria-hidden="true" className="coast-muted hidden md:inline">
                   ›
                 </span>
               )}
@@ -159,7 +163,9 @@ export default function Explore3D() {
                 aria-current={l.id === level.id ? "step" : undefined}
                 className={
                   "rounded-full px-3 py-1 font-semibold transition-colors " +
-                  (l.id === level.id ? "bg-[var(--c-accent)] text-[var(--c-on)]" : "text-[var(--c-text)] hover:bg-[var(--c-panel)]")
+                  (l.id === level.id
+                    ? "bg-[var(--c-accent)] text-[var(--c-on)]"
+                    : "text-[var(--c-text)] ring-1 ring-[var(--c-hair)] hover:bg-[var(--c-panel)] md:ring-0")
                 }
               >
                 <span className="coast-muted mr-1 text-[11.5px] font-bold" style={l.id === level.id ? { color: "inherit", opacity: 0.8 } : undefined}>
