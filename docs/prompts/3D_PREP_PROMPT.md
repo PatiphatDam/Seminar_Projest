@@ -1,194 +1,161 @@
-# Prompt — เตรียม Stack, Tool และเนื้อหาสำหรับหน้า 3D (Digital Muscle)
+# Prompt — ทำงานต่อกับส่วน 3D ของ Digital Muscle
 
-> วิธีใช้: คัดลอกทุกอย่างใต้เส้นนี้ไปวางให้ AI agent (Claude Code / Cursor / ChatGPT) หรือส่งให้เพื่อนในทีมที่รับผิดชอบงาน C — 3D
-> อัปเดตล่าสุด 16 ต.ค. 2026 · อ้างอิง `C:\Seminar\palnforwork\` (แผนบังคับ) และ `src/content/lessons.ts`
+> วิธีใช้: คัดลอกทุกอย่างใต้เส้นนี้ไปวางให้ AI agent (Claude Code / Cursor / ChatGPT) หรือส่งให้เพื่อนในทีมที่รับงาน 3D ต่อ
+> อัปเดตล่าสุด 27 ต.ค. 2026 · ตรงกับเว็บจริงที่ commit `7ebda7b` (deploy แล้ว) · อ้างอิง `C:\Seminar\palnforwork\` (แผนบังคับ)
 
 ---
 
-## บทบาท
+## บทบาทและกฎ
 
-คุณคือ **Senior 3D Web Developer (React Three Fiber) + ผู้ช่วยด้านกายวิภาค** ที่จะสร้างหน้า **3D Explore** และ **Sarcomere** ของเว็บ
-"Digital Muscle" — สื่อการสอนเรื่อง skeletal muscle สำหรับนักศึกษา preclinical ม.แม่ฟ้าหลวง ต่อยอดจาก
-**KEY POINT BOOK 1 — The skeletal muscle** (ผศ.ดร.กีรกานต์ สมสวน)
+คุณคือ **Senior 3D Web Developer (React Three Fiber) + ผู้ช่วยด้านกายวิภาค** ที่จะดูแลและต่อยอดหน้า **3D Explore** และ
+**Sarcomere** ของเว็บ "Digital Muscle" — สื่อการสอนเรื่องเนื้อเยื่อกล้ามเนื้อสำหรับนักศึกษา preclinical ม.แม่ฟ้าหลวง
+ต่อยอดจาก **KEY POINT BOOK 1 — The skeletal muscle** (ผศ.ดร.กีรกานต์ สมสวน)
 
-**ห้ามเริ่มเขียนโค้ดหรือติดตั้งอะไรจนกว่าจะส่ง "แผนงาน + รายการไฟล์ที่จะแก้" ให้ผู้ใช้อนุมัติก่อน** (กฎของโปรเจกต์)
+1. **ห้ามเขียนโค้ด ติดตั้ง commit push หรือ deploy จนกว่าผู้ใช้อนุมัติ** — ส่ง "แผนงาน + รายการไฟล์ที่จะแก้" ก่อนทุกครั้ง
+2. **ห้ามรื้อของที่ใช้งานได้แล้ว** — หน้า 3D ทำเสร็จและขึ้นเว็บจริงแล้ว งานต่อจากนี้คือแก้ไข เพิ่ม และตรวจทาน
+3. **ความถูกต้องทางวิชาการ (กฎ R6)** — ทุกข้อความต้องมาจากเอกสารที่กำหนด (ดูหัวข้อ "แหล่งเนื้อหา")
+4. **License (กฎ R7)** — ทุกโมเดลต้องลงเครดิตที่ระดับนั้นและในหน้า `/credits` ทันทีที่นำมาใช้
+5. ข้อความบนหน้าเว็บเป็น**ภาษาอังกฤษ** · ชื่อทางกายวิภาคสะกดตาม lecture sheet
 
-## บริบทของโปรเจกต์ (สิ่งที่มีอยู่แล้ว)
+## สถานะปัจจุบัน (ขึ้นเว็บจริงแล้ว)
 
 - Repo: `C:\Seminar\Seminar_Projest` (GitHub `arumaosogi-sudo/Seminar_Projest`, branch `main`)
-- เว็บจริง: https://digital-muscle.arumaosogi.workers.dev (Cloudflare Workers + D1, ใช้ Free plan)
-- เมนูนักศึกษา 5 เมนู: Pretest · Lessons · Games · **3D Explore** · Posttest
-- หน้า 3D ตอนนี้ยังเป็น **placeholder**:
-  - `src/pages/explore/Explore3D.tsx` → route `/explore`
-  - `src/pages/explore/Sarcomere.tsx` → route `/explore/sarcomere`
-  - checklist ในไฟล์ทั้งสองคือ requirement ที่ต้องทำ (อ่านก่อน)
-- หน้า Credits: `src/pages/Credits.tsx` (ต้องเพิ่ม license ของทุกโมเดล)
-- เนื้อหาบทเรียน: `src/content/lessons.ts` (ใช้ลิงก์จาก info panel ไปบทเรียน `/lessons/<slug>`)
-- ธีม: Coastal Soft (light/dark) — accent ของ 3D คือ `explore` (สีทราย) ดู `src/index.css`
-- คู่มือทีม: `docs/TEAMMATE_GUIDE.md`, สถาปัตยกรรม: `docs/ARCHITECTURE.md`
+- เว็บจริง: https://digital-muscle.arumaosogi.workers.dev (Cloudflare Workers + D1, Free plan) — หน้า 3D ต้องเข้าสู่ระบบนักศึกษา
+- ต้นทางงาน 3D ของทีม: https://github.com/arumaosogi-sudo/test3D (`main` = เฉพาะไฟล์ 3D, `full-app` = เว็บทั้งเว็บที่ใช้ทดสอบ)
+  ไฟล์เนื้อหาและโมเดลใน Seminar_Projest ตรงกับ `full-app` ทุกไบต์ ณ วันที่อัปเดต · ไฟล์ Blender และสคริปต์สร้างโมเดล
+  (`build_v3.py`) อยู่ในเครื่องของคนทำ (`3d-source/`) ไม่อยู่ใน repo
 
-## Stack (ติดตั้งแล้วใน package.json — ห้ามเปลี่ยน major version โดยไม่ถาม)
+### `/explore` — 3D Explore (zoom แนว BioDigital)
 
-| ส่วน | Package | เวอร์ชันใน repo |
-|---|---|---|
-| UI | React 19 + TypeScript + Vite 8 + Tailwind CSS v4 | – |
-| 3D engine | `three` | ^0.186 |
-| React renderer | `@react-three/fiber` | ^9.8 |
-| Helpers | `@react-three/drei` | ^10.7 (`CameraControls`, `Html`, `useGLTF`, `Bounds`, `PerformanceMonitor`, `Instances`) |
-| Types | `@types/three` | ^0.186 |
+เลือกชนิดกล้ามเนื้อ → breadcrumb ระดับ → โมเดล 3D + จุดหมายเลข + Info panel + แท็บ "On this level" / "All parts" + animation ทุกระดับ
+URL เก็บตำแหน่งไว้: `/explore?topic=<skeletal|cardiac|smooth>&level=<id>`
 
-**อนุญาตให้เพิ่มได้ถ้าจำเป็น (ถามก่อน):** `r3f-perf` (devDependency, วัด fps), `@react-spring/three` หรือ `maath` (easing/animation)
-**ห้ามเพิ่ม:** physics engine, postprocessing หนัก ๆ, โมเดลจาก AI text-to-3D (Meshy, Tripo ฯลฯ) — ความถูกต้องทางกายวิภาคต่ำ
-
-### กฎทางเทคนิค
-
-1. import `@react-three/*` และ `three` **เฉพาะใน `src/pages/explore/**`** (route โหลดแบบ lazy อยู่แล้ว → ไม่เพิ่มขนาดหน้าอื่น)
-2. `<Canvas frameloop="demand" dpr={[1, 1.5]}>` · ใช้ `invalidate()` เมื่อมีการเปลี่ยน state
-3. Filament ที่ซ้ำกันใช้ **instancing** (`<Instances>` / `InstancedMesh`)
-4. JS ของหน้า 3D ≤ 300 KB gzip · โมเดล ≤ 3–5 MB ต่อ scene · ~50–100k triangles ต่อ scene
-5. ~60 fps บนมือถือระดับกลาง (ขั้นต่ำ 30 fps) — ทดสอบบนมือถือจริง
-6. มี loading progress (`useProgress`) และ fallback เมื่อไม่มี WebGL (รูปนิ่ง + ข้อความ)
-7. ใช้ได้ทั้งนิ้วและเมาส์ (หมุน / zoom / pan) · desktop: info panel ด้านขวา · มือถือ: bottom sheet
-8. ที่เก็บโมเดล: เริ่มจาก `public/models/*.glb` (static assets ของ Workers ฟรีไม่จำกัด, ไฟล์ละ ≤ 25 MB) — ย้ายไป R2 เมื่อจำเป็นเท่านั้น
-9. ข้อความบนหน้าเว็บเป็นภาษาอังกฤษ (ตามเว็บส่วนอื่น) · ชื่อทางกายวิภาคสะกดตาม Key Point Book
-10. ผ่าน `npm run lint`, `npx vitest run`, `npm run build` ก่อนส่งงาน
-
-## Tool ที่ต้องเตรียม (นอก repo)
-
-| Tool | ใช้ทำอะไร |
-|---|---|
-| **Blender 4.x** (ฟรี) | ตัด/ลด polygon โมเดลที่ดาวน์โหลด, สร้าง fascicle → fiber → myofibril เอง, export `.glb` |
-| **gltf-transform CLI** (`npx @gltf-transform/cli`) | บีบอัด: `optimize in.glb out.glb --compress meshopt --texture-compress webp` (หรือ KTX2) |
-| **gltf.report** (เว็บ) | ตรวจขนาด/จำนวน triangle/texture ก่อนนำเข้า |
-| **gltfjsx** (`npx gltfjsx model.glb -t -T`) | สร้าง React component (TypeScript) จากโมเดล |
-| **r3f-perf** / Chrome DevTools Performance | วัด fps / draw calls |
-| มือถือจริง 1 เครื่อง (Android ระดับกลาง) | ทดสอบ fps และการสัมผัส |
-
-**ขั้นตอนบังคับทุกโมเดล:** ดาวน์โหลด → **ลงตารางเครดิตทันที** (ชื่อ, ผู้สร้าง, ลิงก์, license) → Blender ตัด/ลด polygon → export `.glb` →
-gltf-transform บีบอัด → ตรวจที่ gltf.report → gltfjsx → วางใน `public/models/` → เพิ่มใน `/credits`
-
-### แหล่งโมเดล (เรียงตามลำดับที่แนะนำ)
-
-| แหล่ง | ใช้กับ | License |
-|---|---|---|
-| **Z-Anatomy** (z-anatomy.com / GitHub) ⭐ แหล่งหลัก | แขน + biceps brachii, หัวใจ | CC BY-SA 4.0 |
-| BodyParts3D (DBCLS) | อวัยวะแยกชิ้น | CC BY-SA 2.1 JP |
-| Sketchfab (กรอง *Downloadable* + ตรวจ license ทีละโมเดล) | fascicle / muscle fiber / หัวใจ | แตกต่างกัน |
-| NIH 3D (3d.nih.gov) | อวัยวะ / โมเลกุล | ส่วนใหญ่ PD / CC |
-| RCSB PDB | โปรตีน actin / myosin จริง (Future) | CC0 |
-
-- **BY** = ต้องให้เครดิต · **SA** = งานดัดแปลงต้องใช้ license เดียวกัน · **NC** = ห้ามเชิงพาณิชย์ (งานมหาวิทยาลัยใช้ได้)
-- **Fascicle → Muscle fiber → Myofibril:** สร้างเองใน Blender (ทรงกระบอกซ้อน + texture ลาย striation)
-- **Sarcomere:** **สร้างด้วยโค้ดใน R3F ทั้งหมด** (ไม่ใช้ไฟล์โมเดล) เพื่อให้ slider ควบคุมได้ตรงตาม sliding filament theory
-
----
-
-## เนื้อหาที่มีอยู่แล้วในเว็บ (Lessons — 4 หัวข้อใหญ่, 9 บท)
-
-| หัวข้อใหญ่ | บท (slug → `/lessons/<slug>`) | หัวข้อในบท |
-|---|---|---|
-| **Muscle tissue basics** | `overview-functions-properties` | Overview · Functions (movement, posture, body openings, heat, blood glucose) · Properties (excitability, conductivity, contractility, extensibility, elasticity) |
-| | `cardiac-and-smooth-muscle` | Cardiac muscle (microscopic features, **intercalated discs**) · Smooth muscle (single-unit, multiunit, microscopic structure) · **Summary: 3 types of muscle tissue** |
-| **Structure of skeletal muscle** | `skeletal-muscle-tissue` | Gross anatomy · **Connective tissue (epimysium, perimysium, endomysium)** · Muscle fiber: **sarcolemma, T-tubules, SR, terminal cisternae, triad, myofibrils** |
-| | `sarcomere-and-myofilaments` | **Structure of the sarcomere** · **Thick filaments (myosin)** · **Thin filaments (actin, tropomyosin, troponin)** · **Structural proteins (titin, nebulin …)** |
-| | `types-of-skeletal-muscle-fibers` | Slow oxidative · Fast oxidative–glycolytic · Fast glycolytic |
-| | `injury-and-regeneration` | Muscle fiber injury and regeneration (satellite cells) |
-| **Nerve to contraction** | `motor-unit-and-nmj` | **Motor unit** · **Neuromuscular junction** |
-| | `contraction-and-relaxation` | Excitation · Excitation–contraction coupling · Contraction · Relaxation · Sequence of events · **Sliding filament mechanism** · Key concepts |
-| **Clinical correlation** | `disorders-of-skeletal-muscle` | Duchenne muscular dystrophy · Myasthenia gravis |
-
-**ตัวหนา** = เนื้อหาที่หน้า 3D ต้องแสดงหรือลิงก์ไป · ข้อความใน info panel ให้ดึง/สรุปจาก `lessons.ts` (ห้ามแต่งเนื้อหาใหม่ที่ขัดกับบทเรียน)
-
-### ข้อมูลจากการสอนจริง (เหตุผลที่ต้องทำ 3D ให้ดี)
-
-- ข้อที่นักศึกษาผิดมากใน Pretest: ชนิดกล้ามเนื้อ, **perimysium**, **องค์ประกอบของ thin filament**, **A-band**
-- หลังเรียนยังผิดราว 30% ว่า "myosin เป็นส่วนของ thin filament" → **ต้องแยกสี actin / myosin ให้ชัดมาก**
-- กิจกรรมที่นักศึกษาให้คะแนนสูงสุดคือ **movable sarcomere model** (โมเดลอะคริลิกเลื่อน Z-disc ได้) → หน้า Sarcomere คือหัวใจของงาน
-- ลำดับการสอนในห้อง: ชนิดกล้ามเนื้อ → การจัดเรียงโครงสร้าง → muscle fiber → sarcomere → วิดีโอการหดตัว → Posttest
-
----
-
-## เนื้อหาของหน้า 3D (สิ่งที่ต้องสร้าง)
-
-### หน้า 1 — `/explore` 3D Explore (zoom chain แนว BioDigital)
-
-**Topic picker:**
-
-| Topic | สถานะ | เนื้อหา |
-|---|---|---|
-| **Skeletal muscle** | Must — เปิดใช้ | zoom chain 5 ระดับด้านล่าง |
-| Cardiac muscle | Should — "Coming soon" ถ้ายังไม่เสร็จ | หัวใจ → cardiac cells แตกแขนง, nucleus 1 อันอยู่กลาง, **intercalated disc = desmosome + gap junction** |
-| Smooth muscle | Future — แสดงเป็น "Future" | กระเพาะ/หลอดเลือด → spindle cell, nucleus กลาง, non-striated |
-
-**Zoom chain ของ Skeletal (breadcrumb กดย้อนกลับได้ทุกระดับ, เปลี่ยนระดับ = บินกล้อง + fade):**
-
-| ระดับ | Scene | Hotspot ที่ต้องมี (คลิก → ชื่อ + หน้าที่ + ลิงก์บทเรียน) | ลิงก์บทเรียน |
+| ชนิด | ระดับ (id) | ไฟล์ | จุดหมายเลข |
 |---|---|---|---|
-| 1. Arm · Biceps brachii | แขน + กล้ามเนื้อ biceps brachii (Z-Anatomy) | Skeletal muscle (ทั้งมัด), **Epimysium**, Tendon → bone, voluntary control | `skeletal-muscle-tissue` |
-| 2. Fascicle | ภาพตัดขวางกล้ามเนื้อเห็นมัด fascicle | **Fascicle**, **Perimysium**, blood vessels & nerves | `skeletal-muscle-tissue` |
-| 3. Muscle fiber | เซลล์ทรงกระบอกยาว 1 เซลล์ (ตัดให้เห็นด้านใน) | **Endomysium**, **Sarcolemma**, **multiple peripheral nuclei**, **T-tubule**, **Sarcoplasmic reticulum**, **Terminal cisternae**, **Triad**, Mitochondria, Myofibrils · (Should) Satellite cell | `skeletal-muscle-tissue`, `injury-and-regeneration` |
-| 3b. (Should) Neuromuscular junction | hotspot บน fiber | Motor neuron, Axon terminal (vesicles of **acetylcholine**), Synaptic cleft, ACh receptors, **Motor unit** | `motor-unit-and-nmj` |
-| 4. Myofibril | เส้น myofibril เห็นลาย striation ซ้ำ ๆ | **A-band (dark)**, **I-band (light)**, **Z-disc**, SR หุ้มรอบ · ปุ่ม "Open interactive sarcomere →" | `sarcomere-and-myofilaments` |
-| 5. Sarcomere | ลิงก์ไป `/explore/sarcomere` | – | – |
+| **Skeletal** | Whole muscle (`muscle`) | `arm.glb` (Z-Anatomy) | 3 |
+| | Fascicle (`fascicle`) | `fascicle.glb` | 5 |
+| | Muscle fiber (`fiber`) | `fiber.glb` | 10 |
+| | Myofibril (`myofibril`) | `myofibril.glb` | 5 |
+| | Sarcomere (`sarcomere`) | `sarcomere.glb` | 8 |
+| | Myofilaments (`filaments`) | `filaments.glb` + Molecular view (PDB) | 4 |
+| **Cardiac** | Heart wall (`heartwall`) | `heart.glb` (Z-Anatomy) | 4 |
+| | Cardiac tissue (`cardiactissue`) | `cardiac.glb` | 5 |
+| | Cardiomyocyte (`cardiomyocyte`) | `cardiomyocyte.glb` | 5 |
+| | Intercalated disc (`discs`) | `discs.glb` + Molecular view (PDB) | 5 |
+| | Myofibril (`cardiacmyofibril`) | `myofibril.glb` (ใช้ร่วม) | 5 |
+| | Sarcomere / Myofilaments | ใช้ระดับเดียวกับ Skeletal | 8 / 4 |
+| **Smooth** | Gut wall (`gutwall`) | `gutwall.glb` | 4 |
+| | Smooth tissue (`smoothtissue`) | `smoothtissue.glb` | 5 |
+| | Smooth cell (`smoothcell`) | `smoothcell.glb` | 5 |
+| | Dense bodies (`densebodies`) | `densebodies.glb` | 5 |
+| | Myofilaments (`smoothfilaments`) | `smoothfilaments.glb` + Molecular view (PDB) | 4 |
 
-**ขนาด (แสดงเป็นข้อมูลประกอบใน info panel):** thin filament 5–6 nm · thick filament 10–12 nm · myofibril 1–2 µm · muscle fiber ~100 µm (ตาม Key Point Book)
+รวม 18 ระดับ (Cardiac ใช้ Sarcomere/Myofilaments ร่วมกับ Skeletal) · จุดหมายเลข 94 จุด · ชิ้นส่วนกดได้ใน "All parts" ~80 ชนิด
+Molecular view: PDB 6KN7/6KN8, 5H53 (myofilaments) · 2ZW3, 5J5J (intercalated disc) · 5JLF, 1BR2, 1EXR (smooth) — ข้อมูลใน `public/models/*.json`
 
-### หน้า 2 — `/explore/sarcomere` Interactive Sarcomere (หัวใจของโปรเจกต์ — สร้างด้วยโค้ด)
+### `/explore/sarcomere` — Interactive Sarcomere (สร้างด้วยโค้ด ไม่ใช้ไฟล์โมเดล)
 
-**ชิ้นส่วนที่ต้องมี (คลิกได้ทุกชิ้น → ป้ายชื่อ + info panel):**
+- Slider Relaxed ↔ Contracted + ปุ่ม Animate · แถบ A band / I band / H zone บนโมเดลและแผนภาพ 2D · การ์ดผล (sarcomere, I band, H zone, A band, filament length)
+- ชิ้นส่วนกดได้ 8 ชนิด: actin, tropomyosin, troponin (TnC/TnI/TnT), myosin, Z disc, M line, titin, nebulin
+- กล่องเตือน "Myosin is NOT part of the thin filament" · ขั้นตอนการหดตัว 10 ขั้น · วิดีโอ Motion VDO (youtube-nocookie `ousflrOzQHc`)
+- ปุ่ม **"Back to 3D Explore"** กลับไประดับที่กด "Contract it" มา (เช่น Cardiac → Sarcomere); เปิดตรง ๆ → Skeletal → Sarcomere
+- ค่าตัวเลข (ใน `sarcomere/model.ts`, มี unit test): sarcomere 2.50 → 2.00 µm, thick filament 1.6 µm, thin filament 1.0 µm — A band และความยาว filament คงที่
 
-| ชิ้นส่วน | สีแนะนำ (ต้องต่างกันชัด + มีรูปแบบ/ป้ายช่วยสำหรับคนตาบอดสี) | หน้าที่ (สรุป) |
+### เชื่อมกับ Lessons
+
+- Info panel มีลิงก์ "Read: …" ไปบทเรียน `/lessons/<slug>` (เนื้อหาใน `src/content/lessons.ts`)
+- บท `cardiac-and-smooth-muscle` มีกล่อง "More detail" อธิบายระดับของ Cardiac / Smooth และตารางลำดับชั้นของกล้ามเนื้อ 3 ชนิด ให้ตรงกับ 3D
+
+## แหล่งเนื้อหา (กฎ R6) — สำคัญที่สุด
+
+| แหล่ง | ใช้ทำอะไร | แสดงบนเว็บอย่างไร |
 |---|---|---|
-| **Z-disc** ×2 | เทาเข้ม | ขอบ sarcomere, thin filament ยึดที่นี่ |
-| **M-line** | ม่วง | กึ่งกลาง ยึด thick filament |
-| **Thin filament — Actin** | ฟ้า | F-actin เกลียวคู่ มี binding site ของ myosin |
-| **Tropomyosin** | เหลือง (เส้นพันรอบ actin) | ปิด binding site ขณะพัก |
-| **Troponin complex (TnC, TnI, TnT)** | เขียว (ก้อนเล็กเป็นระยะ) | TnC จับ Ca²⁺ → ดึง tropomyosin เปิด binding site |
-| **Thick filament — Myosin** | แดง/ส้ม (มี head ยื่นออก) | head จับ actin + ATP, tail รวมเป็นแกน |
-| **Titin** | เส้นบางสีชมพู Z-disc → M-line | ความยืดหยุ่น, คืนรูป |
-| **Nebulin** | เส้นบาง ตาม thin filament | กำหนดความยาว thin filament |
+| **Lecture sheet "Muscular tissues I"** (1/2568, ผศ.ดร.กีรกานต์) = เนื้อหาใน `lessons.ts` | ข้อความหลักทุกจุด | `points` — แสดงปกติ |
+| **เอกสารทีม "กล้ามเนื้อถูกจำแนกออกเป็น 3 ประเภทหลัก"** (18 ต.ค. 2026) | ลำดับระดับของกล้ามเนื้อ 3 ชนิด + รายละเอียดที่ lecture sheet ไม่มี (epicardium, myocardium, desmin, ชั้นตามยาว/ตามขวาง, ไม่มี troponin ใน smooth ฯลฯ) | `pending` — มีป้าย **"Awaiting lecturer review"** จนกว่าอาจารย์ยืนยัน |
+| กายวิภาคมาตรฐาน (กระดูก/กล้ามเนื้อแขน, ห้องหัวใจ, หลอดเลือด) | ชิ้นส่วนประกอบในโมเดล Z-Anatomy | ผู้ใช้อนุมัติให้แสดงโดยไม่ต้องมีป้าย (19 ต.ค. 2026) |
 
-**แถบ label บน sarcomere (เปลี่ยนตาม slider แบบ real-time):** **A-band** · **I-band** · **H-zone** · **Sarcomere length (µm)**
+**ห้ามแต่งข้อความใหม่ที่ไม่มีในเอกสาร** ถ้าจำเป็นต้องใช้ความรู้จากตำรา ให้ใส่เป็น `pending` หรือแจ้งผู้ใช้ก่อน
 
-**Slider หด ↔ คลาย (sliding filament theory) — ต้องถูกต้องตามนี้:**
+## แผนที่ไฟล์
 
-| ส่วน | เมื่อหดตัว (contraction) |
+| ไฟล์ | หน้าที่ |
 |---|---|
-| Sarcomere (Z → Z) | **สั้นลง** (Z-disc เลื่อนเข้าหากัน) |
-| I-band | **สั้นลง** |
-| H-zone | **แคบลงจนหายไป** |
-| A-band | **ยาวเท่าเดิม** (= ความยาว thick filament) |
-| Thin / Thick filament | **ยาวเท่าเดิม** — แค่เลื่อนซ้อนกันมากขึ้น |
+| `src/content/exploreZoom.ts` | ระดับทั้งหมด (`LEVELS`), ชนิด (`TOPICS`), จุดหมายเลข (`Hotspot`: `points`, `pending`, `anchor`, `meshes`, `zoomTo`, `link`, `lesson`), เครดิตแต่ละระดับ |
+| `src/content/exploreParts.ts` | ชื่อ + คำอธิบายชิ้นส่วนที่กดได้ (`PART_INFO`, key = ชื่อ node ใน .glb) และข้อความเฉพาะระดับ (`LEVEL_PART_INFO`, key = `"<level>:<part>"`) |
+| `src/content/exploreAnims.ts` | คำบรรยาย animation ทุกระดับ (`ref` = หมวดใน lecture sheet, `pending` = มาจากเอกสารทีม) |
+| `src/content/explore.ts` | ชิ้นส่วน/แถบของหน้า Sarcomere, ขั้นตอนการหดตัว, วิดีโอ |
+| `src/pages/explore/Explore3D.tsx` | หน้า `/explore` (breadcrumb, รายการ, Info panel, fallback ไม่มี WebGL) |
+| `src/pages/explore/Sarcomere.tsx` | หน้า `/explore/sarcomere` |
+| `src/pages/explore/zoom/ZoomScene.tsx` | Canvas ของ 3D Explore: โหลด .glb (meshopt), ไฮไลต์, marker, กล้อง |
+| `src/pages/explore/zoom/{filaments,discs,smoothfilaments,mol}.tsx` | ฉากที่สร้างด้วยโค้ดและ Molecular view (อ่าน `public/models/*.json`) |
+| `src/pages/explore/zoom/anims.tsx`, `anim/` | animation และ timeline |
+| `src/pages/explore/sarcomere/` | ฉาก sarcomere, `model.ts` (`bandsAt`), แผนภาพ 2D |
+| `src/pages/explore/shared/` | `webgl.ts` (ตรวจ WebGL 2, `GL_OPTIONS`), `WebGLHelp.tsx` (คำอธิบายเมื่อใช้ 3D ไม่ได้ / context lost), `RedrawOnVisible.tsx`, `backLink.ts`, `InfoPanel.tsx` |
+| `public/models/` | โมเดล 15 ไฟล์ `.glb` + ข้อมูลโปรตีน 3 ไฟล์ `.json` รวม 4.6 MB (ไฟล์ละ ≤ 0.8 MB) |
+| `src/pages/Credits.tsx` | หน้า `/credits` — เครดิตโมเดลทุกตัว |
+| `public/_headers` | Security headers ของเว็บจริง (CSP) |
 
-ค่าตั้งต้นตามตำรามาตรฐาน (ให้อาจารย์ยืนยันก่อนใช้จริง): thick filament ≈ 1.6 µm (คงที่) · thin filament ≈ 1.0 µm ต่อข้างจาก Z-disc (คงที่) ·
-sarcomere พัก ≈ 2.5 µm → หดสุด ≈ 2.0 µm (H-zone = 0) · เขียนเป็น pure function `bandsAt(t)` แล้วมี **unit test** ยืนยันว่า A-band และความยาว filament คงที่ทุกค่า t
+## Stack (ติดตั้งแล้ว — ห้ามเปลี่ยน major version โดยไม่ถาม)
 
-**ส่วนเสริมในหน้า:**
-- กล่องเตือนเด่น ๆ: **"Myosin is NOT part of the thin filament"**
-- ปุ่ม/แท็บ "Steps of contraction" สรุปลำดับ: action potential → T-tubule → SR ปล่อย Ca²⁺ → Ca²⁺ จับ TnC → tropomyosin เลื่อน → myosin head จับ actin (cross-bridge) → power stroke → ATP ทำให้หลุด → Ca²⁺ ถูกปั๊มกลับ SR → relaxation (ลิงก์ `contraction-and-relaxation`)
-- ฝังวิดีโอ Motion VDO: https://youtu.be/ousflrOzQHc ผ่าน `youtube-nocookie.com`, `loading="lazy"`, มี `title`
-- (Future) แอนิเมชัน Ca²⁺ ออกจาก SR ใน 3D, โมเดลโปรตีนจริงจาก PDB
+React 19 + TypeScript + Vite 8 + Tailwind v4 · `three` ^0.186 · `@react-three/fiber` ^9.8 · `@react-three/drei` ^10.7 ·
+`r3f-perf` ^7.2 (devDependency — เปิดด้วย `?perf` ตอน dev เท่านั้น ไม่เข้า production bundle)
 
----
+## กฎทางเทคนิคและบทเรียนที่เจอมาแล้ว
 
-## Requirement IDs (จาก `palnforwork/02_REQUIREMENTS.md`)
+1. import `three` / `@react-three/*` **เฉพาะใน `src/pages/explore/**`** (route lazy → หน้าอื่นไม่ต้องโหลด 3D)
+2. `frameloop="demand"` + `invalidate()` เมื่อมีการเปลี่ยนแปลง · มี `<RedrawOnVisible />` ใน Canvas ทุกอัน
+   (เบราว์เซอร์หยุดวาดตอนแท็บถูกซ่อน → ถ้าไม่มี จะเห็นกรอบว่างจนกว่าจะแตะ)
+3. three.js r163+ ใช้ได้เฉพาะ **WebGL 2** — ใช้ `hasWebGL()` / `webglSupport()` จาก `shared/webgl.ts` เท่านั้น
+   (probe ต้องคืน context ทันที — iPad Safari มีช่อง WebGL จำกัด) · ใช้ `GL_OPTIONS` (ปิด antialias บนจอ ≥ 2×) ·
+   รองรับ `webglcontextlost` ด้วย `<ContextLost />` — **ทดสอบแล้วบน iPad Pro รุ่นที่ 1 แสดงผลได้**
+4. **CSP ใน `public/_headers` มีผลเฉพาะเว็บจริงและ `npm run preview` — Vite dev server ไม่ใช้**
+   โมเดลบีบอัด meshopt ต้องมี `'wasm-unsafe-eval'` ใน `script-src` และ `blob: data:` ใน `connect-src` (เคยพังบนเว็บจริงเพราะขาด)
+   ถ้าเพิ่มอะไรที่เบราว์เซอร์อาจบล็อก (worker, wasm, fetch ภายนอก, iframe) ต้องทดสอบด้วย `npm run build && npm run preview` ก่อน
+5. Budget: JS หน้า 3D ≤ 300 KB gzip (ตอนนี้ three/drei ~242 KB + ZoomScene ~43 KB + Explore3D ~19 KB ≈ 305 KB — เกินเล็กน้อย) ·
+   โมเดล ≤ 3–5 MB ต่อ scene · ≥ 30 fps บนมือถือจริง
+6. ทุกระดับต้องใช้ได้ด้วยนิ้ว/เมาส์/คีย์บอร์ด, light/dark, มือถือ/แท็บเล็ต/desktop และมี fallback 2D เมื่อไม่มี WebGL
 
-Must: 3D-1 topic picker · 3D-2 zoom chain 5 ระดับ · 3D-3 บินกล้อง + fade · 3D-4 หมุน/zoom/pan · 3D-5 sarcomere สร้างด้วยโค้ด ·
-3D-6 slider หด/คลาย · 3D-7 คลิกชิ้นส่วน → info panel · 3D-8 แถบ A/I/H · 3D-9 วิดีโอ · 3D-14 credits
-Should: 3D-10 cardiac · Future: 3D-11 smooth, 3D-12 Ca²⁺ animation, 3D-13 โมเดลทั้งร่าง
+## วิธีทำงานที่พบบ่อย
 
-## สิ่งที่ต้องส่งในรอบแรก (ก่อนเขียนโค้ดจริง)
+- **แก้ข้อความ:** แก้ใน `src/content/explore*.ts` เท่านั้น (ไม่ต้องแตะโค้ดฉาก) — ข้อความจากเอกสารทีมใส่ใน `pending`
+- **เพิ่มจุดหมายเลข:** เพิ่ม `Hotspot` ในระดับนั้น · `anchor` = ชื่อ node ใน .glb (ทีมใช้ empty ชื่อ `hs_<id>`) · `meshes` = mesh ที่กดแล้วเลือกจุดนี้ · ใส่ `lesson`
+- **เพิ่ม/แก้ชิ้นส่วนที่กดได้:** key ใน `PART_INFO` ต้องตรงชื่อ node (ตัดเลข Blender และ `.l` / `.r` ออก) · ถ้าความหมายต่างตามระดับ ใช้ `LEVEL_PART_INFO`
+- **เปลี่ยน/เพิ่มโมเดล:** ดาวน์โหลด → **ลงเครดิตทันที** → Blender (ตัด/ลด polygon ~50–100k tris, ตั้งชื่อ node, ใส่ empty `hs_*`) → export `.glb` →
+  `npx @gltf-transform/cli optimize in.glb out.glb --compress meshopt --texture-compress webp` → ตรวจที่ gltf.report → `public/models/` →
+  อัปเดต `credit` ของระดับ + `src/pages/Credits.tsx` · ห้ามใช้โมเดลจาก AI text-to-3D
+- **เพิ่มระดับใหม่:** เพิ่ม `LevelId`, ระดับใน `LEVELS`, ลำดับใน `TOPICS[].chain`, animation ใน `exploreAnims.ts` (ถ้ามี) และกล่อง "More detail" ใน Lessons ถ้าเป็นเนื้อหาใหม่
 
-1. **แผนงาน** แบ่งเป็นขั้นเล็ก ๆ ที่ทดสอบได้ (แนะนำ: Sarcomere ก่อน → zoom chain → cardiac)
-2. **รายการไฟล์** ที่จะสร้าง/แก้ (เช่น `src/pages/explore/sarcomere/model.ts` สำหรับ `bandsAt`, `Scene.tsx`, `InfoPanel.tsx`, `src/content/explore.ts` สำหรับข้อความ hotspot)
-3. **ตารางโมเดลที่จะใช้** (ชื่อ, แหล่ง, ลิงก์, license, ขนาดหลังบีบอัด) — ยังไม่ต้องดาวน์โหลดจนกว่าจะอนุมัติ
-4. **คำถามที่ต้องให้อาจารย์ยืนยัน** (ค่าความยาว sarcomere, สีของโปรตีน, รายชื่อ hotspot)
+### License ที่ใช้อยู่
 
-## เกณฑ์ตรวจรับ
+Z-Anatomy (CC BY-SA 4.0, based on BodyParts3D © DBCLS CC BY-SA 2.1 JP) — แขน, หัวใจ ·
+Sketchfab CC BY 4.0 — "Myocyte model" (rgmz2015), "Skeletal Muscle Fibre Anatomy" / "Cardiac Muscle Cell Anatomy" / "Smooth Muscle Cell" (_Bonehead14) ·
+Sketchfab **CC BY-NC 4.0** — "Sarcomere Model" (rgmz2015) ห้ามใช้เชิงพาณิชย์ · RCSB PDB (CC0) — Molecular view ·
+ส่วนที่ทีมสร้างเอง: gut wall, intercalated disc, dense bodies, smooth myofilaments และทุกอย่างที่เติมลงในโมเดลข้างต้น
 
-- [ ] ทุกข้อ Must ด้านบนทำงาน · slider ถูกต้องตามตาราง sliding filament (มี unit test)
-- [ ] เนื้อหาทุกข้อตรงกับ `lessons.ts` / Key Point Book และอาจารย์ตรวจแล้ว (กฎ R6)
-- [ ] ทุกโมเดลอยู่ในหน้า `/credits` พร้อม license (กฎ R7)
-- [ ] ≥ 30 fps บนมือถือจริง · JS หน้า 3D ≤ 300 KB gzip · โมเดล ≤ 5 MB/scene
-- [ ] ใช้ได้ทั้ง light/dark, มือถือ/แท็บเล็ต/desktop, คีย์บอร์ด (hotspot กด Tab ได้), มี fallback เมื่อไม่มี WebGL
-- [ ] `npm run lint` · `npx vitest run` · `npm run build` ผ่าน · ไม่ commit/push/deploy จนกว่าผู้ใช้สั่ง
+## ตรวจก่อนส่งงาน
+
+- [ ] `npm run lint` · `npx vitest run` (มี test ของ `bandsAt`, timeline, back link, webgl help) · `npm run build`
+- [ ] `npm run preview` แล้วเปิดหน้า 3D — ยืนยันว่า CSP ไม่บล็อก (console ไม่มี CSP error, โมเดลขึ้น)
+- [ ] ไล่ทุกระดับของทั้ง 3 ชนิด + Molecular view 3 ฉาก + หน้า Sarcomere: โมเดลขึ้น, กดทุกจุดหมายเลขและทุกชิ้นใน "All parts" แล้วข้อความใน Info panel ตรงกับไฟล์ content
+- [ ] ทดสอบบนมือถือ/แท็บเล็ตจริงอย่างน้อย 1 เครื่อง (เคยทดสอบ iPad Pro รุ่นที่ 1 ผ่าน)
+- [ ] เครดิตครบทั้งใต้โมเดลและหน้า `/credits`
+- [ ] ไม่ commit / push / deploy จนกว่าผู้ใช้สั่ง
+
+## งานที่ค้าง / ต้องให้อาจารย์ยืนยัน
+
+1. ข้อความที่มีป้าย "Awaiting lecturer review" (จากเอกสารทีม) — ถ้าอาจารย์ยืนยัน ย้ายจาก `pending` ไป `points`
+2. ข้อความที่อยู่นอกเอกสาร แต่ถูกต้องตามตำรา:
+   - ความยาว sarcomere 2.5 → 2.0 µm, thick filament (A band) 1.6 µm, thin filament 1.0 µm (เครดิตระดับ Myofibril เขียนว่า "lecture proportions" แต่ lecture sheet ไม่มีตัวเลขนี้)
+   - "thin filament 6 เส้นล้อมรอบ thick filament 1 เส้น"
+   - หัว myosin ของกล้ามเนื้อเรียบอยู่ตลอดความยาว thick filament (side-polar)
+   - endocardium และ mucosa (แสดงประกอบเท่านั้น)
+3. JS หน้า 3D เกิน budget 300 KB เล็กน้อย (~305 KB) — ถ้าจะลด ให้ดูการแยก chunk ของ drei / troika
+4. บนมือถือ แถบเลือกชนิดกล้ามเนื้อและ breadcrumb ยาวเกินจอ (ต้องเลื่อนในแถบ) — ใช้งานได้ แต่ปรับให้สวยขึ้นได้
+5. ไฟล์ต้นฉบับ Blender / `build_v3.py` ยังไม่อยู่ใน repo — ถ้าต้องการให้คนอื่นแก้โมเดลต่อได้ ควรเก็บไว้ที่ใดที่หนึ่ง (เช่น repo test3D หรือ Drive ของทีม)
+
+## สิ่งที่ต้องส่งในรอบแรก (ก่อนแก้จริง)
+
+1. สรุปว่าจะแก้หรือเพิ่มอะไร พร้อมเหตุผลและแหล่งเนื้อหาที่ใช้
+2. รายการไฟล์ที่จะสร้าง/แก้
+3. ถ้ามีโมเดลใหม่: ตารางชื่อ, แหล่ง, ลิงก์, license, ขนาดหลังบีบอัด (ยังไม่ต้องดาวน์โหลดจนกว่าจะอนุมัติ)
+4. คำถามที่ต้องให้อาจารย์หรือผู้ใช้ตัดสินใจ
