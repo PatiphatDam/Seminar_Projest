@@ -354,10 +354,19 @@
 .mg-stat strong { font-size: 20px; color: var(--sea-600); }
 .mg-stat__bump { animation: mg-bump 0.35s ease-out; }
 @keyframes mg-bump { 40% { transform: scale(1.35); color: #f59e0b; } }
+/* Phones: one compact row, so the play area fits on screen even under a host's bottom nav. */
 @media (max-width: 560px) {
-  .mg-game-bar__title { order: -1; flex-basis: 100%; padding: 4px 8px 0; }
-  .mg-game-bar__stats { flex: 1; justify-content: flex-end; }
+  .mg-page--game { padding-top: 10px; }
+  .mg-game-bar { flex-wrap: nowrap; gap: 4px; padding: 4px; }
+  .mg-game-bar__back { padding-inline: 10px; }
+  .mg-game-bar__back span, .mg-game-bar .mg-lo-tag { display: none; }
+  .mg-game-bar__title h1 { font-size: 17px; }
+  .mg-stat { min-width: 42px; }
+  .mg-stat span { font-size: 9.5px; }
+  .mg-stat strong { font-size: 17px; }
 }
+/* Narrow phones: the best score is on the hub card and the result screen, so it gives way to the title. */
+@media (max-width: 400px) { .mg-stat--best { display: none; } }
 
 .mg-mascot-bar { display: flex; align-items: center; gap: 10px; margin: 10px 0 12px; min-height: 60px; }
 .mg-mascot-bar__mascot { width: 58px; flex: none; }
@@ -370,6 +379,12 @@
   background: var(--surface); border-left: 1px solid var(--card-edge); border-bottom: 1px solid var(--card-edge); transform: rotate(45deg);
 }
 @keyframes mg-bubble { from { transform: scale(0.85); opacity: 0; } }
+@media (max-width: 560px) {
+  .mg-mascot-bar { gap: 8px; margin: 6px 0 8px; min-height: 0; }
+  .mg-mascot-bar__mascot { width: 38px; }
+  .mg-mascot-bar__bubble { padding: 6px 10px; border-radius: 12px; font-size: 13px; line-height: 1.35; }
+  .mg-mascot-bar__bubble::before { left: -6px; width: 10px; height: 10px; margin-top: -5px; }
+}
 
 .mg-game-stage { position: relative; -webkit-user-select: none; user-select: none; }
 
@@ -456,6 +471,12 @@
 .mg-prompt { padding: 12px 16px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--card-edge); border-radius: var(--radius); }
 .mg-prompt__label { font-size: 14px; color: var(--sea-700); font-weight: 600; }
 .mg-prompt__text { font-size: clamp(17px, 2.6vw, 21px); font-weight: 500; line-height: 1.4; animation: mg-bubble 0.3s ease-out; }
+@media (max-width: 560px) {
+  .mg-hud { gap: 6px; padding: 6px 10px; margin-bottom: 8px; }
+  .mg-prompt { padding: 8px 12px; margin-bottom: 8px; }
+  .mg-prompt__label { font-size: 12.5px; }
+  .mg-prompt__text { font-size: 16px; line-height: 1.35; }
+}
 
 .mg-sky {
   position: relative; overflow: hidden; border-radius: 22px; height: min(62vh, 540px); min-height: 440px;
@@ -534,6 +555,8 @@
 /* Sized by height so the castle and the town strip share one scale (110/290 of the castle's height). */
 /* The sky is the size container, so the castle can be capped by both its height and its width (never cropped on phones). */
 .mg-sky { container-type: size; }
+/* Phones: clue + whole sky on one screen; 450px covers the header, HUD, a three-line clue and a host's bottom nav. */
+@media (max-width: 560px) { .mg-sky { height: clamp(320px, calc(100svh - 450px), 540px); min-height: 0; } }
 .mg-root .mg-backdrop {
   --bd-h: min(60cqh, 70cqw);
   position: absolute; left: 50%; bottom: 50px; height: var(--bd-h); width: auto; aspect-ratio: 400 / 290; max-width: none;
@@ -898,6 +921,31 @@
 }
 .mg-zoom__view { animation: mg-zoom-in 0.55s ease-out; }
 .mg-zoom__view svg { width: 100%; }
+/* Phones: the lens and the tray share one screen, so drag never needs a scroll. */
+@media (max-width: 560px) {
+  .mg-stage__head { gap: 10px; margin-bottom: 6px; }
+  .mg-stage__icon { width: 38px; height: 38px; font-size: 21px; border-radius: 10px; }
+  .mg-stage__head h2 { font-size: 18px; }
+  .mg-stage .mg-timer { margin-bottom: 8px; }
+  .mg-zoom__trail { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 4px; margin-bottom: 8px; }
+  .mg-zoom__trail li { min-width: 0; flex: none; padding: 3px 8px; }
+  .mg-zoom__stage { padding: 8px 14px 6px; border-width: 6px; }
+  .mg-zoom__view svg { max-height: 150px; }
+  /* The tray sticks to the bottom of the screen (above a host's tab bar, see --mg-bottom-inset) as one
+     swipeable row, so the pieces stay in reach while the student scrolls to any slot. */
+  .mg-tray {
+    position: sticky; bottom: calc(var(--mg-bottom-inset, 0px) + 6px); z-index: 5;
+    margin-top: 10px; padding: 6px 8px; box-shadow: 0 -4px 18px rgb(0 0 0 / 0.28);
+  }
+  .mg-tray__title { margin-bottom: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mg-tray .mg-tray__pieces {
+    flex-wrap: nowrap; justify-content: flex-start; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px;
+  }
+  .mg-tray .mg-piece { touch-action: pan-x; }
+  .mg-step-slots .mg-row { min-height: 54px; }
+  .mg-step-slots__n { width: 28px; height: 28px; }
+  .mg-tray .mg-jig, .mg-drag-ghost .mg-jig { zoom: 0.74; }
+}
 .mg-zoom__view--out { animation: mg-zoom-out 0.65s ease-in forwards; }
 .mg-zoom__caption { text-align: center; font-weight: 700; color: var(--sea-800); margin-top: 4px; }
 @keyframes mg-zoom-in { from { transform: scale(0.25); opacity: 0; } }

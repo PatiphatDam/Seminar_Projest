@@ -24,5 +24,11 @@ export default function MuscleGamesPage() {
     };
     await api.post("/me/game-runs", body);
   }, []);
-  return <MuscleGames onGameFinish={saveRun} />;
+  // On phones the games keep their sticky piece tray above the fixed bottom tab bar (StudentLayout BottomTabs).
+  return (
+    <MuscleGames
+      onGameFinish={saveRun}
+      className="[--mg-bottom-inset:calc(76px+env(safe-area-inset-bottom))] md:[--mg-bottom-inset:0px]"
+    />
+  );
 }

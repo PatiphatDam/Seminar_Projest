@@ -144,8 +144,8 @@ export default function GamePage({ game, Game }) {
   return (
     <main className="mg-page mg-page--game">
       <header className="mg-game-bar">
-        <Link to=".." className="mg-btn mg-btn--ghost">
-          ← Games
+        <Link to=".." className="mg-btn mg-btn--ghost mg-game-bar__back" aria-label="Back to games">
+          ← <span>Games</span>
         </Link>
         <div className="mg-game-bar__title">
           <span className="mg-lo-tag" title={game.loText}>
@@ -160,7 +160,7 @@ export default function GamePage({ game, Game }) {
               {score}
             </strong>
           </div>
-          <div className="mg-stat">
+          <div className="mg-stat mg-stat--best">
             <span>Best</span>
             <strong>{best[scoreKey] ?? '—'}</strong>
           </div>
