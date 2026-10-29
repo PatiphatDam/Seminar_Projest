@@ -9,7 +9,7 @@ import { useGamesConfig } from './config.js';
 
 const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': CardTableScene, diameter: MicroscopeScene };
 
-function GameCard({ g }) {
+function GameCard({ g, n }) {
   const { best, ach } = useScores();
   const [preview, setPreview] = useState(false);
   const Scene = SCENES[g.id];
@@ -48,7 +48,10 @@ function GameCard({ g }) {
           </span>
         </div>
         <div className="mg-game-card__titlerow">
-          <h2>{g.title}</h2>
+          <h2>
+            <span className="mg-game-card__num">Game {n}</span>
+            {g.title}
+          </h2>
           <Stars n={stars} size="sm" />
         </div>
         <p className="mg-game-card__goal">{g.goal}</p>
@@ -88,8 +91,8 @@ export default function GamesHub() {
       </header>
 
       <ul className="mg-games-grid">
-        {GAMES.map((g) => (
-          <GameCard key={g.id} g={g} />
+        {GAMES.map((g, i) => (
+          <GameCard key={g.id} g={g} n={i + 1} />
         ))}
       </ul>
     </main>

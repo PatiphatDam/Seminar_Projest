@@ -267,10 +267,12 @@
 @media (hover: hover) { .mg-preview-chip { opacity: 0; transition: opacity 0.2s; } .mg-game-card:hover .mg-preview-chip, .mg-preview-chip:focus-visible { opacity: 1; } }
 .mg-game-card__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 8px 0; flex: 1; }
 .mg-game-card__tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.mg-game-card__titlerow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mg-game-card__titlerow { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 /* Same as the main site's lesson card titles: 19/26 px on phones, 21/28 px from 768 px. */
 .mg-game-card__body h2 { font-size: 19px; line-height: 26px; }
 @media (min-width: 768px) { .mg-game-card__body h2 { font-size: 21px; line-height: 28px; } }
+/* "Game 1" sits on its own small line above the title, so long titles never wrap in two-column cards. */
+.mg-game-card__num { display: block; font-family: var(--font); font-size: 12px; line-height: 18px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--card-muted); }
 .mg-game-card__goal { color: var(--card-muted); line-height: 1.5; font-size: 14.5px; }
 .mg-game-card__best { font-size: 13px; color: var(--card-muted); font-weight: 700; margin-top: auto; padding: 12px 0 4px; border-top: 1px solid var(--card-hair); }
 

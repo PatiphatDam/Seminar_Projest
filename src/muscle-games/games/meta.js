@@ -2,7 +2,7 @@ export const GAMES = [
   {
     id: 'balloon-pop',
     title: 'Balloon Pop',
-    goal: 'Help the wizard zap the balloon that matches each muscle function or property before it reaches the castle.',
+    goal: 'Zap the balloon that matches each muscle function or property.',
     lo: 'OL1',
     loText: 'Explain the major functions and physiological properties of muscular tissue',
     minutes: '2–3 min',
@@ -20,7 +20,7 @@ export const GAMES = [
   {
     id: 'group-sort',
     title: 'Group Sort',
-    goal: 'Match each picture with its name or key feature, or race the conveyor belt sorting skeletal, cardiac and smooth muscle.',
+    goal: 'Sort skeletal, cardiac and smooth muscle by picture or on a conveyor belt.',
     lo: 'OL2',
     loText: 'Differentiate the gross and microscopic characteristics of skeletal, cardiac and smooth muscle',
     minutes: '2–3 min',
@@ -38,7 +38,7 @@ export const GAMES = [
   {
     id: 'diameter',
     title: 'Diameter',
-    goal: 'Journey into a muscle: zoom through every layer, build jigsaws and diagnose patients across 6 stages.',
+    goal: 'Zoom into a muscle layer by layer across 6 stages.',
     lo: 'OL3',
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
     minutes: '6–8 min',
