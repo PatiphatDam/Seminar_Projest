@@ -29,8 +29,9 @@ export default function MuscleGamesPage() {
   // The hub gets the same page header as the other student pages (breadcrumb, phone back button);
   // each game keeps its own bar with "← Games".
   const onHub = useMatch("/games") !== null;
+  // coast-sans: the same Nunito Sans text font as Lessons and 3D Explore.
   return (
-    <>
+    <div className="coast-sans">
       {onHub && (
         <StudentPageHeader
           title="Games"
@@ -45,6 +46,6 @@ export default function MuscleGamesPage() {
         hubTitle={!onHub}
         className="[--mg-bottom-inset:calc(76px+env(safe-area-inset-bottom))] md:[--mg-bottom-inset:0px]"
       />
-    </>
+    </div>
   );
 }
