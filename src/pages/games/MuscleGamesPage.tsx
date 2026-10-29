@@ -1,7 +1,9 @@
 import { useCallback } from "react";
+import { useMatch } from "react-router";
 import type { GameRunBody } from "@shared/contract";
 import { api } from "@/lib/api";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
+import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { MuscleGames, type MuscleGameRun } from "@/muscle-games";
 // Cover-title fonts, self-hosted: the CSP blocks Google Fonts. Text and heading fonts come from index.css.
 import "@fontsource/bungee/latin-400.css";
@@ -24,11 +26,25 @@ export default function MuscleGamesPage() {
     };
     await api.post("/me/game-runs", body);
   }, []);
-  // On phones the games keep their sticky piece tray above the fixed bottom tab bar (StudentLayout BottomTabs).
+  // The hub gets the same page header as the other student pages (breadcrumb, phone back button);
+  // each game keeps its own bar with "← Games".
+  const onHub = useMatch("/games") !== null;
   return (
-    <MuscleGames
-      onGameFinish={saveRun}
-      className="[--mg-bottom-inset:calc(76px+env(safe-area-inset-bottom))] md:[--mg-bottom-inset:0px]"
-    />
+    <>
+      {onHub && (
+        <StudentPageHeader
+          title="Games"
+          subtitle="Muscular Tissues I · 3 games — play in any order"
+          crumbs={[{ to: "/", label: "Home" }, { label: "Games" }]}
+          back="/"
+        />
+      )}
+      {/* On phones the games keep their sticky piece tray above the fixed bottom tab bar (StudentLayout BottomTabs). */}
+      <MuscleGames
+        onGameFinish={saveRun}
+        hubTitle={!onHub}
+        className="[--mg-bottom-inset:calc(76px+env(safe-area-inset-bottom))] md:[--mg-bottom-inset:0px]"
+      />
+    </>
   );
 }

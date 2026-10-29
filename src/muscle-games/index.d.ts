@@ -17,4 +17,9 @@ export interface MuscleGameRun {
   finishedAt: string;
 }
 
-export const MuscleGames: ComponentType<{ onGameFinish?: (run: MuscleGameRun) => void | Promise<unknown>; className?: string }>;
+export const MuscleGames: ComponentType<{
+  onGameFinish?: (run: MuscleGameRun) => void | Promise<unknown>;
+  /** false hides the hub's own "Games" heading when the host renders its own page header. */
+  hubTitle?: boolean;
+  className?: string;
+}>;

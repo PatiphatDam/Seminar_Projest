@@ -5,6 +5,7 @@ import { useScores } from './scores.jsx';
 import { BalloonScene, CardTableScene, MicroscopeScene } from './covers.jsx';
 import { Armin } from './fx/Fx.jsx';
 import { Stars } from './components/Hud.jsx';
+import { useGamesConfig } from './config.js';
 
 const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': CardTableScene, diameter: MicroscopeScene };
 
@@ -68,13 +69,18 @@ function GameCard({ g }) {
 }
 
 export default function GamesHub() {
+  const { hubTitle } = useGamesConfig();
   return (
     <main className="mg-page">
       <header className="mg-hub-hero">
         <Armin mood="happy" className="mg-hub-hero__mascot" />
         <div>
-          <p className="mg-eyebrow">Muscular Tissues I</p>
-          <h1>Games</h1>
+          {hubTitle && (
+            <>
+              <p className="mg-eyebrow">Muscular Tissues I</p>
+              <h1>Games</h1>
+            </>
+          )}
           <p className="mg-lede">
             Hi, I’m <strong>Armin</strong>, your muscle buddy! Pick a game, beat your best score, collect ⭐ and 🏅. Every
             game is open, so play in any order.

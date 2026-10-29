@@ -40,9 +40,10 @@ class GameErrorBoundary extends Component {
  * Drop-in games module for a React Router v6 site. Mount it on a splat route:
  *   <Route path="/games/*" element={<MuscleGames onGameFinish={saveRun} />} />
  * Every link inside is relative, so any base path works.
+ * hubTitle={false} drops the hub's own eyebrow + "Games" heading, for hosts that render their own page header there.
  */
-export default function MuscleGames({ onGameFinish, className = '' }) {
-  const config = useMemo(() => ({ onGameFinish }), [onGameFinish]);
+export default function MuscleGames({ onGameFinish, hubTitle = true, className = '' }) {
+  const config = useMemo(() => ({ onGameFinish, hubTitle }), [onGameFinish, hubTitle]);
   return (
     <div className={`mg-root ${className}`.trim()}>
       <GamesConfigContext.Provider value={config}>

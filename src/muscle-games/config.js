@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
 
 // Options passed to <MuscleGames /> by the host site.
-export const GamesConfigContext = createContext({ onGameFinish: undefined });
+export const GamesConfigContext = createContext({ onGameFinish: undefined, hubTitle: true });
 export const useGamesConfig = () => useContext(GamesConfigContext);
