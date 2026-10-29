@@ -38,6 +38,14 @@ function GameCard({ g, n }) {
         </button>
       </div>
       <div className="mg-game-card__body">
+        <div className="mg-game-card__titlerow">
+          <h2>
+            <span className="mg-game-card__num">Game {n}</span>
+            {g.title}
+          </h2>
+          <Stars n={stars} size="sm" />
+        </div>
+        <p className="mg-game-card__goal">{g.goal}</p>
         <div className="mg-game-card__tags">
           <span className="mg-lo-tag" title={g.loText}>
             {g.lo}
@@ -47,14 +55,6 @@ function GameCard({ g, n }) {
             🏅 {unlocked}/{g.achievements.length}
           </span>
         </div>
-        <div className="mg-game-card__titlerow">
-          <h2>
-            <span className="mg-game-card__num">Game {n}</span>
-            {g.title}
-          </h2>
-          <Stars n={stars} size="sm" />
-        </div>
-        <p className="mg-game-card__goal">{g.goal}</p>
         <p className="mg-game-card__best">
           {played.length === 0
             ? 'No score yet this session'
