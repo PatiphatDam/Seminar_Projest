@@ -1,4 +1,4 @@
-import { Component, useMemo } from 'react';
+import { Component, useEffect, useMemo } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ScoresProvider } from './scores.jsx';
 import { FxProvider } from './fx/Fx.jsx';
@@ -9,6 +9,7 @@ import BalloonPop from './games/BalloonPop.jsx';
 import GroupSort from './games/GroupSort.jsx';
 import Diameter from './games/diameter/Diameter.jsx';
 import { gameById } from './games/meta.js';
+import { flush, pendingFor } from './outbox.js';
 import './styles.css';
 
 class GameErrorBoundary extends Component {
@@ -41,9 +42,26 @@ class GameErrorBoundary extends Component {
  *   <Route path="/games/*" element={<MuscleGames onGameFinish={saveRun} />} />
  * Every link inside is relative, so any base path works.
  * hubTitle={false} drops the hub's own eyebrow + "Games" heading, for hosts that render their own page header there.
+ * playerId identifies the signed-in student: runs that could not be saved wait in this browser (outbox.js) and are
+ * sent again only while the same player is signed in.
  */
-export default function MuscleGames({ onGameFinish, hubTitle = true, className = '' }) {
-  const config = useMemo(() => ({ onGameFinish, hubTitle }), [onGameFinish, hubTitle]);
+export default function MuscleGames({ onGameFinish, hubTitle = true, playerId = null, className = '' }) {
+  const config = useMemo(() => ({ onGameFinish, hubTitle, playerId }), [onGameFinish, hubTitle, playerId]);
+
+  // Retry runs that failed to save: now, when the device comes back online, and every 20 s while any are waiting.
+  useEffect(() => {
+    const retry = () => {
+      if (pendingFor(playerId).length) flush(onGameFinish, playerId);
+    };
+    retry();
+    window.addEventListener('online', retry);
+    const timer = setInterval(retry, 20_000);
+    return () => {
+      window.removeEventListener('online', retry);
+      clearInterval(timer);
+    };
+  }, [onGameFinish, playerId]);
+
   return (
     <div className={`mg-root ${className}`.trim()}>
       <GamesConfigContext.Provider value={config}>

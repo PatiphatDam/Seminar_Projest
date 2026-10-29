@@ -398,6 +398,9 @@
 }
 .mg-result__score { font-size: 60px; font-weight: 800; font-family: var(--font-serif); color: var(--sea-600); line-height: 1.05; }
 .mg-result__score small { font-size: 0.4em; color: var(--muted); }
+.mg-save { font-size: 13px; font-weight: 700; padding: 6px 10px; border-radius: 10px; color: var(--muted); }
+.mg-save--saved { color: var(--ok); background: var(--ok-bg); }
+.mg-save--queued { color: var(--gold-ink); background: var(--gold-bg); }
 .mg-result__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .mg-badge { align-self: center; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--gold-bg); color: var(--gold-ink); }
 

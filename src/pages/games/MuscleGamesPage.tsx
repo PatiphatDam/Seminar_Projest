@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useMatch } from "react-router";
 import type { GameRunBody } from "@shared/contract";
 import { api } from "@/lib/api";
+import { useMe } from "@/lib/auth";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { MuscleGames, type MuscleGameRun } from "@/muscle-games";
@@ -27,6 +28,9 @@ export default function MuscleGamesPage() {
   // The hub gets the same page header as the other student pages (breadcrumb, phone back button);
   // each game keeps its own bar with "← Games".
   const onHub = useMatch("/games") !== null;
+  // Runs that fail to save (Wi-Fi drop) wait in this browser and are re-sent only for this same student.
+  const me = useMe().data;
+  const playerId = me?.role === "student" ? String(me.student.id) : null;
   // coast-sans: the same Nunito Sans text font as Lessons and 3D Explore.
   return (
     <div className="coast-sans">
@@ -42,6 +46,7 @@ export default function MuscleGamesPage() {
       <MuscleGames
         onGameFinish={saveRun}
         hubTitle={!onHub}
+        playerId={playerId}
         className="[--mg-bottom-inset:calc(76px+env(safe-area-inset-bottom))] md:[--mg-bottom-inset:0px]"
       />
     </div>

@@ -4,6 +4,7 @@ import { useScores } from '../scores.jsx';
 import { MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
 import { MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
+import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
 
 const cheer = (score) =>
   score >= 9
@@ -13,6 +14,12 @@ const cheer = (score) =>
       : score >= 5
         ? ['Nice! Review your mistakes and try again?', 'happy']
         : ['No worries. Review what you missed and try again!', 'sad'];
+
+const SAVE_TEXT = {
+  saving: 'Saving your score…',
+  saved: '✓ Score saved',
+  queued: '⏳ No connection. Your score is kept on this device and will upload by itself when you are back online.',
+};
 
 const newRunId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
@@ -31,7 +38,7 @@ export default function GamePage({ game, Game }) {
   const { best, submit } = useScores();
   const fx = useFx();
   const { muted } = useFxState();
-  const { onGameFinish } = useGamesConfig();
+  const { onGameFinish, playerId } = useGamesConfig();
   const [run, setRun] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState(null);
@@ -57,9 +64,12 @@ export default function GamePage({ game, Game }) {
       const key = info.key || keyRef.current;
       const isNewBest = submit(key, final);
       const mistakes = dedupe(info.mistakes);
-      try {
-        const saved = onGameFinish?.({
-          runId: info.runId || runIdRef.current,
+      const runId = info.runId || runIdRef.current;
+      // 'saving' → 'saved', or 'queued' when it failed and waits in the outbox for the next try.
+      const saving = deliver(
+        onGameFinish,
+        {
+          runId,
           gameId: game.id,
           mode: key.includes(':') ? key.split(':')[1] : null,
           scoreKey: key,
@@ -70,14 +80,12 @@ export default function GamePage({ game, Game }) {
           mistakes,
           summary: info.summary ?? '',
           finishedAt: new Date().toISOString(),
-        });
-        Promise.resolve(saved).catch((err) => console.error('[MuscleGames] onGameFinish failed', err));
-      } catch (err) {
-        console.error('[MuscleGames] onGameFinish failed', err);
-      }
-      return { key, isNewBest, mistakes };
+        },
+        playerId
+      );
+      return { key, isNewBest, mistakes, runId, saving };
     },
-    [game, submit, onGameFinish]
+    [game, submit, onGameFinish, playerId]
   );
 
   // Leaving (← Games, Back, restart) in the middle of a run still saves what was played, if the game supports it.
@@ -106,14 +114,24 @@ export default function GamePage({ game, Game }) {
 
   const finish = useCallback(
     (final, info = {}) => {
-      const { key, isNewBest, mistakes } = record(final, info, true);
+      const { key, isNewBest, mistakes, runId, saving } = record(final, info, true);
       fx.sound('win');
       if (final >= 8) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
       fx.say(...cheer(final));
-      setResult({ score: final, key, isNewBest, summary: info.summary, mistakes });
+      setResult({ score: final, key, isNewBest, summary: info.summary, mistakes, runId, save: 'saving' });
+      saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
     [fx, record]
   );
+
+  // A queued run turns into "saved" once the outbox manages to send it.
+  const queuedRunId = result?.save === 'queued' ? result.runId : null;
+  useEffect(() => {
+    if (!queuedRunId) return undefined;
+    return onOutboxChange(() => {
+      if (!pendingFor(playerId).includes(queuedRunId)) setResult((r) => (r?.runId === queuedRunId ? { ...r, save: 'saved' } : r));
+    });
+  }, [queuedRunId, playerId]);
 
   const restart = () => {
     reportExit();
@@ -195,6 +213,11 @@ export default function GamePage({ game, Game }) {
             <p className="mg-muted">
               Best this session: <strong>{bestOf(game, best)} / {MAX_SCORE}</strong>
             </p>
+            {onGameFinish && (
+              <p className={`mg-save mg-save--${result.save}`} role="status">
+                {SAVE_TEXT[result.save]}
+              </p>
+            )}
 
             {result.mistakes.length > 0 && (
               <details className="mg-review" open={result.mistakes.length <= 3}>
