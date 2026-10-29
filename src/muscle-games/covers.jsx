@@ -326,7 +326,7 @@ export function ConveyorCoverScene() {
           <path key={x} d={`M${x} 44l6 6h5l-6-6z`} fill="#facc15" />
         ))}
       </g>
-      <text x="70" y="40" textAnchor="middle" fontFamily="Bungee, 'Nunito Sans', sans-serif" fontSize="11.5" fill="#1d2a30">
+      <text x="70" y="40" textAnchor="middle" fontFamily="Bungee, 'Nunito Sans Variable', sans-serif" fontSize="11.5" fill="#1d2a30">
         CONVEYOR SORT
       </text>
 

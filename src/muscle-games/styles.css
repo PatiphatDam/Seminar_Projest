@@ -1,4 +1,4 @@
-/* Fonts (Nunito Sans, Playfair Display, Noto Sans Thai, Cinzel Decorative, Bungee) are loaded by the host page,
+/* Fonts (Nunito Sans, Playfair Display, Inter, Cinzel Decorative, Bungee) are loaded by the host page,
    not here: the main site's CSP blocks Google Fonts. Standalone hosts import src/fonts.css. */
 
 /*
@@ -51,8 +51,9 @@
   --shadow-lg: 0 20px 50px hsl(165 35% 15% / 0.3);
   --radius: 18px;
   --tap: 44px;
-  --font: 'Nunito Sans Variable', 'Nunito Sans', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-serif: 'Playfair Display Variable', 'Playfair Display', 'Noto Sans Thai', Georgia, serif;
+  /* Same stacks as the main site's student pages (.coast-sans / .coast-serif in its index.css). */
+  --font: 'Nunito Sans Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Playfair Display Variable', Georgia, serif;
   font-family: var(--font);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
