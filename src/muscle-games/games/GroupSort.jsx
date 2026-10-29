@@ -52,7 +52,7 @@ function ModeSelect({ onPick }) {
               <span>{m.meta}</span>
               <Stars n={starsFor(key, best[key])} size="sm" />
             </span>
-            <span className="mg-btn mg-btn--primary mg-btn--block">Start {m.title}</span>
+            <span className="mg-btn mg-btn--primary mg-btn--block">▶ Play {m.title}</span>
           </button>
         );
       })}
