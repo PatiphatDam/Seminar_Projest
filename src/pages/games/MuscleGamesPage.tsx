@@ -34,7 +34,7 @@ export default function MuscleGamesPage() {
       {onHub && (
         <StudentPageHeader
           title="Games"
-          subtitle="Muscular Tissues I · 3 games — play in any order"
+          subtitle="3 Muscular Games"
           crumbs={[{ to: "/", label: "Home" }, { label: "Games" }]}
           back="/"
         />
