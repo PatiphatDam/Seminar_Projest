@@ -350,6 +350,7 @@
 .mg-stat { display: flex; flex-direction: column; align-items: center; min-width: 58px; line-height: 1.15; }
 .mg-stat span { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .mg-stat strong { font-size: 20px; color: var(--sea-600); }
+.mg-stat strong small { font-size: 0.6em; font-weight: 700; color: var(--muted); }
 .mg-stat__bump { animation: mg-bump 0.35s ease-out; }
 @keyframes mg-bump { 40% { transform: scale(1.35); color: #f59e0b; } }
 /* Phones: one compact row, so the play area fits on screen even under a host's bottom nav. */
@@ -396,12 +397,9 @@
   display: flex; flex-direction: column; gap: 8px; animation: mg-pop-in 0.3s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 .mg-result__score { font-size: 60px; font-weight: 800; font-family: var(--font-serif); color: var(--sea-600); line-height: 1.05; }
+.mg-result__score small { font-size: 0.4em; color: var(--muted); }
 .mg-result__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-.mg-result__label { font-weight: 700; color: var(--sea-700); margin-top: 6px; }
-.mg-result__ach ul { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
 .mg-badge { align-self: center; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: 13px; background: var(--gold-bg); color: var(--gold-ink); }
-.mg-ach-chip { padding: 6px 12px; border-radius: 999px; background: var(--gold-bg); color: var(--gold-ink); font-weight: 700; font-size: 14px; }
-.mg-ach-chip--new { animation: mg-pop-in 0.4s 0.9s backwards cubic-bezier(0.2, 1.4, 0.4, 1); }
 
 .mg-review { text-align: left; margin-top: 8px; border: 1px solid var(--border); border-radius: 14px; padding: 4px 12px; }
 .mg-review summary { cursor: pointer; font-weight: 700; padding: 8px 0; min-height: var(--tap); display: flex; align-items: center; }
@@ -444,26 +442,10 @@
 .mg-timer--low .mg-timer__fill { background: linear-gradient(90deg, #f97316, #ef4444); animation: mg-blink 0.5s steps(2) infinite; }
 .mg-timer--low .mg-timer__num, .mg-timer--out .mg-timer__num { color: var(--bad); }
 @keyframes mg-blink { 50% { opacity: 0.55; } }
-.mg-combo { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 4px; border-radius: 999px; background: var(--chip); }
-.mg-combo__x { display: grid; place-items: center; min-width: 38px; height: 32px; border-radius: 999px; font-weight: 800; background: var(--sea-200); color: var(--sea-800); animation: mg-bump 0.4s ease-out; }
-.mg-combo__label { display: flex; flex-direction: column; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; color: var(--muted); line-height: 1.1; }
-.mg-combo__label small { font-size: 12px; letter-spacing: 0; color: var(--text); }
-.mg-combo--x2 .mg-combo__x { background: #fde68a; color: #92400e; }
-.mg-combo--x3 .mg-combo__x { background: #fdba74; color: #7c2d12; }
-.mg-combo--x5 .mg-combo__x { background: linear-gradient(90deg, #f43f5e, #f59e0b); color: #fff; box-shadow: 0 0 12px rgba(244, 63, 94, 0.6); }
 .mg-lives { font-size: 20px; letter-spacing: 2px; }
 .mg-heart { color: #e11d48; display: inline-block; }
 .mg-heart--lost { color: var(--border); animation: mg-heart-lost 0.4s ease-out; }
 @keyframes mg-heart-lost { 40% { transform: scale(1.5); } }
-.mg-stars { display: inline-flex; gap: 2px; line-height: 1; }
-.mg-star { color: var(--border); }
-.mg-star--on { color: #fbbf24; text-shadow: 0 1px 0 #b45309; }
-.mg-stars--xs { font-size: 13px; }
-.mg-stars--sm { font-size: 20px; }
-.mg-stars--md { font-size: 28px; }
-.mg-stars--lg { font-size: 46px; justify-content: center; gap: 6px; }
-.mg-star--pop { animation: mg-star-pop 0.5s backwards cubic-bezier(0.2, 1.6, 0.4, 1); }
-@keyframes mg-star-pop { from { transform: scale(0) rotate(-90deg); opacity: 0; } }
 
 /* ---------- Balloon Pop ---------- */
 .mg-prompt { padding: 12px 16px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--card-edge); border-radius: var(--radius); }
@@ -524,10 +506,6 @@
   /* long words break at a syllable with a hyphen rather than mid-letter */
   hyphens: auto; overflow-wrap: break-word;
 }
-.mg-rider--gold { --color: #f5c542; --color-dark: #b8860b; }
-.mg-rider--gold .mg-rider__balloon { filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.85)); }
-.mg-rider__star { position: absolute; top: -6px; right: -4px; font-size: 20px; animation: mg-twinkle-b 1.2s ease-in-out infinite; }
-@keyframes mg-twinkle-b { 50% { transform: scale(1.3) rotate(20deg); } }
 .mg-rider--aim .mg-rider__balloon { filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 2px #fff); }
 .mg-rider--good { animation: mg-fall var(--dur) linear var(--delay) forwards, mg-burst 0.3s ease-out forwards; animation-play-state: paused, running; }
 .mg-rider--bad { animation: mg-fall var(--dur) linear var(--delay) forwards, mg-fizzle 0.4s ease-out forwards; animation-play-state: paused, running; }
@@ -991,7 +969,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-btn--pulse,
-  .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-rider__star, .mg-adv__mascot, .mg-lens__ring, .mg-mode__cards i, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
+  .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-adv__mascot, .mg-lens__ring, .mg-mode__cards i, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
   .mg-pcard, .mg-pmatch { transition: none; animation: none; }
 }
 .mg-crash { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }

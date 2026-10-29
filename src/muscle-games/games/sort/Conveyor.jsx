@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { pick, useFx } from '../../fx/Fx.jsx';
-import { ComboMeter, Lives, TimerBar, comboMult, useCountdown } from '../../components/Hud.jsx';
+import { Lives, TimerBar, useCountdown } from '../../components/Hud.jsx';
+import { scoreOutOf10 } from '../meta.js';
 import { shuffle } from '../util.js';
 import { GROUPS, TEXT_CARDS, groupLabel } from './data.js';
 
@@ -127,7 +128,7 @@ export default function Conveyor({ onScore, onFinish }) {
   const [arm, setArm] = useState({ x: '50%', key: 0, card: null, mark: null });
   const [binFx, setBinFx] = useState({});
   const [over, setOver] = useState(false);
-  const st = useRef({ score: 0, streak: 0, maxStreak: 0, sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], n: 0, grabs: 0, t0: performance.now() });
+  const st = useRef({ sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], n: 0, grabs: 0, t0: performance.now() });
   const [, rerender] = useReducer((x) => x + 1, 0);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
@@ -138,6 +139,8 @@ export default function Conveyor({ onScore, onFinish }) {
   const busy = useRef(false);
   const overRef = useRef(false);
 
+  // Out of 10: crates packed right over every crate that was packed or missed (wrong bin or fell off).
+  const score = () => scoreOutOf10(s.sorted, s.sorted + s.wrong + s.fell);
   const [left] = useCountdown(TIME, { running: !over, onExpire: () => end('Time’s up! ⏰') });
 
   useEffect(() => {
@@ -165,10 +168,9 @@ export default function Conveyor({ onScore, onFinish }) {
     fx.say(line, s.lives > 0 ? 'happy' : 'sad');
     later(
       () =>
-        onFinish(s.score, {
+        onFinish(score(), {
           summary: `${s.sorted} crates packed · ${s.wrong + s.fell} missed`,
           mistakes: s.mistakes,
-          stats: { convSorted: s.sorted, maxStreak: s.maxStreak },
         }),
       1100
     );
@@ -176,7 +178,7 @@ export default function Conveyor({ onScore, onFinish }) {
 
   const loseLife = () => {
     s.lives -= 1;
-    s.streak = 0;
+    onScore(score());
     rerender();
     if (s.lives <= 0) end('Out of hearts 💔');
   };
@@ -190,18 +192,12 @@ export default function Conveyor({ onScore, onFinish }) {
     setBelt((b) => b.filter((c) => c.uid !== item.uid));
     const { x, y } = fx.centerOf(`[data-drop="bin-${bin}"]`);
     if (item.card.answer === bin) {
-      s.streak += 1;
-      s.maxStreak = Math.max(s.maxStreak, s.streak);
       s.sorted += 1;
-      const mult = comboMult(s.streak);
-      const pts = 10 * mult;
-      s.score += pts;
-      onScore(s.score);
-      fx.sound(mult > 1 ? 'combo' : 'good', mult);
+      onScore(score());
+      fx.sound('good');
       fx.burst(x, y - 20, 14);
-      fx.float(x, y - 30, `+${pts}${mult > 1 ? ` ×${mult}` : ''}`);
-      if (mult > 1 && s.streak % 3 === 0) fx.say(`Combo ×${mult}! Quick hands 🔥`, 'wow');
-      else if (s.sorted % 4 === 0) fx.say(pick(['Great packing!', 'The belt is speeding up!', 'Keep going! 💪']), 'happy');
+      fx.float(x, y - 30, '✓');
+      if (s.sorted % 4 === 0) fx.say(pick(['Great packing!', 'The belt is speeding up!', 'Keep going! 💪']), 'happy');
       flashBin(bin, 'good');
       rerender();
       return 'good';
@@ -265,7 +261,6 @@ export default function Conveyor({ onScore, onFinish }) {
         <div className="mg-hud__row">
           <span className="mg-hud__q">📦 {s.sorted} packed</span>
           <Lives lives={s.lives} max={LIVES} />
-          <ComboMeter streak={s.streak} />
         </div>
       </div>
 

@@ -30,6 +30,7 @@ function makeEdges() {
 }
 
 const IDS = Array.from({ length: N * N }, (_, i) => `${Math.floor(i / N)}-${i % N}`);
+export const JIGSAW_PLACEMENTS = IDS.length - GIVEN;
 const pos = (id) => id.split('-').map(Number);
 
 export default function PictureJigsaw({ onPlaced, onMissed, onDone }) {

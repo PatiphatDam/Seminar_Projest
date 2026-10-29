@@ -2,16 +2,17 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link } from 'react-router-dom';
 import { useScores } from '../scores.jsx';
 import { MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
-import { starsFor } from '../games/meta.js';
+import { MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
-import { Stars } from './Hud.jsx';
 
-const CHEERS = {
-  3: 'Amazing! A full three stars! 🌟',
-  2: 'Great job! Just a little more for three stars.',
-  1: 'Nice! Play again to collect more stars?',
-  0: 'No worries. Review what you missed and try again!',
-};
+const cheer = (score) =>
+  score >= 9
+    ? ['Excellent! Almost perfect 🌟', 'wow']
+    : score >= 7
+      ? ['Great job! Play again to push it higher.', 'happy']
+      : score >= 5
+        ? ['Nice! Review your mistakes and try again?', 'happy']
+        : ['No worries. Review what you missed and try again!', 'sad'];
 
 const newRunId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
@@ -25,17 +26,16 @@ function dedupe(mistakes = []) {
   });
 }
 
-// Shared frame for every game: header, Armin, live score, session best, results, review and replay.
+// Shared frame for every game: header, Armin, live score out of 10, session best, results, review and replay.
 export default function GamePage({ game, Game }) {
-  const { best, submit, unlock } = useScores();
+  const { best, submit } = useScores();
   const fx = useFx();
   const { muted } = useFxState();
   const { onGameFinish } = useGamesConfig();
   const [run, setRun] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState(null);
-  const [scoreKey, setScoreKeyState] = useState(game.keys[0]);
-  const keyRef = useRef(scoreKey);
+  const keyRef = useRef(game.keys[0]);
   const runIdRef = useRef(newRunId());
   // A game may register a function returning { score, info } for a run that is left before it ends.
   const exitReportRef = useRef(null);
@@ -43,7 +43,6 @@ export default function GamePage({ game, Game }) {
 
   const setScoreKey = useCallback((key) => {
     keyRef.current = key;
-    setScoreKeyState(key);
   }, []);
 
   // Runs before the game's own effects so the game can set its intro line.
@@ -51,15 +50,12 @@ export default function GamePage({ game, Game }) {
     fx.say('', 'idle');
   }, [run, fx]);
 
-  // Saves a run: session best, achievements and the host's onGameFinish hook (GAME-7 database).
+  // Saves a run (score out of 10): session best and the host's onGameFinish hook (GAME-7 database).
   const record = useCallback(
     (final, info, completed) => {
       reportedRef.current = true;
       const key = info.key || keyRef.current;
-      const stars = starsFor(key, final);
       const isNewBest = submit(key, final);
-      const earned = game.achievements.filter((a) => a.test({ ...info.stats, stars })).map((a) => a.id);
-      const fresh = unlock(game.id, earned);
       const mistakes = dedupe(info.mistakes);
       try {
         const saved = onGameFinish?.({
@@ -68,11 +64,9 @@ export default function GamePage({ game, Game }) {
           mode: key.includes(':') ? key.split(':')[1] : null,
           scoreKey: key,
           score: final,
-          stars,
+          maxScore: MAX_SCORE,
           completed,
           isNewBest,
-          achievements: earned,
-          newAchievements: fresh,
           mistakes,
           summary: info.summary ?? '',
           finishedAt: new Date().toISOString(),
@@ -81,9 +75,9 @@ export default function GamePage({ game, Game }) {
       } catch (err) {
         console.error('[MuscleGames] onGameFinish failed', err);
       }
-      return { key, stars, isNewBest, mistakes, fresh };
+      return { key, isNewBest, mistakes };
     },
-    [game, submit, unlock, onGameFinish]
+    [game, submit, onGameFinish]
   );
 
   // Leaving (← Games, Back, restart) in the middle of a run still saves what was played, if the game supports it.
@@ -112,22 +106,13 @@ export default function GamePage({ game, Game }) {
 
   const finish = useCallback(
     (final, info = {}) => {
-      const { key, stars, isNewBest, mistakes, fresh } = record(final, info, true);
+      const { key, isNewBest, mistakes } = record(final, info, true);
       fx.sound('win');
-      if (stars >= 2) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
-      fx.say(CHEERS[stars], stars ? 'happy' : 'sad');
-      const unlockedNow = game.achievements.filter((a) => fresh.includes(a.id));
-      setResult({
-        score: final,
-        key,
-        stars,
-        isNewBest,
-        summary: info.summary,
-        mistakes,
-        fresh: unlockedNow,
-      });
+      if (final >= 8) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
+      fx.say(...cheer(final));
+      setResult({ score: final, key, isNewBest, summary: info.summary, mistakes });
     },
-    [fx, game, record]
+    [fx, record]
   );
 
   const restart = () => {
@@ -158,11 +143,12 @@ export default function GamePage({ game, Game }) {
             <span>Score</span>
             <strong key={score} className="mg-stat__bump">
               {score}
+              <small>/{MAX_SCORE}</small>
             </strong>
           </div>
           <div className="mg-stat mg-stat--best">
             <span>Best</span>
-            <strong>{best[scoreKey] ?? '—'}</strong>
+            <strong>{bestOf(game, best) ?? '—'}</strong>
           </div>
           <button
             type="button"
@@ -201,25 +187,14 @@ export default function GamePage({ game, Game }) {
               {game.title}
               {game.modeLabels ? ` · ${game.modeLabels[result.key]}` : ''}
             </h2>
-            <Stars n={result.stars} size="lg" animate />
-            <p className="mg-result__score">{result.score}</p>
+            <p className="mg-result__score">
+              {result.score}
+              <small> / {MAX_SCORE}</small>
+            </p>
             {result.summary && <p className="mg-muted">{result.summary}</p>}
             <p className="mg-muted">
-              Best this session: <strong>{best[result.key]}</strong>
+              Best this session: <strong>{bestOf(game, best)} / {MAX_SCORE}</strong>
             </p>
-
-            {result.fresh.length > 0 && (
-              <div className="mg-result__ach">
-                <p className="mg-result__label">New badges unlocked!</p>
-                <ul>
-                  {result.fresh.map((a) => (
-                    <li key={a.id} className="mg-ach-chip mg-ach-chip--new" title={a.desc}>
-                      <span aria-hidden="true">{a.icon}</span> {a.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
 
             {result.mistakes.length > 0 && (
               <details className="mg-review" open={result.mistakes.length <= 3}>

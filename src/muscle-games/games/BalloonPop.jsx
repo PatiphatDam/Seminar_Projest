@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { sample, shuffle } from './util.js';
 import { AirshipArt, CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
-import { GOLD, ICE, pick, useFx } from '../fx/Fx.jsx';
-import { ComboMeter, Lives, TimerBar, comboMult, useCountdown } from '../components/Hud.jsx';
+import { ICE, pick, useFx } from '../fx/Fx.jsx';
+import { Lives, TimerBar, useCountdown } from '../components/Hud.jsx';
+import { scoreOutOf10 } from './meta.js';
 
 // OL1 — functions and physiological properties of muscle tissue (lecture §1–2).
 const PROPERTIES = ['Excitability', 'Conductivity', 'Contractility', 'Extensibility', 'Elasticity'];
@@ -52,7 +53,6 @@ function buildQuestions() {
     return {
       ...c,
       options: shuffle([c.answer, ...wrong]),
-      golden: Math.random() < 0.4 ? Math.floor(Math.random() * 4) : -1,
       special: i === 0 ? null : roll < 0.3 ? 'ice' : roll < 0.55 ? 'bomb' : null,
     };
   });
@@ -61,7 +61,6 @@ function buildQuestions() {
 function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial }) {
   const [state, setState] = useState({});
   const done = useRef(false);
-  const started = useRef(performance.now());
   const [flyerGone, setFlyerGone] = useState(false);
   const flyerShot = useRef(false);
   const delays = useMemo(() => shuffle([0, 0.35, 0.7, 1.05]).map((d) => d + Math.random() * 0.25), []);
@@ -75,7 +74,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
     });
   }, [assisted, q]);
 
-  const shoot = (el, opt, k) => {
+  const shoot = (el, opt) => {
     if (done.current || state[opt]) return;
     setState((s) => ({ ...s, [opt]: 'aim' }));
     fire(el, (x, y) => {
@@ -83,8 +82,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
       if (opt === q.answer) {
         done.current = true;
         setState((s) => ({ ...s, [opt]: 'good' }));
-        const flight = (performance.now() - started.current) / 1000 - delays[k];
-        onHit({ bonus: Math.max(0, Math.round(5 * (1 - flight / duration))), golden: k === q.golden, x, y });
+        onHit({ x, y });
       } else {
         setState((s) => ({ ...s, [opt]: 'bad' }));
         onWrong({ opt, x, y });
@@ -104,19 +102,18 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
         <button
           key={opt}
           type="button"
-          className={`mg-rider${k === q.golden ? ' mg-rider--gold' : ''}${state[opt] ? ` mg-rider--${state[opt]}` : ''}`}
+          className={`mg-rider${state[opt] ? ` mg-rider--${state[opt]}` : ''}`}
           style={{ '--lane': k, '--color': COLORS[k][0], '--color-dark': COLORS[k][1], '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
           onPointerDown={(e) => {
             e.preventDefault();
-            shoot(e.currentTarget, opt, k);
+            shoot(e.currentTarget, opt);
           }}
-          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && shoot(e.currentTarget, opt, k)}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && shoot(e.currentTarget, opt)}
           onAnimationEnd={(e) => landed(e, opt)}
           disabled={['good', 'bad', 'gone'].includes(state[opt])}
         >
           <span className="mg-rider__balloon">
             <AirshipArt />
-            {k === q.golden && <span className="mg-rider__star" aria-hidden="true">⭐</span>}
           </span>
           <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
@@ -148,8 +145,8 @@ export default function BalloonPop({ onScore, onFinish }) {
   const fx = useFx();
   const questions = useMemo(buildQuestions, []);
   const st = useRef({
-    i: 0, score: 0, lives: LIVES, correct: 0, wrong: 0, misses: 0, streak: 0, maxStreak: 0,
-    golden: 0, ice: 0, atpUsed: 0, atp: 0, over: false, mistakes: [],
+    // right = clues answered right on the first try; each is worth 1 of the 10 points.
+    i: 0, right: 0, roundWrong: false, lives: LIVES, atp: 0, over: false, mistakes: [],
   });
   const [, rerender] = useReducer((x) => x + 1, 0);
   const [assistFor, setAssistFor] = useState(-1);
@@ -173,16 +170,9 @@ export default function BalloonPop({ onScore, onFinish }) {
     if (line) fx.say(line, 'sad');
     rerender();
     later(() => {
-      onFinish(s.score, {
-        summary: `${s.correct}/${ROUNDS} correct · best streak ${s.maxStreak}`,
+      onFinish(scoreOutOf10(s.right, ROUNDS), {
+        summary: `${s.right}/${ROUNDS} clues right on the first try`,
         mistakes: s.mistakes,
-        stats: {
-          perfect: s.correct === ROUNDS && s.wrong === 0 && s.misses === 0,
-          maxStreak: s.maxStreak,
-          golden: s.golden,
-          ice: s.ice,
-          atp: s.atpUsed,
-        },
       });
     }, 1000);
   }
@@ -193,6 +183,7 @@ export default function BalloonPop({ onScore, onFinish }) {
       if (s.lives <= 0 || s.i + 1 >= ROUNDS) end();
       else {
         s.i += 1;
+        s.roundWrong = false;
         rerender();
       }
     }, 1000);
@@ -245,31 +236,22 @@ export default function BalloonPop({ onScore, onFinish }) {
     }, SWING_AT);
   };
 
-  const hit = ({ bonus, golden, x, y }) => {
-    s.streak += 1;
-    s.maxStreak = Math.max(s.maxStreak, s.streak);
-    s.correct += 1;
-    if (golden) s.golden += 1;
-    const mult = comboMult(s.streak);
-    const pts = (10 + bonus) * mult * (golden ? 2 : 1);
-    s.score += pts;
+  const hit = ({ x, y }) => {
+    const firstTry = !s.roundWrong;
+    if (firstTry) s.right += 1;
     s.atp = Math.min(ATP_MAX, s.atp + 1);
-    onScore(s.score);
+    onScore(scoreOutOf10(s.right, ROUNDS));
     fx.sound('pop');
-    fx.sound(mult > 1 || golden ? 'combo' : 'good', mult);
-    fx.burst(x, y, golden ? 34 : 16, golden ? GOLD : undefined);
-    fx.float(x, y - 24, `+${pts}${mult > 1 ? ` ×${mult}` : ''}${golden ? ' ⭐' : ''}`, golden ? 'gold' : 'good');
-    fx.say(
-      golden ? 'Golden balloon! Points ×2 ✨' : mult > 1 ? `Combo ×${mult}! On fire 🔥` : s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : pick(PRAISE),
-      golden || mult > 2 ? 'wow' : 'happy'
-    );
+    fx.sound('good');
+    fx.burst(x, y, 16);
+    fx.float(x, y - 24, firstTry ? '+1' : '✓', 'good');
+    fx.say(s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : firstTry ? pick(PRAISE) : 'Got it, but no point this time', 'happy');
     rerender();
     nextRound();
   };
 
   const wrong = ({ opt, x, y }) => {
-    s.wrong += 1;
-    s.streak = 0;
+    s.roundWrong = true;
     s.mistakes.push({ prompt: q.text, yours: opt, answer: q.answer });
     fx.sound('pop');
     fx.sound('bad');
@@ -280,8 +262,6 @@ export default function BalloonPop({ onScore, onFinish }) {
   };
 
   const miss = () => {
-    s.misses += 1;
-    s.streak = 0;
     s.mistakes.push({ prompt: q.text, yours: 'Let it reach the castle', answer: q.answer });
     fx.sound('bad');
     fx.vibrate(120);
@@ -295,7 +275,6 @@ export default function BalloonPop({ onScore, onFinish }) {
   const special = (kind, x, y) => {
     if (s.over) return;
     if (kind === 'ice') {
-      s.ice += 1;
       fx.sound('pop');
       fx.sound('freeze');
       fx.burst(x, y, 24, ICE);
@@ -311,7 +290,6 @@ export default function BalloonPop({ onScore, onFinish }) {
         setFrozen(false);
       }, 3500);
     } else {
-      s.streak = 0;
       fx.sound('boom');
       fx.vibrate([80, 40, 80]);
       fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
@@ -326,7 +304,6 @@ export default function BalloonPop({ onScore, onFinish }) {
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
-    s.atpUsed += 1;
     setAssistFor(s.i);
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
@@ -342,7 +319,6 @@ export default function BalloonPop({ onScore, onFinish }) {
             Q {s.i + 1}/{ROUNDS}
           </span>
           <Lives lives={s.lives} max={LIVES} />
-          <ComboMeter streak={s.streak} />
         </div>
       </div>
 
@@ -395,7 +371,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         </button>
       </div>
       <p className="mg-legend">
-        🧙 Tap a balloon and the wizard zaps it · ⭐ Gold = points ×2 · ❄️ Ice = slow motion · 💣 Bomb = lose a heart · ⚡ ATP removes 2 wrong balloons
+        🧙 Tap a balloon and the wizard zaps it · ✅ Right on the first try = 1 point · ❄️ Ice = slow motion · 💣 Bomb = lose a heart · ⚡ ATP removes 2 wrong balloons
       </p>
     </section>
   );

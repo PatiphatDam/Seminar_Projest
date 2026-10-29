@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useScores } from '../scores.jsx';
-import { starsFor } from './meta.js';
-import { Stars } from '../components/Hud.jsx';
+import { MAX_SCORE } from './meta.js';
 import { ConveyorCoverScene } from '../covers.jsx';
 import Memory from './sort/Memory.jsx';
 import Conveyor from './sort/Conveyor.jsx';
@@ -50,7 +49,11 @@ function ModeSelect({ onPick }) {
             <span className="mg-mode__desc">{m.desc}</span>
             <span className="mg-mode__meta">
               <span>{m.meta}</span>
-              <Stars n={starsFor(key, best[key])} size="sm" />
+              {best[key] !== undefined && (
+                <strong>
+                  Best {best[key]}/{MAX_SCORE}
+                </strong>
+              )}
             </span>
             <span className="mg-btn mg-btn--primary mg-btn--block">▶ Play {m.title}</span>
           </button>

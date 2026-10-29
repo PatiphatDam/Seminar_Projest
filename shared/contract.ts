@@ -214,14 +214,18 @@ export interface AttemptResult {
 
 /* ───────────── games: scores (GAME-7) ───────────── */
 
+/** Every run is scored out of 10; a student's collected score for a game is their best run in any of its modes. */
+export const GAME_MAX_SCORE = 10;
+export const GAME_IDS = ["balloon-pop", "group-sort", "diameter"] as const;
+export type GameId = (typeof GAME_IDS)[number];
+export const GAME_LABELS: Record<GameId, string> = {
+  "balloon-pop": "Game 1: Balloon Pop",
+  "group-sort": "Game 2: Group Sort",
+  diameter: "Game 3: Diameter",
+};
+/** One key per game mode (Group Sort has two); the part before ":" is the game id. */
 export const GAME_SCORE_KEYS = ["balloon-pop", "group-sort:memory", "group-sort:conveyor", "diameter"] as const;
 export type GameScoreKey = (typeof GAME_SCORE_KEYS)[number];
-export const GAME_SCORE_LABELS: Record<GameScoreKey, string> = {
-  "balloon-pop": "Balloon Pop",
-  "group-sort:memory": "Group Sort · Picture Match",
-  "group-sort:conveyor": "Group Sort · Conveyor",
-  diameter: "Diameter",
-};
 
 const shortText = z.string().max(400);
 
@@ -229,11 +233,9 @@ const shortText = z.string().max(400);
 export const gameRunBody = z.object({
   runId: z.string().trim().min(8).max(64).regex(/^[\w-]+$/),
   scoreKey: z.enum(GAME_SCORE_KEYS),
-  score: z.number().int().min(0).max(100_000),
-  stars: z.number().int().min(0).max(3),
+  score: z.number().min(0).max(GAME_MAX_SCORE),
   completed: z.boolean().default(true),
   summary: shortText.default(""),
-  achievements: z.array(z.string().max(40)).max(30).default([]),
   mistakes: z
     .array(z.object({ prompt: shortText, yours: shortText, answer: shortText, why: shortText.optional() }))
     .max(100)
@@ -242,9 +244,8 @@ export const gameRunBody = z.object({
 export type GameRunBody = z.input<typeof gameRunBody>;
 
 export interface GameBest {
-  scoreKey: GameScoreKey;
+  gameId: GameId;
   best: number;
-  stars: number;
   plays: number;
   lastPlayedAt: string;
 }
@@ -252,14 +253,18 @@ export interface GameBest {
 /** GET /api/admin/game-results?classId=&status= */
 export interface AdminGameResults {
   classId: number | null;
-  keys: { scoreKey: GameScoreKey; label: string; players: number; plays: number; meanBest: number | null }[];
+  /** Points per game (10); the total is out of maxScore × games.length. */
+  maxScore: number;
+  games: { gameId: GameId; label: string; players: number; plays: number; meanBest: number | null }[];
   rows: {
     studentCode: string;
     firstName: string | null;
     className: string;
     enrollmentStatus: EnrollmentStatus;
-    /** key = scoreKey; null when never played */
-    games: Record<string, { best: number; stars: number; plays: number; lastPlayedAt: string } | null>;
+    /** Best run per game (any mode); null when never played */
+    games: Record<GameId, { best: number; plays: number; lastPlayedAt: string } | null>;
+    /** Sum of the best scores (unplayed games count 0) */
+    total: number;
   }[];
 }
 

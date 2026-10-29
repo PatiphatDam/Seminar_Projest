@@ -6,6 +6,8 @@ import { JigsawPiece } from '../../fx/jigsaw.jsx';
 import { shuffle } from '../util.js';
 
 const CHAIN = ['muscle', 'fascicle', 'fiber', 'myofibril', 'sarcomere', 'filaments'];
+// One drop per level below the whole muscle.
+export const ZOOM_PLACEMENTS = CHAIN.length - 1;
 const INFO = {
   muscle: { label: 'Whole muscle', size: 'cm' },
   fascicle: { label: 'Fascicle', size: '~1 mm' },

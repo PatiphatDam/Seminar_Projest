@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Armin, pick, useFx } from '../../fx/Fx.jsx';
-import { ComboMeter, Stars, TimerBar, comboMult, useCountdown } from '../../components/Hud.jsx';
+import { TimerBar, useCountdown } from '../../components/Hud.jsx';
+import { scoreOutOf10 } from '../meta.js';
 import { LEVELS } from './levels.js';
-import ZoomDive from './ZoomDive.jsx';
+import ZoomDive, { ZOOM_PLACEMENTS } from './ZoomDive.jsx';
 import LabelPuzzle from './LabelPuzzle.jsx';
-import PictureJigsaw from './PictureJigsaw.jsx';
+import PictureJigsaw, { JIGSAW_PLACEMENTS } from './PictureJigsaw.jsx';
 import Contraction from './Contraction.jsx';
 
-const PLACE_POINTS = 20;
-const MISS_PENALTY = 5;
-const CLEAR_BONUS = 30;
-const COMBO_CAP = 3;
+// Pieces the student places in each stage (given pieces excluded); all 6 stages together make the 10 points.
+const placementsIn = (lv) => (lv.type === 'zoom' ? ZOOM_PLACEMENTS : lv.type === 'jigsaw' ? JIGSAW_PLACEMENTS : lv.pieces.length - lv.given.length);
+const TOTAL_PLACEMENTS = LEVELS.reduce((n, lv) => n + placementsIn(lv), 0);
 // Cleared stages survive leaving the page (← Games) for the rest of the browser session.
 const PROGRESS_KEY = 'muscle-games:diameter-progress';
 
@@ -75,7 +75,6 @@ function AdventureMap({ current, results, resumed, onPlay, onFinishEarly }) {
               <span className="mg-adv__label">
                 {k + 1}. {lv.title}
               </span>
-              {state === 'done' && <Stars n={results[k]?.stars ?? 0} size="xs" />}
             </div>
           );
         })}
@@ -98,9 +97,9 @@ function AdventureMap({ current, results, resumed, onPlay, onFinishEarly }) {
 function LevelRunner({ level, index, onPlaced, onMissed, onDone }) {
   const fx = useFx();
   const [finished, setFinished] = useState(false);
-  const [left, , leftRef] = useCountdown(level.time, {
+  const [left] = useCountdown(level.time, {
     running: !finished,
-    onExpire: () => fx.say('Time’s up! You can still finish, but there’s no time bonus ⏰', 'sad'),
+    onExpire: () => fx.say('Time’s up! Take your time and finish the stage ⏰', 'sad'),
   });
 
   useEffect(() => {
@@ -110,7 +109,7 @@ function LevelRunner({ level, index, onPlaced, onMissed, onDone }) {
   const done = () => {
     if (finished) return;
     setFinished(true);
-    onDone(leftRef.current);
+    onDone();
   };
   const props = { level, onPlaced, onMissed, onDone: done };
 
@@ -143,9 +142,7 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
   });
   const st = useRef({
     runId: saved?.runId || runId,
-    score: saved?.score ?? 0,
-    streak: 0,
-    maxStreak: saved?.maxStreak ?? 0,
+    right: saved?.right ?? 0,
     misses: saved?.misses ?? 0,
     levelMisses: 0,
     mistakes: saved?.mistakes ?? [],
@@ -155,8 +152,9 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
   const [phase, setPhase] = useState('map');
   const [current, setCurrent] = useState(Math.min(saved?.current ?? 0, LEVELS.length - 1));
   const [clear, setClear] = useState(null);
-  const [streak, setStreak] = useState(0);
   const s = st.current;
+  // Out of 10: right drops over every piece of all 6 stages plus every wrong drop (unplayed stages count against you).
+  const score = () => scoreOutOf10(s.right, TOTAL_PLACEMENTS + s.misses);
 
   const report = () => {
     const cleared = s.results.filter(Boolean).length;
@@ -164,19 +162,12 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
       runId: s.runId,
       summary: `${cleared}/${LEVELS.length} stages cleared · ${s.misses} wrong ${s.misses === 1 ? 'drop' : 'drops'}`,
       mistakes: s.mistakes,
-      stats: {
-        explorer: cleared === LEVELS.length,
-        flawless: cleared === LEVELS.length && s.misses === 0,
-        builder: s.results[4]?.misses === 0,
-        doctor: s.results[5]?.misses === 0,
-        maxStreak: s.maxStreak,
-      },
     };
   };
 
   useEffect(() => {
     if (saved) {
-      onScore(s.score);
+      onScore(score());
       if (saved.current >= LEVELS.length) {
         finish();
         return;
@@ -186,62 +177,47 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
       fx.say('Let’s explore a muscle! Tap the first stage on the map 🗺️', 'happy');
     }
     // Leaving after clearing at least one stage still saves the run.
-    setExitReport?.(() => (!s.done && s.results.some(Boolean) ? { score: s.score, info: report() } : null));
+    setExitReport?.(() => (!s.done && s.results.some(Boolean) ? { score: score(), info: report() } : null));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fx]);
 
-  const add = (pts) => {
-    s.score = Math.max(0, s.score + pts);
-    onScore(s.score);
-  };
-
   const placed = (pt) => {
-    s.streak += 1;
-    s.maxStreak = Math.max(s.maxStreak, s.streak);
-    setStreak(s.streak);
-    const mult = comboMult(s.streak, COMBO_CAP);
-    const pts = PLACE_POINTS * mult;
-    add(pts);
-    fx.sound(mult > 1 ? 'combo' : 'snap', mult);
+    s.right += 1;
+    onScore(score());
+    fx.sound('snap');
     fx.burst(pt.x, pt.y, 12);
-    fx.float(pt.x, pt.y - 24, `+${pts}${mult > 1 ? ` ×${mult}` : ''}`);
-    if (mult > 1 && s.streak % 3 === 0) fx.say(`Combo ×${mult}! 🔥`, 'wow');
-    else fx.say(pick(['Click! Perfect fit 🧩', 'Correct!', 'Great!', 'Spot on! 💪']), 'happy');
+    fx.float(pt.x, pt.y - 24, '✓');
+    fx.say(pick(['Click! Perfect fit 🧩', 'Correct!', 'Great!', 'Spot on! 💪']), 'happy');
   };
 
   const missed = (pt, mistake) => {
-    s.streak = 0;
-    setStreak(0);
     s.misses += 1;
     s.levelMisses += 1;
     if (mistake) s.mistakes.push(mistake);
-    add(-MISS_PENALTY);
+    onScore(score());
     fx.sound('bad');
     fx.vibrate(120);
-    fx.float(pt.x, pt.y - 20, `-${MISS_PENALTY}`, 'bad');
+    fx.float(pt.x, pt.y - 20, '✗', 'bad');
     fx.say(pick(['Not there yet', 'Have another look 🤔', 'So close!']), 'sad');
   };
 
-  const levelDone = (timeLeft) => {
+  const levelDone = () => {
     const level = LEVELS[current];
-    const timeBonus = Math.round(timeLeft);
-    add(CLEAR_BONUS + timeBonus);
-    const stars = timeLeft <= 0 ? 1 : s.levelMisses === 0 ? 3 : s.levelMisses <= 2 ? 2 : 1;
-    s.results[current] = { stars, misses: s.levelMisses };
+    const misses = s.levelMisses;
+    s.results[current] = { misses };
     s.levelMisses = 0;
     saveProgress({
       runId: s.runId,
       current: current + 1,
-      score: s.score,
-      maxStreak: s.maxStreak,
+      right: s.right,
       misses: s.misses,
       mistakes: s.mistakes,
       results: s.results,
     });
     fx.sound('win');
     fx.burst(window.innerWidth / 2, window.innerHeight / 3, 40);
-    fx.say(stars === 3 ? 'Three stars! Flawless 🌟' : 'Stage cleared! 🎉', 'wow');
-    setClear({ level, stars, timeBonus });
+    fx.say(misses === 0 ? 'Flawless stage! 🌟' : 'Stage cleared! 🎉', 'wow');
+    setClear({ level, misses });
     setPhase('clear');
   };
 
@@ -249,7 +225,7 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
     if (s.done) return;
     s.done = true;
     saveProgress(null);
-    onFinish(s.score, report());
+    onFinish(score(), report());
   }
 
   const goNext = (toMap) => {
@@ -268,7 +244,6 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
       <div className="mg-hud mg-hud--slim">
         <div className="mg-hud__row">
           <span className="mg-hud__q">🗺️ Stage {Math.min(current + 1, LEVELS.length)}/{LEVELS.length}</span>
-          <ComboMeter streak={streak} cap={COMBO_CAP} />
         </div>
       </div>
 
@@ -284,9 +259,8 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
           <h2>
             {clear.level.icon} {clear.level.title}
           </h2>
-          <Stars n={clear.stars} size="lg" animate />
           <p className="mg-clear__bonus">
-            +{CLEAR_BONUS} clear bonus · +{clear.timeBonus} time bonus
+            {clear.misses === 0 ? 'No wrong drops ✨' : `${clear.misses} wrong ${clear.misses === 1 ? 'drop' : 'drops'}`}
           </p>
           <p className="mg-clear__wrap">{clear.level.wrap}</p>
           {clear.level.contraction && <Contraction />}

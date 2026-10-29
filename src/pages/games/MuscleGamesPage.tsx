@@ -10,7 +10,7 @@ import "@fontsource/bungee/latin-400.css";
 import "@fontsource/cinzel-decorative/latin-700.css";
 import "@fontsource/cinzel-decorative/latin-900.css";
 
-/** /games/* — the Muscle Games module. Every finished (or left) run is saved to the student's record (GAME-7). */
+/** /games/* — the Muscle Games module. Every finished (or left) run, scored out of 10, is saved to the student's record (GAME-7). */
 export default function MuscleGamesPage() {
   useDocumentTitle("Games");
   const saveRun = useCallback(async (run: MuscleGameRun) => {
@@ -18,10 +18,8 @@ export default function MuscleGamesPage() {
       runId: run.runId,
       scoreKey: run.scoreKey as GameRunBody["scoreKey"],
       score: run.score,
-      stars: run.stars,
       completed: run.completed,
       summary: run.summary,
-      achievements: run.achievements,
       mistakes: run.mistakes,
     };
     await api.post("/me/game-runs", body);

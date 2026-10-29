@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFx } from '../fx/Fx.jsx';
 
-export const comboMult = (streak, cap = 5) => Math.min(cap, streak >= 8 ? 5 : streak >= 5 ? 3 : streak >= 3 ? 2 : 1);
-
 // Countdown in seconds. Returns [left, addSeconds, leftRef].
 export function useCountdown(total, { running = true, onExpire } = {}) {
   const [left, setLeft] = useState(total);
@@ -51,43 +49,12 @@ export function TimerBar({ left, total }) {
   );
 }
 
-export function ComboMeter({ streak, cap = 5 }) {
-  const m = comboMult(streak, cap);
-  return (
-    <div className={`mg-combo mg-combo--x${m}`} aria-label={`Combo ×${m}, streak ${streak}`}>
-      <span className="mg-combo__x" key={m}>
-        ×{m}
-      </span>
-      <span className="mg-combo__label">
-        COMBO
-        <small>🔥 {streak}</small>
-      </span>
-    </div>
-  );
-}
-
 export function Lives({ lives, max }) {
   return (
     <span className="mg-lives" aria-label={`${lives} lives left`}>
       {Array.from({ length: max }, (_, k) => (
         <span key={k} className={k < lives ? 'mg-heart' : 'mg-heart mg-heart--lost'}>
           ♥
-        </span>
-      ))}
-    </span>
-  );
-}
-
-export function Stars({ n, size = 'md', animate = false }) {
-  return (
-    <span className={`mg-stars mg-stars--${size}`} aria-label={`${n} of 3 stars`}>
-      {[0, 1, 2].map((k) => (
-        <span
-          key={k}
-          className={`mg-star${k < n ? ' mg-star--on' : ''}${animate ? ' mg-star--pop' : ''}`}
-          style={animate ? { animationDelay: `${0.25 + k * 0.3}s` } : undefined}
-        >
-          ★
         </span>
       ))}
     </span>

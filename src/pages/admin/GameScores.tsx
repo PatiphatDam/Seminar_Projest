@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { GAME_SCORE_KEYS, type AdminClass, type AdminGameResults } from "@shared/contract";
+import { GAME_IDS, type AdminClass, type AdminGameResults } from "@shared/contract";
 import { api } from "@/lib/api";
 import { Button, Card, EmptyState, PageHeader, PageLoader } from "@/components/ui";
 import { useAdminClass } from "@/components/admin/adminClass";
@@ -13,7 +13,7 @@ import { LiveIndicator, useLiveInterval } from "@/components/admin/live";
 
 type StatusFilter = "active" | "all";
 
-/** GAME-7: best score per student for each Muscle Games game, saved from /games. */
+/** GAME-7: collected game score — each student's best run out of 10 per Muscle Games game, and the total. */
 export default function GameScores() {
   const { classId: currentId } = useAdminClass();
   const toast = useToast();
@@ -36,6 +36,7 @@ export default function GameScores() {
   const classes = classesQ.data ?? [];
   const classLabel = classId ? (classes.find((c) => c.id === classId)?.name ?? `Class ${classId}`) : "All classes";
   const data = q.data;
+  const totalMax = data ? data.maxScore * data.games.length : 0;
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return (data?.rows ?? []).filter((r) => !term || r.studentCode.includes(term) || (r.firstName ?? "").toLowerCase().includes(term));
@@ -47,16 +48,24 @@ export default function GameScores() {
     try {
       // No e-mail addresses are exported (PDPA), same as the Results export.
       const XLSX = await import("xlsx");
-      const header = ["Student ID", "First name", "Section", "Status", ...data.keys.flatMap((k) => [`${k.label} best`, `${k.label} stars`, `${k.label} plays`])];
+      const header = [
+        "Student ID",
+        "First name",
+        "Section",
+        "Status",
+        ...data.games.flatMap((g) => [`${g.label} (/${data.maxScore})`, `${g.label} plays`]),
+        `Total (/${totalMax})`,
+      ];
       const body = data.rows.map((r) => [
         r.studentCode,
         r.firstName ?? "",
         r.className,
         r.enrollmentStatus === "active" ? "Active" : "Withdrawn",
-        ...GAME_SCORE_KEYS.flatMap((k) => {
-          const g = r.games[k];
-          return g ? [g.best, g.stars, g.plays] : [null, null, 0];
+        ...GAME_IDS.flatMap((id) => {
+          const g = r.games[id];
+          return g ? [g.best, g.plays] : [null, 0];
         }),
+        r.total,
       ]);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([header, ...body]), "Game scores");
@@ -74,7 +83,7 @@ export default function GameScores() {
     <>
       <PageHeader
         title="Game scores"
-        subtitle="Best score per student in each game · separate from pretest / posttest scores"
+        subtitle="Collected score: best run out of 10 in each game · separate from pretest / posttest scores"
         actions={
           <>
             <LiveIndicator updatedAt={q.dataUpdatedAt} fetching={q.isFetching} onRefresh={() => void q.refetch()} />
@@ -124,14 +133,19 @@ export default function GameScores() {
       ) : (
         <div className="space-y-[25px]">
           <div className="grid gap-[17px] sm:grid-cols-2 xl:grid-cols-4">
-            {data.keys.map((k) => (
+            {data.games.map((g) => (
               <StatCard
-                key={k.scoreKey}
-                label={k.label}
-                value={k.meanBest === null ? "—" : fmtNum(k.meanBest)}
-                sub={`mean best · ${k.players}/${data.rows.length} students · ${k.plays} plays`}
+                key={g.gameId}
+                label={g.label}
+                value={g.meanBest === null ? "—" : `${fmtNum(g.meanBest)}/${data.maxScore}`}
+                sub={`mean best · ${g.players}/${data.rows.length} students · ${g.plays} plays`}
               />
             ))}
+            <StatCard
+              label="Total"
+              value={`${fmtNum(data.rows.reduce((n, r) => n + r.total, 0) / data.rows.length)}/${totalMax}`}
+              sub={`mean total · ${data.rows.length} students`}
+            />
           </div>
           <Card className="overflow-hidden">
             <div className="relative overflow-x-auto">
@@ -142,11 +156,14 @@ export default function GameScores() {
                     <th scope="col" className="px-5 py-3 font-semibold">Student ID</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Name</th>
                     <th scope="col" className="px-3 py-3 font-semibold">Section</th>
-                    {data.keys.map((k) => (
-                      <th key={k.scoreKey} scope="col" className="px-3 py-3 text-right font-semibold">
-                        {k.label}
+                    {data.games.map((g) => (
+                      <th key={g.gameId} scope="col" className="px-3 py-3 text-right font-semibold">
+                        {g.label}
                       </th>
                     ))}
+                    <th scope="col" className="px-5 py-3 text-right font-semibold">
+                      Total /{totalMax}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,16 +174,14 @@ export default function GameScores() {
                       </td>
                       <td className="px-3 py-3">{r.firstName ?? "—"}</td>
                       <td className="px-3 py-3 text-muted">{r.className}</td>
-                      {GAME_SCORE_KEYS.map((k) => {
-                        const g = r.games[k];
+                      {GAME_IDS.map((id) => {
+                        const g = r.games[id];
                         return (
-                          <td key={k} className="px-3 py-3 text-right tabular-nums" title={g ? `Last played ${formatDateTime(g.lastPlayedAt)}` : undefined}>
+                          <td key={id} className="px-3 py-3 text-right tabular-nums" title={g ? `Last played ${formatDateTime(g.lastPlayedAt)}` : undefined}>
                             {g ? (
                               <>
-                                <span className="font-semibold text-ink">{g.best}</span>{" "}
-                                <span className="text-amber-500" aria-label={`${g.stars} stars`}>
-                                  {"★".repeat(g.stars)}
-                                </span>
+                                <span className="font-semibold text-ink">{fmtNum(g.best)}</span>
+                                <span className="text-muted">/{data.maxScore}</span>
                                 <span className="block text-[11px] text-muted">{g.plays} plays</span>
                               </>
                             ) : (
@@ -175,6 +190,7 @@ export default function GameScores() {
                           </td>
                         );
                       })}
+                      <td className="px-5 py-3 text-right font-semibold text-ink tabular-nums">{fmtNum(r.total)}</td>
                     </tr>
                   ))}
                 </tbody>

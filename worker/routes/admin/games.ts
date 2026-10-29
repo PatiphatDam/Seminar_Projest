@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { GAME_SCORE_KEYS, GAME_SCORE_LABELS, type AdminGameResults, type EnrollmentStatus } from "../../../shared/contract";
+import { GAME_IDS, GAME_LABELS, GAME_MAX_SCORE, type AdminGameResults, type EnrollmentStatus, type GameId } from "../../../shared/contract";
 import { queryAll, type SqlValue } from "../../db";
 import type { AppEnv } from "../../env";
 import { round2 } from "../../grading";
@@ -10,16 +10,15 @@ export const gameResultRoutes = new Hono<AppEnv>();
 
 interface BestRow {
   enrollment_id: number;
-  score_key: string;
+  game_id: GameId;
   best: number;
-  stars: number;
   plays: number;
   last_played_at: string;
 }
 
 /**
  * GET /api/admin/game-results?classId=&status=all
- * Best score, stars and number of plays per student for each game/mode (GAME-7).
+ * Collected game score (GAME-7): each student's best run out of 10 per game (any mode), number of plays and the total.
  * Withdrawn enrollments are excluded unless status=all.
  */
 gameResultRoutes.get("/game-results", async (c) => {
@@ -54,11 +53,10 @@ gameResultRoutes.get("/game-results", async (c) => {
 
   const best = await queryAll<BestRow>(
     db,
-    `SELECT g.enrollment_id, g.score_key, MAX(g.score) AS best, MAX(g.stars) AS stars, COUNT(*) AS plays,
-            MAX(g.updated_at) AS last_played_at
+    `SELECT g.enrollment_id, g.game_id, MAX(g.score) AS best, COUNT(*) AS plays, MAX(g.updated_at) AS last_played_at
        FROM game_runs g JOIN enrollments e ON e.id = g.enrollment_id JOIN classes c ON c.id = e.class_id
       WHERE ${classWhere} ${statusWhere}
-      GROUP BY g.enrollment_id, g.score_key`,
+      GROUP BY g.enrollment_id, g.game_id`,
     ...classParams,
   );
 
@@ -66,9 +64,9 @@ gameResultRoutes.get("/game-results", async (c) => {
   for (const b of best) byEnrollment.set(b.enrollment_id, [...(byEnrollment.get(b.enrollment_id) ?? []), b]);
 
   const rows: AdminGameResults["rows"] = enrollments.map((e) => {
-    const games: AdminGameResults["rows"][number]["games"] = Object.fromEntries(GAME_SCORE_KEYS.map((k) => [k, null]));
+    const games = Object.fromEntries(GAME_IDS.map((id) => [id, null])) as AdminGameResults["rows"][number]["games"];
     for (const b of byEnrollment.get(e.id) ?? []) {
-      games[b.score_key] = { best: b.best, stars: b.stars, plays: b.plays, lastPlayedAt: b.last_played_at };
+      games[b.game_id] = { best: b.best, plays: b.plays, lastPlayedAt: b.last_played_at };
     }
     return {
       studentCode: e.student_code ?? ANONYMIZED_LABEL,
@@ -76,19 +74,20 @@ gameResultRoutes.get("/game-results", async (c) => {
       className: e.class_name,
       enrollmentStatus: e.status,
       games,
+      total: round2(GAME_IDS.reduce((n, id) => n + (games[id]?.best ?? 0), 0)),
     };
   });
 
-  const keys: AdminGameResults["keys"] = GAME_SCORE_KEYS.map((k) => {
-    const played = rows.map((r) => r.games[k]).filter((g) => g !== null);
+  const games: AdminGameResults["games"] = GAME_IDS.map((id) => {
+    const played = rows.map((r) => r.games[id]).filter((g) => g !== null);
     return {
-      scoreKey: k,
-      label: GAME_SCORE_LABELS[k],
+      gameId: id,
+      label: GAME_LABELS[id],
       players: played.length,
       plays: played.reduce((n, g) => n + g.plays, 0),
       meanBest: played.length ? round2(played.reduce((n, g) => n + g.best, 0) / played.length) : null,
     };
   });
 
-  return c.json<AdminGameResults>({ classId, keys, rows });
+  return c.json<AdminGameResults>({ classId, maxScore: GAME_MAX_SCORE, games, rows });
 });

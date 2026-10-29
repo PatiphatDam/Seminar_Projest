@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { gameRunBody, type GameBest, type GameScoreKey } from "../../shared/contract";
+import { gameRunBody, type GameBest, type GameId } from "../../shared/contract";
 import { execute, nowIso, queryAll } from "../db";
 import type { AppEnv } from "../env";
 import { readBody } from "../http";
 import { requireStudent } from "../auth";
 
-/** Game scores (GAME-7): the games module posts every finished (or left) run here. */
+/** Game scores (GAME-7): the games module posts every finished (or left) run here, scored out of 10. */
 export const gameRoutes = new Hono<AppEnv>();
 
 gameRoutes.use("/me/game-runs", requireStudent);
@@ -20,40 +20,36 @@ gameRoutes.post("/me/game-runs", async (c) => {
   const now = nowIso();
   await execute(
     c.env.DB,
-    `INSERT INTO game_runs (student_id, enrollment_id, class_id, run_id, game_id, score_key, score, stars, completed,
-                            summary, mistakes, achievements, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO game_runs (student_id, enrollment_id, class_id, run_id, game_id, score_key, score, completed,
+                            summary, mistakes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (student_id, run_id) DO UPDATE SET
-       score = excluded.score, stars = excluded.stars, completed = excluded.completed, summary = excluded.summary,
-       mistakes = excluded.mistakes, achievements = excluded.achievements, updated_at = excluded.updated_at`,
+       score = excluded.score, completed = excluded.completed, summary = excluded.summary,
+       mistakes = excluded.mistakes, updated_at = excluded.updated_at`,
     s.id,
     s.enrollment?.id ?? null,
     s.enrollment?.classId ?? null,
     body.runId,
     body.scoreKey.split(":")[0],
     body.scoreKey,
-    body.score,
-    body.stars,
+    Math.round(body.score * 10) / 10, // one decimal, e.g. 8.3
     body.completed ? 1 : 0,
     body.summary,
     JSON.stringify(body.mistakes),
-    JSON.stringify(body.achievements),
     now,
     now,
   );
   return c.json({ ok: true }, 201);
 });
 
-/** GET /api/me/game-runs — the signed-in student's best score per game/mode. */
+/** GET /api/me/game-runs — the signed-in student's best score (out of 10) per game, any mode. */
 gameRoutes.get("/me/game-runs", async (c) => {
   const s = c.get("student");
-  const rows = await queryAll<{ score_key: GameScoreKey; best: number; stars: number; plays: number; last_played_at: string }>(
+  const rows = await queryAll<{ game_id: GameId; best: number; plays: number; last_played_at: string }>(
     c.env.DB,
-    `SELECT score_key, MAX(score) AS best, MAX(stars) AS stars, COUNT(*) AS plays, MAX(updated_at) AS last_played_at
-       FROM game_runs WHERE student_id = ? GROUP BY score_key`,
+    `SELECT game_id, MAX(score) AS best, COUNT(*) AS plays, MAX(updated_at) AS last_played_at
+       FROM game_runs WHERE student_id = ? GROUP BY game_id`,
     s.id,
   );
-  return c.json<GameBest[]>(
-    rows.map((r) => ({ scoreKey: r.score_key, best: r.best, stars: r.stars, plays: r.plays, lastPlayedAt: r.last_played_at })),
-  );
+  return c.json<GameBest[]>(rows.map((r) => ({ gameId: r.game_id, best: r.best, plays: r.plays, lastPlayedAt: r.last_played_at })));
 });

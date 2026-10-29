@@ -1,15 +1,16 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 
-// Best scores and unlocked achievements for this browser session only (saving to the DB is GAME-7).
+// Best scores (out of 10) for this browser session only; the host saves every run to its database (GAME-7).
 const KEY = 'muscle-games:session';
 const ScoresContext = createContext(null);
 
 function load() {
   try {
     const data = JSON.parse(sessionStorage.getItem(KEY));
-    return { best: data?.best || {}, ach: data?.ach || {} };
+    // Bests above 10 come from the old points system and are dropped.
+    return { best: Object.fromEntries(Object.entries(data?.best || {}).filter(([, v]) => v <= 10)) };
   } catch {
-    return { best: {}, ach: {} };
+    return { best: {} };
   }
 }
 
@@ -35,16 +36,8 @@ export function ScoresProvider({ children }) {
     return true;
   }, []);
 
-  // Unlocks achievement ids for a game; returns the ones that are new.
-  const unlock = useCallback((gameId, ids) => {
-    const have = ref.current.ach[gameId] || [];
-    const fresh = ids.filter((id) => !have.includes(id));
-    if (fresh.length) save({ ...ref.current, ach: { ...ref.current.ach, [gameId]: [...have, ...fresh] } });
-    return fresh;
-  }, []);
-
   return (
-    <ScoresContext.Provider value={{ best: state.best, ach: state.ach, submit, unlock }}>{children}</ScoresContext.Provider>
+    <ScoresContext.Provider value={{ best: state.best, submit }}>{children}</ScoresContext.Provider>
   );
 }
 

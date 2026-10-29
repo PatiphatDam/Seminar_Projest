@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { pick, useFx } from '../../fx/Fx.jsx';
-import { ComboMeter, TimerBar, comboMult, useCountdown } from '../../components/Hud.jsx';
+import { TimerBar, useCountdown } from '../../components/Hud.jsx';
+import { scoreOutOf10 } from '../meta.js';
 import { sample, shuffle } from '../util.js';
 import { PAIRS } from './data.js';
 
 // Picture Match: every card is face up. Tap a picture, then the name (or feature) that belongs to it.
 const TIME = 150;
-const COMBO_CAP = 3;
 const ROUND_BREAK_MS = 1400;
 export const ROUNDS = [
   { id: 'name', title: 'Name it', hint: 'match each picture with its name', count: 6 },
@@ -36,12 +36,14 @@ export default function Memory({ onScore, onFinish }) {
   const [wrongPair, setWrongPair] = useState([]);
   const [between, setBetween] = useState(false);
   const [over, setOver] = useState(false);
-  const st = useRef({ score: 0, streak: 0, maxStreak: 0, misses: 0, found: 0, mistakes: [] });
+  const st = useRef({ misses: 0, found: 0, mistakes: [] });
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   const s = st.current;
 
-  const [left, , leftRef] = useCountdown(TIME, { running: !between && !over, onExpire: () => end(false) });
+  // Out of 10: pairs found over every pair plus every wrong match (unfound pairs count against you).
+  const score = () => scoreOutOf10(s.found, TOTAL_PAIRS + s.misses);
+  const [left] = useCountdown(TIME, { running: !between && !over, onExpire: () => end(false) });
 
   useEffect(() => {
     fx.say(`Round 1: ${ROUNDS[0].hint}. Tap a picture, then the words that go with it!`, 'happy');
@@ -53,20 +55,12 @@ export default function Memory({ onScore, onFinish }) {
     if (s.over) return;
     s.over = true;
     setOver(true);
-    const bonus = completed ? Math.round(leftRef.current * 2) : 0;
-    s.score += bonus;
-    onScore(s.score);
-    fx.say(completed ? `All pairs found! Time bonus +${bonus} ⏱` : 'Time’s up! ⏰', completed ? 'wow' : 'sad');
+    fx.say(completed ? 'All pairs found! 🎉' : 'Time’s up! ⏰', completed ? 'wow' : 'sad');
     later(
       () =>
-        onFinish(s.score, {
-          summary: `${s.found}/${TOTAL_PAIRS} pairs · ${s.misses} wrong · time bonus +${bonus}`,
+        onFinish(score(), {
+          summary: `${s.found}/${TOTAL_PAIRS} pairs · ${s.misses} wrong`,
           mistakes: s.mistakes,
-          stats: {
-            memPerfect: completed && s.misses === 0,
-            memFast: completed && leftRef.current >= 45,
-            maxStreak: s.maxStreak,
-          },
         }),
       1100
     );
@@ -99,24 +93,19 @@ export default function Memory({ onScore, onFinish }) {
     const [pic, text] = card.kind === 'pic' ? [card, selected] : [selected, card];
     setSelected(null);
     if (pic.pair === text.pair) {
-      s.streak += 1;
       s.found += 1;
-      s.maxStreak = Math.max(s.maxStreak, s.streak);
-      const mult = comboMult(s.streak, COMBO_CAP);
-      const pts = 20 * mult;
-      s.score += pts;
-      onScore(s.score);
+      onScore(score());
       const { x, y } = fx.centerOf(`[data-card="${card.uid}"]`);
-      fx.sound(mult > 1 ? 'combo' : 'good', mult);
+      fx.sound('good');
       fx.burst(x, y, 20);
-      fx.float(x, y - 20, `+${pts}${mult > 1 ? ` ×${mult}` : ''}`);
-      fx.say(mult > 1 ? `Combo ×${mult}! 🔥 ${pic.p.name}` : `${pick(['A match!', 'Great!', 'Sharp eyes!'])} ${pic.p.name}`, mult > 1 ? 'wow' : 'happy');
+      fx.float(x, y - 20, '✓');
+      fx.say(`${pick(['A match!', 'Great!', 'Sharp eyes!'])} ${pic.p.name}`, 'happy');
       const nextMatched = { ...matched, [pic.pair]: true };
       setMatched(nextMatched);
       if (Object.keys(nextMatched).length === deck.pics.length) roundCleared();
     } else {
-      s.streak = 0;
       s.misses += 1;
+      onScore(score());
       s.mistakes.push({ prompt: `What is this picture? (${ROUNDS[round].title})`, yours: text.text, answer: `${pic.p.name} — ${pic.p.clue}`, why: pic.p.why });
       fx.sound('bad');
       fx.vibrate(100);
@@ -139,7 +128,6 @@ export default function Memory({ onScore, onFinish }) {
           <span className="mg-hud__q">
             🖼️ Round {round + 1}/{ROUNDS.length} · {ROUNDS[round].title} · {Object.keys(matched).length}/{deck.pics.length}
           </span>
-          <ComboMeter streak={s.streak} cap={COMBO_CAP} />
         </div>
       </div>
       {between && <p className="mg-peek-banner">✨ Round {round + 2} coming up…</p>}

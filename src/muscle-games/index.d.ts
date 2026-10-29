@@ -6,12 +6,11 @@ export interface MuscleGameRun {
   gameId: "balloon-pop" | "group-sort" | "diameter";
   mode: string | null;
   scoreKey: string;
+  /** Out of maxScore (10), one decimal: the share of answers that were right. */
   score: number;
-  stars: number;
+  maxScore: number;
   completed: boolean;
   isNewBest: boolean;
-  achievements: string[];
-  newAchievements: string[];
   mistakes: { prompt: string; yours: string; answer: string; why?: string }[];
   summary: string;
   finishedAt: string;

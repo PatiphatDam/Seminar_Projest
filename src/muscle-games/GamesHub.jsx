@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { GAMES, starsFor } from './games/meta.js';
+import { GAMES, MAX_SCORE, bestOf } from './games/meta.js';
 import { useScores } from './scores.jsx';
 import { BalloonScene, CardTableScene, MicroscopeScene } from './covers.jsx';
 import { Armin } from './fx/Fx.jsx';
-import { Stars } from './components/Hud.jsx';
 import { useGamesConfig } from './config.js';
 
 const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': CardTableScene, diameter: MicroscopeScene };
 
 function GameCard({ g, n }) {
-  const { best, ach } = useScores();
+  const { best } = useScores();
   const [preview, setPreview] = useState(false);
   const Scene = SCENES[g.id];
-  const stars = Math.max(0, ...g.keys.map((k) => starsFor(k, best[k])));
-  const unlocked = (ach[g.id] || []).length;
-  const played = g.keys.filter((k) => best[k] !== undefined);
+  const top = bestOf(g, best);
 
   return (
     <li
@@ -43,7 +40,6 @@ function GameCard({ g, n }) {
             <span className="mg-game-card__num">Game {n}</span>
             {g.title}
           </h2>
-          <Stars n={stars} size="sm" />
         </div>
         <p className="mg-game-card__goal">{g.goal}</p>
         <div className="mg-game-card__tags">
@@ -51,16 +47,10 @@ function GameCard({ g, n }) {
             {g.lo}
           </span>
           <span className="mg-chip">⏱ {g.minutes}</span>
-          <span className="mg-chip" title="Achievements unlocked this session">
-            🏅 {unlocked}/{g.achievements.length}
-          </span>
+          <span className="mg-chip">🎯 {MAX_SCORE} points</span>
         </div>
         <p className="mg-game-card__best">
-          {played.length === 0
-            ? 'No score yet this session'
-            : g.modeLabels
-              ? played.map((k) => `${g.modeLabels[k]} ${best[k]}`).join(' · ')
-              : `Best this session: ${best[g.keys[0]]}`}
+          {top === undefined ? 'No score yet this session' : `Best this session: ${top} / ${MAX_SCORE}`}
         </p>
         <Link to={g.id} className="mg-btn mg-btn--primary mg-btn--block mg-btn--pulse" aria-label={`Play ${g.title}`}>
           ▶ Play
@@ -84,8 +74,8 @@ export default function GamesHub() {
             </>
           )}
           <p className="mg-lede">
-            Hi, I’m <strong>Armin</strong>, your muscle buddy! Pick a game, beat your best score, collect ⭐ and 🏅. Every
-            game is open, so play in any order.
+            Hi, I’m <strong>Armin</strong>, your muscle buddy! Each game is worth 10 points and your best
+            score counts. Every game is open, so play in any order.
           </p>
         </div>
       </header>
