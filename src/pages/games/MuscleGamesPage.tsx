@@ -3,6 +3,10 @@ import type { GameRunBody } from "@shared/contract";
 import { api } from "@/lib/api";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { MuscleGames, type MuscleGameRun } from "@/muscle-games";
+// Cover-title fonts, self-hosted: the CSP blocks Google Fonts. Text and heading fonts come from index.css.
+import "@fontsource/bungee/latin-400.css";
+import "@fontsource/cinzel-decorative/latin-700.css";
+import "@fontsource/cinzel-decorative/latin-900.css";
 
 /** /games/* — the Muscle Games module. Every finished (or left) run is saved to the student's record (GAME-7). */
 export default function MuscleGamesPage() {

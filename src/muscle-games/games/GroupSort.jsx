@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useScores } from '../scores.jsx';
 import { starsFor } from './meta.js';
 import { Stars } from '../components/Hud.jsx';
+import { ConveyorCoverScene } from '../covers.jsx';
 import Memory from './sort/Memory.jsx';
 import Conveyor from './sort/Conveyor.jsx';
 
@@ -17,7 +18,7 @@ const MODES = [
     id: 'conveyor',
     title: 'Conveyor Sort',
     icon: '📦',
-    desc: 'Cards race along a belt. Drag or tap them into the Skeletal, Cardiac or Smooth bin before they fall off.',
+    desc: 'Crates roll down the factory belt. Press a picture button and the robot arm packs the crate into Skeletal, Cardiac or Smooth.',
     meta: '60 s · 3 lives',
   },
 ];
@@ -40,13 +41,7 @@ function ModeSelect({ onPick }) {
                   ))}
                 </span>
               ) : (
-                <span className="mg-mode__belt">
-                  {['🫀', '💪', '🧬'].map((c, k) => (
-                    <i key={k} style={{ animationDelay: `${-k * 1.2}s` }}>
-                      {c}
-                    </i>
-                  ))}
-                </span>
+                <ConveyorCoverScene />
               )}
             </span>
             <span className="mg-mode__title">
@@ -65,13 +60,20 @@ function ModeSelect({ onPick }) {
   );
 }
 
-export default function GroupSort({ onScore, onFinish, setScoreKey }) {
-  const [mode, setMode] = useState(null);
+// The mode played last. GamePage remounts the game on ↻ / Play again (`fresh`), which should replay that
+// mode straight away instead of going back to the mode picker.
+let lastMode = null;
+
+export default function GroupSort({ onScore, onFinish, setScoreKey, fresh }) {
+  const [mode, setMode] = useState(() => (fresh ? lastMode : null));
+  useEffect(() => {
+    if (mode) setScoreKey(`group-sort:${mode}`);
+  }, [mode, setScoreKey]);
   if (!mode) {
     return (
       <ModeSelect
         onPick={(m) => {
-          setScoreKey(`group-sort:${m}`);
+          lastMode = m;
           setMode(m);
         }}
       />

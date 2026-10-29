@@ -26,8 +26,8 @@ class GameErrorBoundary extends Component {
     if (!this.state.error) return this.props.children;
     return (
       <div className="mg-page mg-crash" role="alert">
-        <h1>เกิดข้อผิดพลาด</h1>
-        <p className="mg-muted">Something went wrong while loading the game.</p>
+        <h1>Something went wrong</h1>
+        <p className="mg-muted">The game couldn’t load. Try reloading the page.</p>
         <button type="button" className="mg-btn mg-btn--primary" onClick={() => window.location.reload()}>
           ↻ Reload
         </button>

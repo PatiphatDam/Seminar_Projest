@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { sample, shuffle } from './util.js';
+import { AirshipArt, CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
 import { GOLD, ICE, pick, useFx } from '../fx/Fx.jsx';
 import { ComboMeter, Lives, TimerBar, comboMult, useCountdown } from '../components/Hud.jsx';
 
@@ -31,9 +32,17 @@ const ROUNDS = 10;
 const LIVES = 3;
 const TIME = 100;
 const ATP_MAX = 4;
-const COLORS = ['#c084fc', '#f472b6', '#7dd3fc', '#fdba74'];
-const PRAISE = ['เยี่ยมมาก! 🎯', 'แม่นสุด ๆ!', 'ถูกต้อง! 💪', 'เก่งจัง!', 'ปังมาก!'];
-const OOPS = ['อุ๊ย! ยังไม่ใช่', 'เกือบแล้ว ลองอีกลูก!', 'ไม่ใช่ลูกนั้นนะ 😅'];
+// Stripe colour and its shade for each lane's balloon.
+const COLORS = [
+  ['#2fb5a3', '#1f8577'],
+  ['#ec7fb0', '#bf5285'],
+  ['#4fa5e0', '#2f78ad'],
+  ['#f2954a', '#c46c27'],
+];
+const SWING_AT = 180; // ms into the cast animation when the staff swings forward
+const FIRE_FLIGHT = 200;
+const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
+const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];
 
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
@@ -53,9 +62,10 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
   const [state, setState] = useState({});
   const done = useRef(false);
   const started = useRef(performance.now());
+  const [flyerGone, setFlyerGone] = useState(false);
+  const flyerShot = useRef(false);
   const delays = useMemo(() => shuffle([0, 0.35, 0.7, 1.05]).map((d) => d + Math.random() * 0.25), []);
-  const flyer = useMemo(() => ({ top: 12 + Math.random() * 26, delay: 1 + Math.random() * 1.5, rev: Math.random() < 0.5 }), []);
-  const [flyerHit, setFlyerHit] = useState(false);
+  const flyer = useMemo(() => ({ top: 10 + Math.random() * 24, delay: 1 + Math.random() * 1.5, rev: Math.random() < 0.5 }), []);
 
   useEffect(() => {
     if (!assisted) return;
@@ -82,8 +92,8 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
     });
   };
 
-  const escaped = (e, opt) => {
-    if (e.animationName !== 'mg-rise' || opt !== q.answer || done.current) return;
+  const landed = (e, opt) => {
+    if (e.animationName !== 'mg-fall' || opt !== q.answer || done.current) return;
     done.current = true;
     onMiss();
   };
@@ -94,30 +104,36 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
         <button
           key={opt}
           type="button"
-          className={`mg-balloon${k === q.golden ? ' mg-balloon--gold' : ''}${state[opt] ? ` mg-balloon--${state[opt]}` : ''}`}
-          style={{ '--lane': k, '--color': COLORS[k], '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
+          className={`mg-rider${k === q.golden ? ' mg-rider--gold' : ''}${state[opt] ? ` mg-rider--${state[opt]}` : ''}`}
+          style={{ '--lane': k, '--color': COLORS[k][0], '--color-dark': COLORS[k][1], '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
           onPointerDown={(e) => {
             e.preventDefault();
             shoot(e.currentTarget, opt, k);
           }}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && shoot(e.currentTarget, opt, k)}
-          onAnimationEnd={(e) => escaped(e, opt)}
+          onAnimationEnd={(e) => landed(e, opt)}
           disabled={['good', 'bad', 'gone'].includes(state[opt])}
         >
-          {k === q.golden && <span className="mg-balloon__star" aria-hidden="true">⭐</span>}
-          <span>{opt}</span>
+          <span className="mg-rider__balloon">
+            <AirshipArt />
+            {k === q.golden && <span className="mg-rider__star" aria-hidden="true">⭐</span>}
+          </span>
+          <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
       ))}
-      {q.special && !flyerHit && (
+      {q.special && !flyerGone && (
         <button
           type="button"
           className={`mg-flyer mg-flyer--${q.special}${flyer.rev ? ' mg-flyer--rev' : ''}`}
           style={{ top: `${flyer.top}%`, '--fdelay': `${flyer.delay}s` }}
           onPointerDown={(e) => {
             e.preventDefault();
-            if (flyerHit) return;
-            setFlyerHit(true);
-            fire(e.currentTarget, (x, y) => onSpecial(q.special, x, y));
+            if (flyerShot.current) return;
+            flyerShot.current = true;
+            fire(e.currentTarget, (x, y) => {
+              setFlyerGone(true);
+              onSpecial(q.special, x, y);
+            });
           }}
           aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: costs a life'}
         >
@@ -139,16 +155,17 @@ export default function BalloonPop({ onScore, onFinish }) {
   const [assistFor, setAssistFor] = useState(-1);
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
+  const [casting, setCasting] = useState(0);
   const skyRef = useRef(null);
-  const launcherRef = useRef(null);
+  const wizardRef = useRef(null);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const s = st.current;
   const q = questions[s.i];
-  const duration = Math.max(5, 8.5 - s.i * 0.35);
-  const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end('หมดเวลาแล้ว! ⏰') });
+  const duration = Math.max(7, 10.5 - s.i * 0.35);
+  const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end('Time’s up! ⏰') });
 
   function end(line) {
     if (s.over) return;
@@ -183,36 +200,49 @@ export default function BalloonPop({ onScore, onFinish }) {
   const loseLife = () => {
     s.lives -= 1;
     rerender();
-    if (s.lives <= 0) end('หัวใจหมดแล้ว 💔');
+    if (s.lives <= 0) end('Out of hearts 💔');
   };
 
-  // Shoot a dart from the launcher at an element, then resolve the hit where it lands.
+  // The wizard raises the staff and swings it; at the swing a tiny fireball flies from the orb
+  // to the element, dropping embers, and the hit resolves where it lands.
   const fire = (el, land) => {
     const sky = skyRef.current;
-    if (!sky) return;
-    const box = sky.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    const tx = r.left + r.width / 2 - box.left;
-    const ty = r.top + r.height / 2 - box.top;
-    const sx = box.width / 2;
-    const sy = box.height - 36;
-    const angle = (Math.atan2(ty - sy, tx - sx) * 180) / Math.PI + 90;
-    if (launcherRef.current) launcherRef.current.style.transform = `translateX(-50%) rotate(${angle}deg)`;
-    const dart = document.createElement('div');
-    dart.className = 'mg-dart';
-    sky.appendChild(dart);
-    fx.sound('whoosh');
-    const anim = dart.animate(
-      [
-        { transform: `translate(${sx}px, ${sy}px) rotate(${angle}deg)` },
-        { transform: `translate(${tx}px, ${ty}px) rotate(${angle}deg)` },
-      ],
-      { duration: 170, easing: 'ease-in' }
-    );
-    anim.onfinish = () => {
-      dart.remove();
-      land(tx + box.left, ty + box.top);
-    };
+    if (!sky || !el) return;
+    const aim = (r) => [r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)];
+    let [tx, ty] = aim(el.getBoundingClientRect());
+    setCasting((c) => c + 1);
+    later(() => {
+      const box = sky.getBoundingClientRect();
+      if (el.isConnected) [tx, ty] = aim(el.getBoundingClientRect());
+      const orb = wizardRef.current?.querySelector('.mg-wizard__orb')?.getBoundingClientRect();
+      const sx = orb ? orb.left + orb.width / 2 : box.left + box.width / 2;
+      const sy = orb ? orb.top + orb.height / 2 : box.bottom - 90;
+      fx.sound('whoosh');
+      const ball = document.createElement('div');
+      ball.className = 'mg-fireball';
+      sky.appendChild(ball);
+      const at = (p) => [sx + (tx - sx) * p * p - box.left, sy + (ty - sy) * p * p - box.top];
+      const anim = ball.animate(
+        [
+          { transform: `translate(${sx - box.left}px, ${sy - box.top}px) scale(0.6)` },
+          { transform: `translate(${tx - box.left}px, ${ty - box.top}px) scale(1)` },
+        ],
+        { duration: FIRE_FLIGHT, easing: 'ease-in' }
+      );
+      for (let k = 1; k <= 5; k++)
+        later(() => {
+          const [x, y] = at(k / 6);
+          const ember = document.createElement('div');
+          ember.className = 'mg-ember';
+          ember.style.transform = `translate(${x}px, ${y}px)`;
+          sky.appendChild(ember);
+          later(() => ember.remove(), 460);
+        }, (FIRE_FLIGHT * k) / 6);
+      anim.onfinish = () => {
+        ball.remove();
+        land(tx, ty);
+      };
+    }, SWING_AT);
   };
 
   const hit = ({ bonus, golden, x, y }) => {
@@ -230,7 +260,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     fx.burst(x, y, golden ? 34 : 16, golden ? GOLD : undefined);
     fx.float(x, y - 24, `+${pts}${mult > 1 ? ` ×${mult}` : ''}${golden ? ' ⭐' : ''}`, golden ? 'gold' : 'good');
     fx.say(
-      golden ? 'บอลลูนทอง! คะแนน ×2 ✨' : mult > 1 ? `คอมโบ ×${mult}! ไฟลุกแล้ว 🔥` : s.atp === ATP_MAX ? 'ATP เต็มแล้ว! กดใช้พลังได้เลย ⚡' : pick(PRAISE),
+      golden ? 'Golden balloon! Points ×2 ✨' : mult > 1 ? `Combo ×${mult}! On fire 🔥` : s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : pick(PRAISE),
       golden || mult > 2 ? 'wow' : 'happy'
     );
     rerender();
@@ -252,10 +282,12 @@ export default function BalloonPop({ onScore, onFinish }) {
   const miss = () => {
     s.misses += 1;
     s.streak = 0;
-    s.mistakes.push({ prompt: q.text, yours: 'ปล่อยให้ลอยหนีไป', answer: q.answer });
+    s.mistakes.push({ prompt: q.text, yours: 'Let it reach the castle', answer: q.answer });
     fx.sound('bad');
     fx.vibrate(120);
-    fx.say(`หลุดไปแล้ว! คำตอบคือ ${q.answer}`, 'sad');
+    fx.say(`It reached the castle! The answer was ${q.answer}`, 'sad');
+    setShake(true);
+    later(() => setShake(false), 500);
     loseLife();
     nextRound();
   };
@@ -267,10 +299,10 @@ export default function BalloonPop({ onScore, onFinish }) {
       fx.sound('pop');
       fx.sound('freeze');
       fx.burst(x, y, 24, ICE);
-      fx.say('บอลลูนน้ำแข็ง! ทุกลูกลอยช้าลง ❄️', 'wow');
+      fx.say('Ice spell! Everything falls slower ❄️', 'wow');
       const setRate = (rate) =>
         skyRef.current?.getAnimations({ subtree: true }).forEach((a) => {
-          if (a.animationName === 'mg-rise') a.playbackRate = rate;
+          if (a.animationName === 'mg-fall') a.playbackRate = rate;
         });
       setRate(0.35);
       setFrozen(true);
@@ -284,7 +316,7 @@ export default function BalloonPop({ onScore, onFinish }) {
       fx.vibrate([80, 40, 80]);
       fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
       fx.float(x, y, '💥', 'bad');
-      fx.say('ตู้ม! โดนระเบิด เสียหัวใจ 1 ดวง', 'sad');
+      fx.say('Boom! You hit a bomb and lost a heart', 'sad');
       setShake(true);
       later(() => setShake(false), 500);
       loseLife();
@@ -297,7 +329,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     s.atpUsed += 1;
     setAssistFor(s.i);
     fx.sound('power');
-    fx.say('พลัง ATP! ตัดตัวเลือกผิดออก 2 ลูก ⚡', 'wow');
+    fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
     rerender();
   };
 
@@ -315,15 +347,20 @@ export default function BalloonPop({ onScore, onFinish }) {
       </div>
 
       <div className="mg-prompt">
-        <p className="mg-prompt__label">🎯 Shoot the balloon that matches:</p>
+        <p className="mg-prompt__label">🪄 Tap the balloon that matches:</p>
         <p className="mg-prompt__text" key={s.i}>
           {q.text}
         </p>
       </div>
 
       <div ref={skyRef} className={`mg-sky${frozen ? ' mg-sky--frozen' : ''}${shake ? ' mg-shake' : ''}`}>
-        <div className="mg-sky__cloud mg-sky__cloud--a" aria-hidden="true" />
-        <div className="mg-sky__cloud mg-sky__cloud--b" aria-hidden="true" />
+        <div className="mg-sky__moon" aria-hidden="true" />
+        <TownArt layer="far" />
+        <CastleArt layer="far" />
+        <TownArt layer="near" />
+        <CastleArt layer="near" />
+        <div className="mg-sky__haze" aria-hidden="true" />
+        <SkyClouds />
         {!s.over && (
           <Round
             key={s.i}
@@ -337,8 +374,9 @@ export default function BalloonPop({ onScore, onFinish }) {
             onSpecial={special}
           />
         )}
-        <div ref={launcherRef} className="mg-launcher" aria-hidden="true">
-          <span className="mg-launcher__dart" />
+        <div className="mg-castle" aria-hidden="true" />
+        <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
+          <WizardArt />
         </div>
         <button
           type="button"
@@ -356,7 +394,9 @@ export default function BalloonPop({ onScore, onFinish }) {
           <span className="mg-atp__label">{s.atp >= ATP_MAX ? 'USE ATP' : 'ATP'}</span>
         </button>
       </div>
-      <p className="mg-legend">⭐ Gold = points ×2 · ❄️ Ice = slow motion · 💣 Bomb = lose a heart · ⚡ ATP removes 2 wrong balloons</p>
+      <p className="mg-legend">
+        🧙 Tap a balloon and the wizard zaps it · ⭐ Gold = points ×2 · ❄️ Ice = slow motion · 💣 Bomb = lose a heart · ⚡ ATP removes 2 wrong balloons
+      </p>
     </section>
   );
 }

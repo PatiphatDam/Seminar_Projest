@@ -56,7 +56,7 @@ export default function PictureJigsaw({ onPlaced, onMissed, onDone }) {
 
   useEffect(() => {
     if (!done) return undefined;
-    fx.say('ภาพสมบูรณ์แล้ว! สวยมาก 🖼️', 'wow');
+    fx.say('Picture complete! Beautiful 🖼️', 'wow');
     const t = setTimeout(onDone, 1200);
     return () => clearTimeout(t);
   }, [done]); // eslint-disable-line react-hooks/exhaustive-deps

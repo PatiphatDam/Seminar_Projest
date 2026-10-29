@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Myo, pick, useFx } from '../../fx/Fx.jsx';
+import { Armin, pick, useFx } from '../../fx/Fx.jsx';
 import { ComboMeter, Stars, TimerBar, comboMult, useCountdown } from '../../components/Hud.jsx';
 import { LEVELS } from './levels.js';
 import ZoomDive from './ZoomDive.jsx';
@@ -62,7 +62,7 @@ function AdventureMap({ current, results, resumed, onPlay, onFinishEarly }) {
           const state = k < current ? 'done' : k === current ? 'now' : 'locked';
           return (
             <div key={lv.id} className={`mg-adv__node mg-adv__node--${state}`} style={{ left: `${NODES[k][0]}%`, top: `${NODES[k][1]}%` }}>
-              {state === 'now' && <Myo mood="happy" className="mg-adv__myo" />}
+              {state === 'now' && <Armin mood="happy" className="mg-adv__mascot" />}
               <button
                 type="button"
                 className="mg-adv__btn"
@@ -81,7 +81,7 @@ function AdventureMap({ current, results, resumed, onPlay, onFinishEarly }) {
         })}
       </div>
       <div className="mg-adv__actions">
-        {resumed && <p className="mg-adv__resume">✅ บันทึกความคืบหน้าไว้แล้ว — เล่นต่อจากด่าน {current + 1} ได้เลย</p>}
+        {resumed && <p className="mg-adv__resume">✅ Progress saved. Continue from stage {current + 1}.</p>}
         <button type="button" className="mg-btn mg-btn--primary mg-btn--pulse" onClick={() => onPlay(current)}>
           ▶ Play stage {current + 1}: {LEVELS[current].title}
         </button>
@@ -100,7 +100,7 @@ function LevelRunner({ level, index, onPlaced, onMissed, onDone }) {
   const [finished, setFinished] = useState(false);
   const [left, , leftRef] = useCountdown(level.time, {
     running: !finished,
-    onExpire: () => fx.say('หมดเวลาแล้ว! ทำให้จบได้ แต่ไม่มีโบนัสเวลานะ ⏰', 'sad'),
+    onExpire: () => fx.say('Time’s up! You can still finish, but there’s no time bonus ⏰', 'sad'),
   });
 
   useEffect(() => {
@@ -181,9 +181,9 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
         finish();
         return;
       }
-      fx.say(`ยินดีต้อนรับกลับ! เล่นต่อที่ด่าน ${saved.current + 1} ได้เลย 🗺️`, 'happy');
+      fx.say(`Welcome back! Carry on from stage ${saved.current + 1} 🗺️`, 'happy');
     } else {
-      fx.say('ออกสำรวจกล้ามเนื้อกัน! แตะด่านแรกบนแผนที่ได้เลย 🗺️', 'happy');
+      fx.say('Let’s explore a muscle! Tap the first stage on the map 🗺️', 'happy');
     }
     // Leaving after clearing at least one stage still saves the run.
     setExitReport?.(() => (!s.done && s.results.some(Boolean) ? { score: s.score, info: report() } : null));
@@ -205,8 +205,8 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
     fx.sound(mult > 1 ? 'combo' : 'snap', mult);
     fx.burst(pt.x, pt.y, 12);
     fx.float(pt.x, pt.y - 24, `+${pts}${mult > 1 ? ` ×${mult}` : ''}`);
-    if (mult > 1 && s.streak % 3 === 0) fx.say(`คอมโบ ×${mult}! 🔥`, 'wow');
-    else fx.say(pick(['คลิก! พอดีเป๊ะ 🧩', 'ถูกต้อง!', 'เยี่ยม!', 'ใช่เลย! 💪']), 'happy');
+    if (mult > 1 && s.streak % 3 === 0) fx.say(`Combo ×${mult}! 🔥`, 'wow');
+    else fx.say(pick(['Click! Perfect fit 🧩', 'Correct!', 'Great!', 'Spot on! 💪']), 'happy');
   };
 
   const missed = (pt, mistake) => {
@@ -219,7 +219,7 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
     fx.sound('bad');
     fx.vibrate(120);
     fx.float(pt.x, pt.y - 20, `-${MISS_PENALTY}`, 'bad');
-    fx.say(pick(['ยังไม่ใช่ตรงนั้นนะ', 'ลองดูอีกทีนะ 🤔', 'เกือบแล้ว!']), 'sad');
+    fx.say(pick(['Not there yet', 'Have another look 🤔', 'So close!']), 'sad');
   };
 
   const levelDone = (timeLeft) => {
@@ -240,7 +240,7 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
     });
     fx.sound('win');
     fx.burst(window.innerWidth / 2, window.innerHeight / 3, 40);
-    fx.say(stars === 3 ? 'สามดาว! ไร้ที่ติ 🌟' : 'ผ่านด่านแล้ว! 🎉', 'wow');
+    fx.say(stars === 3 ? 'Three stars! Flawless 🌟' : 'Stage cleared! 🎉', 'wow');
     setClear({ level, stars, timeBonus });
     setPhase('clear');
   };
@@ -260,7 +260,7 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
     setCurrent(current + 1);
     setClear(null);
     setPhase(toMap ? 'map' : 'play');
-    if (toMap) fx.say('ด่านต่อไปปลดล็อกแล้ว! 🔓', 'happy');
+    if (toMap) fx.say('Next stage unlocked! 🔓', 'happy');
   };
 
   return (

@@ -9,12 +9,6 @@ export const GROUPS = [
 ];
 export const groupLabel = (id) => GROUPS.find((g) => g.id === id).label;
 
-export const IMAGE_CARDS = [
-  { answer: 'skeletal', Art: SkeletalArt, text: 'Striated fibers, many peripheral nuclei', why: 'Long cylindrical fibers, clear striations and many nuclei pushed to the edge.' },
-  { answer: 'cardiac', Art: CardiacArt, text: 'Branched cells with intercalated discs', why: 'Branched striated cells, one central nucleus, joined end-to-end by intercalated discs.' },
-  { answer: 'smooth', Art: SmoothArt, text: 'Spindle cells, no striations', why: 'Spindle-shaped cells with one central nucleus and no striations.' },
-];
-
 export const TEXT_CARDS = [
   { answer: 'skeletal', text: 'Many nuclei at the edge of the cell', why: 'Skeletal fibers are multinucleated with peripheral nuclei.' },
   { answer: 'skeletal', text: 'Generally under voluntary control', why: 'Only skeletal muscle is generally voluntary.' },

@@ -7,10 +7,10 @@ import { useGamesConfig } from '../config.js';
 import { Stars } from './Hud.jsx';
 
 const CHEERS = {
-  3: 'สุดยอด! สามดาวเต็ม! 🌟',
-  2: 'เก่งมาก! อีกนิดเดียวก็สามดาวแล้ว',
-  1: 'ดีเลย! ลองอีกรอบเพื่อเก็บดาวเพิ่มไหม?',
-  0: 'ไม่เป็นไรนะ ทบทวนข้อที่พลาดแล้วลองใหม่!',
+  3: 'Amazing! A full three stars! 🌟',
+  2: 'Great job! Just a little more for three stars.',
+  1: 'Nice! Play again to collect more stars?',
+  0: 'No worries. Review what you missed and try again!',
 };
 
 const newRunId = () => (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -25,7 +25,7 @@ function dedupe(mistakes = []) {
   });
 }
 
-// Shared frame for every game: header, Myo, live score, session best, results, review and replay.
+// Shared frame for every game: header, Armin, live score, session best, results, review and replay.
 export default function GamePage({ game, Game }) {
   const { best, submit, unlock } = useScores();
   const fx = useFx();
@@ -210,7 +210,7 @@ export default function GamePage({ game, Game }) {
 
             {result.fresh.length > 0 && (
               <div className="mg-result__ach">
-                <p className="mg-result__label">ปลดล็อกเหรียญใหม่!</p>
+                <p className="mg-result__label">New badges unlocked!</p>
                 <ul>
                   {result.fresh.map((a) => (
                     <li key={a.id} className="mg-ach-chip mg-ach-chip--new" title={a.desc}>
@@ -223,7 +223,7 @@ export default function GamePage({ game, Game }) {
 
             {result.mistakes.length > 0 && (
               <details className="mg-review" open={result.mistakes.length <= 3}>
-                <summary>📖 ทบทวนข้อที่พลาด ({result.mistakes.length})</summary>
+                <summary>📖 Review your mistakes ({result.mistakes.length})</summary>
                 <ul>
                   {result.mistakes.map((m, k) => (
                     <li key={k}>

@@ -46,7 +46,7 @@ export function TimerBar({ left, total }) {
       <div className="mg-timer__track">
         <div className="mg-timer__fill" style={{ width: `${Math.max(0, (left / total) * 100)}%` }} />
       </div>
-      <span className="mg-timer__num">{left <= 0 ? 'หมดเวลา' : `${secs}s`}</span>
+      <span className="mg-timer__num">{left <= 0 ? 'Time’s up' : `${secs}s`}</span>
     </div>
   );
 }

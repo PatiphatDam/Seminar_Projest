@@ -38,7 +38,7 @@ export default function ZoomDive({ onPlaced, onMissed, onDone }) {
 
   useEffect(() => {
     if (!finished) return undefined;
-    fx.say('สุดทางแล้ว! นี่คือ actin (เส้นบาง) กับ myosin (เส้นหนา) 🔬', 'wow');
+    fx.say('You reached the bottom! These are actin (thin) and myosin (thick) 🔬', 'wow');
     const t = setTimeout(onDone, 1600);
     return () => clearTimeout(t);
   }, [finished]); // eslint-disable-line react-hooks/exhaustive-deps
