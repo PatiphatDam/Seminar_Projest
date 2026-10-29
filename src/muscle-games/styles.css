@@ -274,7 +274,9 @@
 /* "Game 1" sits on its own small line above the title, so long titles never wrap in two-column cards. */
 .mg-game-card__num { display: block; font-family: var(--font); font-size: 12px; line-height: 18px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--card-muted); }
 .mg-game-card__goal { color: var(--card-muted); line-height: 1.5; font-size: 14.5px; }
-.mg-game-card__best { font-size: 13px; color: var(--card-muted); font-weight: 700; margin-top: auto; padding: 12px 0 4px; border-top: 1px solid var(--card-hair); }
+/* The chips take the spare height, so they always sit right on the divider whatever the description length. */
+.mg-game-card__body .mg-game-card__tags { margin-top: auto; }
+.mg-game-card__best { font-size: 13px; color: var(--card-muted); font-weight: 700; padding: 12px 0 4px; border-top: 1px solid var(--card-hair); }
 
 /* Scene loops */
 .mg-scene * { transform-box: fill-box; }
