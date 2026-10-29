@@ -266,7 +266,9 @@
 }
 @media (hover: hover) { .mg-preview-chip { opacity: 0; transition: opacity 0.2s; } .mg-game-card:hover .mg-preview-chip, .mg-preview-chip:focus-visible { opacity: 1; } }
 .mg-game-card__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 8px 0; flex: 1; }
-.mg-game-card__tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mg-game-card__tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+/* Compact chips so OL · time · points stay on one row even in the narrow two-column cards. */
+.mg-game-card__tags > * { white-space: nowrap; font-size: 12px; padding: 4px 9px; }
 .mg-game-card__titlerow { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
 /* Same as the main site's lesson card titles: 19/26 px on phones, 21/28 px from 768 px. */
 .mg-game-card__body h2 { font-size: 19px; line-height: 26px; }
