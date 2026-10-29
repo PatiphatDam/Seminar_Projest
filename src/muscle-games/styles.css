@@ -260,14 +260,6 @@
 @media (hover: hover) { .mg-game-card:hover { transform: translateY(-2px); } }
 .mg-game-card__cover { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px; background: var(--card-panel); }
 .mg-game-card__cover .mg-scene { width: 100%; height: 100%; }
-.mg-ribbon {
-  position: absolute; top: 12px; left: 12px; padding: 4px 10px; border-radius: 999px;
-  font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; border-radius: 6px; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-  animation: mg-wiggle 3s ease-in-out infinite;
-}
-.mg-ribbon--hot { background: #b3472f; }
-.mg-ribbon--new { background: hsl(165 52% 32%); }
-@keyframes mg-wiggle { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(-6deg); } 96% { transform: rotate(6deg); } }
 .mg-preview-chip {
   position: absolute; top: 10px; right: 10px; min-height: var(--tap); padding: 0 12px; border-radius: 999px; border: 0;
   background: rgb(12 30 26 / 0.72); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -994,7 +986,7 @@
 @keyframes mg-pop-in { from { transform: scale(0.85); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-ribbon, .mg-btn--pulse,
+  .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-btn--pulse,
   .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-rider__star, .mg-adv__mascot, .mg-lens__ring, .mg-mode__cards i, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
   .mg-pcard, .mg-pmatch { transition: none; animation: none; }
 }

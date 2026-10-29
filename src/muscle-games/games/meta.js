@@ -6,7 +6,6 @@ export const GAMES = [
     lo: 'OL1',
     loText: 'Explain the major functions and physiological properties of muscular tissue',
     minutes: '2–3 min',
-    badge: 'HOT',
     keys: ['balloon-pop'],
     intro: 'Tap the balloon that matches the clue and the wizard zaps it! Golden balloons score ×2, but watch out for bombs 💣',
     achievements: [
@@ -25,7 +24,6 @@ export const GAMES = [
     lo: 'OL2',
     loText: 'Differentiate the gross and microscopic characteristics of skeletal, cardiac and smooth muscle',
     minutes: '2–3 min',
-    badge: 'NEW',
     keys: ['group-sort:memory', 'group-sort:conveyor'],
     modeLabels: { 'group-sort:memory': 'Picture Match', 'group-sort:conveyor': 'Conveyor' },
     intro: 'Pick a mode: Picture Match or Conveyor Sort?',
@@ -44,7 +42,6 @@ export const GAMES = [
     lo: 'OL3',
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
     minutes: '6–8 min',
-    badge: 'NEW',
     keys: ['diameter'],
     intro: 'Let’s explore a muscle! Tap the first stage on the map 🗺️',
     achievements: [

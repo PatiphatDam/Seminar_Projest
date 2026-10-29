@@ -27,7 +27,6 @@ function GameCard({ g }) {
     >
       <div className={`mg-game-card__cover${preview ? ' mg-is-preview' : ''}`}>
         <Scene />
-        {g.badge && <span className={`mg-ribbon mg-ribbon--${g.badge.toLowerCase()}`}>{g.badge === 'HOT' ? '🔥 HOT' : '✨ NEW'}</span>}
         <button
           type="button"
           className="mg-preview-chip"
