@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { sample, shuffle } from './util.js';
 import { AirshipArt, CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
 import { ICE, pick, useFx } from '../fx/Fx.jsx';
-import { Lives, TimerBar, useCountdown } from '../components/Hud.jsx';
+import { TimerBar, useCountdown } from '../components/Hud.jsx';
 import { scoreOutOf10 } from './meta.js';
 
 // OL1 — functions and physiological properties of muscle tissue (lecture §1–2).
@@ -378,7 +378,6 @@ export default function BalloonPop({ onScore, onFinish }) {
           <span className="mg-hud__q">
             Q {s.i + 1}/{ROUNDS}
           </span>
-          <Lives lives={s.lives} max={LIVES} />
         </div>
       </div>
 
@@ -414,21 +413,31 @@ export default function BalloonPop({ onScore, onFinish }) {
         <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
           <WizardArt />
         </div>
-        <button
-          type="button"
-          className={`mg-atp${s.atp >= ATP_MAX ? ' mg-atp--ready' : ''}`}
-          onClick={fireAtp}
-          disabled={s.atp < ATP_MAX || s.over}
-          aria-label={`ATP power ${s.atp} of ${ATP_MAX}. ${s.atp >= ATP_MAX ? 'Ready: removes two wrong balloons' : 'Answer correctly to charge'}`}
-        >
-          <span className="mg-atp__icon" aria-hidden="true">⚡</span>
-          <span className="mg-atp__cells" aria-hidden="true">
-            {Array.from({ length: ATP_MAX }, (_, k) => (
-              <i key={k} className={k < s.atp ? 'mg-on' : undefined} />
+        {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}
+        <div className="mg-gauge">
+          <div className="mg-gauge__lives" role="img" aria-label={`${s.lives} of ${LIVES} lives left`}>
+            {Array.from({ length: LIVES }, (_, k) => (
+              <i key={k} className={k < s.lives ? 'mg-on' : undefined} />
             ))}
-          </span>
-          <span className="mg-atp__label">{s.atp >= ATP_MAX ? 'USE ATP' : 'ATP'}</span>
-        </button>
+          </div>
+          <button
+            type="button"
+            className={`mg-gauge__atp${s.atp >= ATP_MAX ? ' mg-gauge__atp--ready' : ''}`}
+            onClick={fireAtp}
+            disabled={s.atp < ATP_MAX || s.over}
+            aria-label={`ATP power ${s.atp} of ${ATP_MAX}. ${s.atp >= ATP_MAX ? 'Ready: removes two wrong balloons' : 'Answer correctly to charge'}`}
+          >
+            <span className="mg-gauge__bolt" aria-hidden="true">
+              <b>⚡</b>
+            </span>
+            <span className="mg-gauge__tube" aria-hidden="true">
+              {Array.from({ length: ATP_MAX }, (_, k) => (
+                <i key={k} className={k < s.atp ? 'mg-on' : undefined} />
+              ))}
+              {s.atp >= ATP_MAX && <span className="mg-gauge__tap">TAP!</span>}
+            </span>
+          </button>
+        </div>
       </div>
       <p className="mg-legend">
         🧙 Tap a balloon and the wizard zaps it · ✅ Right on the first try = 1 point · ❄️ Ice = slow motion · 💣 Bomb = removes 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
