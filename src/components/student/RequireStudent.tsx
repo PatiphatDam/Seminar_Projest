@@ -81,8 +81,8 @@ function AdminSessionNotice({ email }: { email: string }) {
     <CenteredShell>
       <h1 className="text-xl font-bold">You're signed in as an instructor</h1>
       <p className="mt-2 text-sm text-muted">
-        <span className="font-medium text-ink">{email}</span> uses the instructor dashboard. Student pages need a student
-        account.
+        <span className="font-medium text-ink">{email}</span> is signed in to the instructor dashboard. To study or preview the
+        student pages, switch to the student view and sign in again with the same Google account.
       </p>
       <div className="mt-6 flex flex-wrap gap-2">
         <Link
@@ -96,7 +96,7 @@ function AdminSessionNotice({ email }: { email: string }) {
           loading={logout.isPending}
           onClick={() => logout.mutate(undefined, { onSuccess: () => navigate("/login", { replace: true }) })}
         >
-          Sign out
+          Switch to student view
         </Button>
       </div>
     </CenteredShell>

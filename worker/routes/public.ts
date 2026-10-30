@@ -147,10 +147,12 @@ async function applyJoinCode(db: D1Database, studentId: number, studentCode: str
   return undefined;
 }
 
+/**
+ * Student sign-in. Instructors also have @mfu.ac.th addresses (an allowed student domain): signing in HERE gives them
+ * the student view (a student record keyed by the e-mail's local part), so they can study and preview what students
+ * see. The instructor dashboard is reached only through "For instructors" (/admin/login → as: "admin").
+ */
 async function loginStudent(c: Context<AppEnv>, email: string, joinCode: string | undefined) {
-  // Instructors also have @mfu.ac.th addresses (an allowed student domain): if this e-mail is on the instructor list,
-  // sign them in as an instructor instead of creating a student record. The login page then opens /admin.
-  if (await findAdmin(c.env.DB, c.env, email)) return loginAdmin(c, email);
   const check = parseStudentEmail(email, studentDomains(c.env));
   if (!check.ok) throw forbidden(check.error, check.code);
   const db = c.env.DB;

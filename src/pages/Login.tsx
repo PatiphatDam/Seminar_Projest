@@ -87,10 +87,11 @@ export default function Login() {
 
       {me.data?.role === "admin" && (
         <p className="mt-4 rounded-xl bg-zinc-100 px-3 py-2 text-xs text-zinc-700">
-          You're signed in as an instructor ({me.data.admin.email}).{" "}
+          You're signed in as an instructor ({me.data.admin.email}). Signing in below opens the student view instead — or{" "}
           <Link to="/admin" className="font-semibold underline">
-            Open the dashboard
+            open the dashboard
           </Link>
+          .
         </p>
       )}
 
