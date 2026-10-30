@@ -364,7 +364,7 @@ export function ConveyorCoverScene() {
   );
 }
 
-// Picture Match cover: a noir detective in a deerstalker, seen from behind with his pipe, studies an evidence wall of muscle photos tied
+// Picture Match cover: a noir detective in a dark deerstalker, seen from behind with his pipe, studies an evidence wall of muscle photos tied
 // with red string, lit by a beam through the window blinds.
 function NoirPhoto({ x, y, w, h, r, children }) {
   return (
@@ -389,9 +389,9 @@ export function DetectiveCoverScene() {
           <stop offset="1" stopColor="#efe3cc" stopOpacity="0.04" />
         </linearGradient>
         <pattern id="nr-tweed" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
-          <rect width="2.4" height="2.4" fill="#9c8662" />
-          <path d="M0 0h1.2v1.2H0z M1.2 1.2h1.2v1.2H1.2z" fill="#3e3023" />
-          <path d="M0 1.9h2.4" stroke="#6e3d24" strokeWidth="0.25" />
+          <rect width="2.4" height="2.4" fill="#3a332c" />
+          <path d="M0 0h1.2v1.2H0z M1.2 1.2h1.2v1.2H1.2z" fill="#121010" />
+          <path d="M0 1.9h2.4" stroke="#4a1c1c" strokeWidth="0.25" />
         </pattern>
         <linearGradient id="nr-hat-shade" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#050404" stopOpacity="0.75" />
@@ -469,44 +469,49 @@ export function DetectiveCoverScene() {
       <rect x="282" y="123" width="15" height="14" rx="1.5" fill="#1d1916" />
       <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
 
-      {/* the detective, from behind and symmetric: Inverness cape, a houndstooth deerstalker with its ear flaps
-          tied up on top, and a pipe poking out on the right with smoke curling up. Red rim light on the left. */}
+      {/* the detective, from behind, drawn flat and boxy like the Conveyor Sort worker: a squared coat with a
+          shoulder cape, a dark tweed deerstalker tipped to one side with its back peak hanging over the neck,
+          and a pipe poking out on the right with smoke curling up. Red rim light on the left. */}
       {/* view-box: .mg-scene * uses fill-box, which would move this transform off the figure's own corner */}
-      <g transform="translate(215 162) scale(1.6)" style={{ transformBox: 'view-box' }}>
-        <ellipse cy="-55" rx="58" ry="52" fill="url(#nr-halo)" />
+      <g transform="translate(188 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
+        <ellipse cy="-52" rx="50" ry="48" fill="url(#nr-halo)" />
         <g fill="#050404">
-          <path d="M-40 0 C-40 -20 -35 -34 -23 -41 C-16 -45 -9 -47 -6 -49 L6 -49 C9 -47 16 -45 23 -41 C35 -34 40 -20 40 0 Z" />
-          <rect x="-5" y="-58" width="10" height="10" />
-          <ellipse cy="-66" rx="10" ry="11" />
+          <path d="M-28 0 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V0 Z" />
+          <rect x="-5" y="-56" width="10" height="9" />
+          <circle cy="-64" r="10" />
         </g>
-        <path d="M-34 -22 C-30 -34 -18 -43 -6 -46 L6 -46 C18 -43 30 -34 34 -22 C20 -18 -20 -18 -34 -22 Z" fill="#0d0b0a" />
-        <path d="M-7 -49 L-10 -42 L0 -46 L10 -42 L7 -49 Z" fill="#100d0b" />
-        <path d="M-12 -24 C-10 -32 -8 -38 -6 -44 M12 -24 C10 -32 8 -38 6 -44" stroke="#1b1714" strokeWidth="0.8" fill="none" />
+        <path d="M-28 -24 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V-24 Z" fill="#0e0c0b" />
+        <path d="M-8 -48 L-11 -41 L0 -45 L11 -41 L8 -48 Z" fill="#141110" />
+        <path d="M-10 0 V-22 M10 0 V-22" stroke="#171310" strokeWidth="0.8" />
         {/* pipe: stem from the mouth, bowl with a glowing ember */}
-        <path d="M7 -61 C12 -60 16 -60 19 -62" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M18 -63 L17.5 -70 L24 -70 L23.5 -63 C22.5 -60.5 19 -60.5 18 -63 Z" fill="#050404" />
-        <path d="M17.5 -70 L24 -70" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
-        <ellipse cx="20.8" cy="-70.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
+        <path d="M7 -59 C12 -58 16 -58 19 -60" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        <path d="M18 -61 L17.5 -68 L24 -68 L23.5 -61 C22.5 -58.5 19 -58.5 18 -61 Z" fill="#050404" />
+        <path d="M17.5 -68 L24 -68" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
+        <ellipse cx="20.8" cy="-68.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
         <g stroke="#efe3cc" strokeWidth="1.1" strokeLinecap="round" fill="none">
-          <path className="mg-sc-smoke" d="M21 -72 C17 -78 25 -82 21 -88 C17 -94 24 -98 22 -104" />
-          <path className="mg-sc-smoke mg-sc-smoke--late" d="M22 -73 C26 -79 19 -84 23 -90 C27 -96 21 -100 24 -106" />
+          <path className="mg-sc-smoke" d="M21 -70 C17 -76 25 -80 21 -86 C17 -92 24 -96 22 -102" />
+          <path className="mg-sc-smoke mg-sc-smoke--late" d="M22 -71 C26 -77 19 -82 23 -88 C27 -94 21 -98 24 -104" />
         </g>
-        {/* deerstalker: tweed pattern, shaded darker away from the window */}
+        {/* rim light */}
+        <path d="M-28 -27 V-32 C-28 -40 -24 -45 -17 -47" stroke="#c0262d" strokeWidth="1" fill="none" />
+        <path d="M-9.5 -58 C-10.5 -61 -10.5 -65 -9.5 -68" stroke="#c0262d" strokeWidth="0.7" fill="none" />
+        <path d="M28 -2 V-32 C28 -40 24 -45 17 -47" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.35" />
+      </g>
+      {/* deerstalker seen from behind, tipped to the left: dark noir tweed, the back peak toward us */}
+      <g transform="translate(188 152) scale(1.45) rotate(-12 0 -66)" style={{ transformBox: 'view-box' }}>
         {['url(#nr-tweed)', 'url(#nr-hat-shade)'].map((fill) => (
           <g key={fill} fill={fill}>
-            <path d="M-13 -74 C-17 -78 -16 -85 -11 -86 L-9 -78 Z M13 -74 C17 -78 16 -85 11 -86 L9 -78 Z" />
-            <path d="M-13 -70 C-13 -84 -7 -90 0 -90 C7 -90 13 -84 13 -70 Z" />
-            <path d="M-14 -71 C-8 -64 8 -64 14 -71 L12 -73 C6 -69 -6 -69 -12 -73 Z" />
+            <path d="M-12 -73 C-16 -77 -15 -84 -10 -85 L-8 -77 Z M12 -73 C16 -77 15 -84 10 -85 L8 -77 Z" />
+            <path d="M-12 -68 C-12 -82 -7 -88 0 -88 C7 -88 12 -82 12 -68 Z" />
+            <path d="M-14 -70 C-13 -57 13 -57 14 -70 C9 -66 -9 -66 -14 -70 Z" />
           </g>
         ))}
-        <path d="M0 -90 V-70 M-6.5 -88 C-8 -82 -8 -76 -7 -70.5 M6.5 -88 C8 -82 8 -76 7 -70.5" stroke="#1d1610" strokeWidth="0.5" fill="none" />
-        <path d="M0 -90 C-5 -95 -8 -92 -5 -89 Z M0 -90 C5 -95 8 -92 5 -89 Z" fill="#3a2a1c" />
-        <path d="M-1 -90 L-4 -84 M1 -90 L4 -84" stroke="#3a2a1c" strokeWidth="0.7" strokeLinecap="round" />
-        {/* rim light */}
-        <path d="M-33 -29 C-30 -35 -25 -39 -18 -43" stroke="#c0262d" strokeWidth="1" fill="none" />
-        <path d="M-13 -71 C-13 -84 -7 -90 -1 -90" stroke="#c0262d" strokeWidth="0.8" fill="none" />
-        <path d="M-10 -60 C-11 -63 -11 -68 -10 -71" stroke="#c0262d" strokeWidth="0.7" fill="none" />
-        <path d="M13 -72 C13 -82 9 -88 3 -90 M36 -16 C33 -30 26 -38 18 -43" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.4" />
+        <path d="M0 -88 V-68 M-6 -86 C-7.5 -80 -7.5 -74 -6.5 -68.5 M6 -86 C7.5 -80 7.5 -74 6.5 -68.5" stroke="#050404" strokeWidth="0.5" fill="none" />
+        <path d="M-14 -70 C-9 -66 9 -66 14 -70" stroke="#050404" strokeWidth="0.6" fill="none" />
+        <path d="M0 -88 C-5 -93 -8 -90 -5 -87 Z M0 -88 C5 -93 8 -90 5 -87 Z" fill="#0d0b0a" />
+        <path d="M-1 -88 L-4 -82 M1 -88 L4 -82" stroke="#0d0b0a" strokeWidth="0.7" strokeLinecap="round" />
+        <path d="M-12 -69 C-12 -82 -7 -88 -1 -88" stroke="#c0262d" strokeWidth="0.8" fill="none" />
+        <path d="M12 -70 C12 -80 8 -86 3 -88" stroke="#efe3cc" strokeWidth="0.5" fill="none" opacity="0.4" />
       </g>
 
       <rect width="320" height="150" fill="url(#nr-vignette)" />
