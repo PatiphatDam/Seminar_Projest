@@ -177,40 +177,77 @@ function GaugeLightning() {
   );
 }
 
-// An electric explosion where a wrong balloon is removed, drawn round (0, 0): first a four-point flash with a streak
-// and flying shards, then curved arcs over a puff of smoke that swells and fades.
-const SHARDS = [
-  [-30, -14, 8], [-24, 20, 10], [26, -22, 9], [34, 12, 7], [-8, 34, 9], [12, -36, 7],
-];
+// A crescent blade along the arc of radius `r` from angle `a0` to `a1`, `w` thick in the middle and sharp at both ends.
+function crescent(r, a0, a1, w) {
+  const outer = [];
+  const inner = [];
+  for (let k = 0; k <= 10; k++) {
+    const t = k / 10;
+    const a = a0 + (a1 - a0) * t;
+    const th = Math.sin(Math.PI * t) ** 0.8 * w;
+    outer.push(`${(Math.cos(a) * (r + th / 2)).toFixed(1)},${(Math.sin(a) * (r + th / 2)).toFixed(1)}`);
+    inner.unshift(`${(Math.cos(a) * (r - th / 2)).toFixed(1)},${(Math.sin(a) * (r - th / 2)).toFixed(1)}`);
+  }
+  return [...outer, ...inner].join(' ');
+}
+
+// An electric shockwave where a wrong balloon is removed, drawn round (0, 0) and over in half a second: a hard white
+// cross for a couple of frames, then a tilted ring racing out with speed lines, two crescent slashes swinging round,
+// a few crackling bolts and sparks flying off.
+const EB_LINES = [
+  [-0.3, 26, 58, 3.2], [0.5, 24, 46, 2.4], [1.25, 26, 62, 3.4], [2.1, 22, 44, 2.2],
+  [2.75, 26, 56, 3], [3.6, 24, 50, 2.6], [4.3, 26, 64, 3.4], [5.3, 22, 42, 2.2],
+].map(([a, r1, r2, w]) => taper([[Math.cos(a) * r1, Math.sin(a) * r1], [Math.cos(a) * r2, Math.sin(a) * r2]], w));
+const EB_SPARKS = [[-46, -30], [40, -40], [52, 14], [-30, 40], [10, 50], [-54, 6], [24, -54]].map(([dx, dy]) => {
+  const ux = (dx / Math.hypot(dx, dy)) * 7;
+  const uy = (dy / Math.hypot(dx, dy)) * 7;
+  return { dx, dy, points: taper([[ux, uy], [-ux, -uy]], 2.6) };
+});
+const EB_CRACKLE = [jagged(-10, -8, -40, -26, 4, 0.25, 7), jagged(12, 6, 38, 24, 4, 0.25, 8), jagged(4, -12, 14, -40, 3, 0.3, 9)];
+const EB_SLASHES = [crescent(30, -2.6, -1.0, 7), crescent(26, 0.5, 1.9, 5.5)];
 
 function ElectricBurst({ x, y }) {
   return (
     <svg className="mg-eburst" style={{ left: x, top: y }} viewBox="-70 -70 140 140" aria-hidden="true">
       <defs>
         <radialGradient id="mg-eburst-glow">
-          <stop offset="0" stopColor="#60a5fa" stopOpacity="0.8" />
-          <stop offset="1" stopColor="#60a5fa" stopOpacity="0" />
+          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.85" />
+          <stop offset="0.5" stopColor="#3b82f6" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <g className="mg-eburst__flash">
-        <circle r="38" fill="url(#mg-eburst-glow)" />
-        <polygon points="-68,0 0,-1.6 68,0 0,1.6" fill="#1e3a8a" opacity="0.8" />
-        <polygon points="0,-58 7,-7 46,0 7,7 0,40 -7,7 -42,0 -7,-7" fill="#67e8f9" stroke="#3b82f6" strokeWidth="3" strokeLinejoin="round" />
-        <polygon points="0,-40 4,-4 30,0 4,4 0,26 -4,4 -28,0 -4,-4" fill="#f0fdff" />
-        {SHARDS.map(([sx, sy, r]) => (
-          <polygon key={`${sx}${sy}`} points={`${sx},${sy - r} ${sx + r * 0.35},${sy + r * 0.2} ${sx - r * 0.4},${sy + r * 0.5}`} fill="#e0f7ff" />
+      <g className="mg-eburst__glow">
+        <circle r="34" fill="url(#mg-eburst-glow)" />
+      </g>
+      <g className="mg-eburst__ring">
+        <ellipse rx="44" ry="30" fill="none" stroke="#3b82f6" strokeWidth="7" opacity="0.35" />
+        <ellipse rx="44" ry="30" fill="none" stroke="#a5f3fc" strokeWidth="2.2" />
+      </g>
+      <g className="mg-eburst__lines" fill="#e0f7ff">
+        {EB_LINES.map((pts) => (
+          <polygon key={pts} points={pts} />
         ))}
       </g>
-      <g className="mg-eburst__smoke" fill="#8ea3c7">
-        <circle cx="-8" cy="4" r="13" />
-        <circle cx="9" cy="-4" r="12" />
-        <circle cx="4" cy="12" r="10" />
-        <circle cx="-4" cy="-10" r="9" />
+      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1">
+        {EB_SLASHES.map((pts) => (
+          <polygon key={pts} points={pts} />
+        ))}
       </g>
-      <g className="mg-eburst__arcs" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1.2" strokeLinejoin="round">
-        <path d="M-6 -46 Q30 -26 8 6 Q20 -24 -6 -46 Z" />
-        <path d="M30 18 Q2 40 -34 26 Q-2 32 30 18 Z" />
-        <path d="M-40 -6 Q-30 -30 -4 -30 Q-28 -24 -40 -6 Z" />
+      <g className="mg-eburst__crackle">
+        {EB_CRACKLE.map((spine, k) => (
+          <Bolt key={k} spine={spine} w={4} />
+        ))}
+      </g>
+      <g className="mg-eburst__sparks">
+        {EB_SPARKS.map(({ dx, dy, points }, k) => (
+          <g key={k} style={{ '--dx': `${dx}px`, '--dy': `${dy}px`, animationDelay: `${k * 0.012}s` }}>
+            <polygon points={points} fill="#f0fdff" />
+          </g>
+        ))}
+      </g>
+      <g className="mg-eburst__flash">
+        <polygon points="0,-46 5,-5 34,0 5,5 0,38 -5,5 -30,0 -5,-5" fill="#f0fdff" stroke="#67e8f9" strokeWidth="2.5" strokeLinejoin="round" />
+        <circle r="9" fill="#fff" />
       </g>
     </svg>
   );
@@ -479,7 +516,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  // The two wrong balloons the power removes blow up in an electric explosion.
+  // The two wrong balloons the power removes blow up in an electric shockwave, with a short shake for impact.
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
@@ -497,8 +534,13 @@ export default function BalloonPop({ onScore, onFinish }) {
       });
     setAssistFor(s.i);
     setBursts(targets);
-    if (targets.length) fx.sound('boom');
-    later(() => setBursts([]), 800);
+    if (targets.length) {
+      fx.sound('boom');
+      fx.vibrate(60);
+      setShake(true);
+      later(() => setShake(false), 250);
+    }
+    later(() => setBursts([]), 600);
     rerender();
   };
 
