@@ -99,34 +99,101 @@ function BombIcon() {
   );
 }
 
-// Lightning crackling round the full ATP tube. Laid over the gauge button, 14px bigger on every side; the two sets of
-// bolts flash in turn, and the whole thing bursts in once when the tube fills.
-const SPARKS_A = [
-  'M48 22 l5 -8 l4 4 l6 -10 l3 7 l7 -5',
-  'M171 30 l6 -5 l-1 7 l6 -1 l-4 7 l5 3',
-  'M84 50 l4 7 l5 -4 l5 8 l4 -5 l6 6',
-  'M12 30 l-7 -4 l2 7 l-6 0 l5 6',
-];
-const SPARKS_B = [
-  'M120 22 l-4 -8 l7 2 l-2 -9 l7 5 l4 -6',
-  'M44 50 l-3 8 l6 -3 l0 9',
-  'M140 50 l5 6 l3 -5 l6 7 l5 -3',
-  'M35 10 l-4 -5 l6 0 l-3 -5',
+// Lightning in the style of 2D anime effects: each bolt is a solid shape, wide at its root and sharp at its tip, with a
+// white core, a cyan body and a blue glow. A bolt keeps a few shapes ("poses") and flips between them every few frames
+// so it seems to boil.
+function rng(seed) {
+  return () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// The centre line of a bolt from (x1, y1) to (x2, y2), kinked `kinks` times, each kink thrown sideways up to `jag` of
+// the length.
+function jagged(x1, y1, x2, y2, kinks, jag, seed) {
+  const r = rng(seed);
+  const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+  const nx = -(y2 - y1) / len;
+  const ny = (x2 - x1) / len;
+  return Array.from({ length: kinks + 1 }, (_, k) => {
+    const t = k / kinks;
+    const off = k === 0 || k === kinks ? 0 : (r() * 2 - 1) * jag * len;
+    return [x1 + (x2 - x1) * t + nx * off, y1 + (y2 - y1) * t + ny * off];
+  });
+}
+
+// Polygon points round a centre line, `w` wide at the root and narrowing to a point.
+function taper(spine, w) {
+  const left = [];
+  const right = [];
+  spine.forEach(([x, y], k) => {
+    const [ax, ay] = spine[Math.max(0, k - 1)];
+    const [bx, by] = spine[Math.min(spine.length - 1, k + 1)];
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    const hw = (w / 2) * (1 - k / (spine.length - 1));
+    const nx = (-(by - ay) / len) * hw;
+    const ny = ((bx - ax) / len) * hw;
+    left.push(`${(x + nx).toFixed(1)},${(y + ny).toFixed(1)}`);
+    right.unshift(`${(x - nx).toFixed(1)},${(y - ny).toFixed(1)}`);
+  });
+  return [...left, ...right].join(' ');
+}
+
+function Bolt({ spine, w }) {
+  const body = taper(spine, w);
+  return (
+    <>
+      <polygon points={body} fill="#60a5fa" stroke="#3b82f6" strokeWidth={w * 0.9} strokeLinejoin="round" opacity="0.35" />
+      <polygon points={body} fill="#67e8f9" stroke="#a5f3fc" strokeWidth="0.6" strokeLinejoin="round" />
+      <polygon points={taper(spine, w * 0.45)} fill="#f0fdff" />
+    </>
+  );
+}
+
+// Round the full tube: three poses of four bolts each, hugging the top and bottom edges, whipping off the end and off
+// the bolt badge (clear of the life bars above). Drawn in the space of .mg-gauge__sparks (the gauge button, 14px bigger
+// on every side; the tube runs x 37–171, y 23–49 and the badge sits at 35, 36).
+const WHIP_POSES = [0, 1, 2].map((p) => [
+  [jagged(62 + p * 8, 24, 150 - p * 6, 19, 7, 0.06, 11 + p), 6],
+  [jagged(168, 30, 188, 60 - p * 7, 4, 0.25, 21 + p), 7.5],
+  [jagged(160 - p * 10, 50, 50 + p * 10, 59 + p * 2, 7, 0.06, 31 + p), 6.5],
+  [jagged(22, 30, 0, 12 + p * 9, 3, 0.3, 41 + p), 6],
+]);
+
+// When the tube fills, one strike leaps from the badge up into the sky: a spark, half a bolt, then the full bolt in
+// two poses with a branch. Drawn in .mg-gauge__strike, whose bottom edge runs through the badge at x 54.
+const STRIKE = [
+  [[jagged(54, 300, 70, 250, 3, 0.2, 51), 7]],
+  [[jagged(54, 300, 96, 130, 5, 0.12, 52), 11]],
+  [[jagged(54, 300, 122, 0, 8, 0.09, 53), 15], [jagged(88, 160, 150, 120, 4, 0.15, 54), 6]],
+  [[jagged(54, 300, 116, 0, 8, 0.09, 55), 15], [jagged(80, 190, 20, 140, 4, 0.15, 56), 6]],
 ];
 
-function GaugeSparks() {
-  const bolts = (paths) =>
-    paths.map((d) => (
-      <g key={d}>
-        <path d={d} stroke="#facc15" strokeWidth="5" opacity="0.55" />
-        <path d={d} stroke="#fffbe0" strokeWidth="1.8" />
-      </g>
-    ));
+function GaugeLightning() {
   return (
-    <svg className="mg-gauge__sparks" viewBox="0 0 180 72" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <g className="mg-gauge__sparks-a">{bolts(SPARKS_A)}</g>
-      <g className="mg-gauge__sparks-b">{bolts(SPARKS_B)}</g>
-    </svg>
+    <>
+      <svg className="mg-gauge__strike" viewBox="0 0 160 300" aria-hidden="true">
+        {STRIKE.map((bolts, k) => (
+          <g key={k} className={`mg-strike-${k + 1}`}>
+            {bolts.map(([spine, w], j) => (
+              <Bolt key={j} spine={spine} w={w} />
+            ))}
+          </g>
+        ))}
+      </svg>
+      <svg className="mg-gauge__sparks" viewBox="0 0 180 72" aria-hidden="true">
+        {WHIP_POSES.map((bolts, k) => (
+          <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
+            {bolts.map(([spine, w], j) => (
+              <Bolt key={j} spine={spine} w={w} />
+            ))}
+          </g>
+        ))}
+      </svg>
+    </>
   );
 }
 
@@ -245,6 +312,7 @@ export default function BalloonPop({ onScore, onFinish }) {
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
   const [casting, setCasting] = useState(0);
+  const [zap, setZap] = useState(null);
   const skyRef = useRef(null);
   const wizardRef = useRef(null);
   const timers = useRef([]);
@@ -392,12 +460,36 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  const fireAtp = () => {
+  // Two bolts shoot from the badge to the two wrong balloons the power removes, and they burst where the bolts land.
+  const fireAtp = (e) => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
-    setAssistFor(s.i);
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
+    const sky = skyRef.current;
+    const box = sky.getBoundingClientRect();
+    const badge = e.currentTarget.querySelector('.mg-gauge__bolt').getBoundingClientRect();
+    const [sx, sy] = [badge.left + badge.width / 2 - box.left, badge.top + badge.height / 2 - box.top];
+    // the same two the round removes: wrong answers not yet shot at, in lane order
+    const targets = [...sky.querySelectorAll('.mg-rider')]
+      .filter((el) => el.querySelector('.mg-rider__banner').textContent !== q.answer && !/mg-rider--/.test(el.className))
+      .slice(0, 2)
+      .map((el) => {
+        const r = el.querySelector('.mg-rider__balloon').getBoundingClientRect();
+        return [r.left + r.width / 2, r.top + r.height / 2];
+      });
+    setZap({
+      id: Date.now(),
+      w: box.width,
+      h: box.height,
+      poses: [61, 62].map((seed) => targets.map(([x, y], k) => jagged(sx, sy, x - box.left, y - box.top, 9, 0.07, seed + k * 10))),
+    });
+    later(() => {
+      setAssistFor(s.i);
+      targets.forEach(([x, y]) => fx.burst(x, y, 18, ['#f0fdff', '#67e8f9', '#3b82f6']));
+      if (targets.length) fx.sound('pop');
+    }, 160);
+    later(() => setZap(null), 420);
     rerender();
   };
 
@@ -444,6 +536,18 @@ export default function BalloonPop({ onScore, onFinish }) {
         <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
           <WizardArt />
         </div>
+        {s.atp >= ATP_MAX && <div className="mg-sky__flash" aria-hidden="true" />}
+        {zap && (
+          <svg key={zap.id} className="mg-zap" viewBox={`0 0 ${zap.w} ${zap.h}`} aria-hidden="true">
+            {zap.poses.map((bolts, k) => (
+              <g key={k} className="mg-zap__pose" style={{ animationDelay: `${-0.06 * k}s` }}>
+                {bolts.map((spine, j) => (
+                  <Bolt key={j} spine={spine} w={10} />
+                ))}
+              </g>
+            ))}
+          </svg>
+        )}
         {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}
         <div className="mg-gauge">
           <div className="mg-gauge__lives" role="img" aria-label={`${s.lives} of ${LIVES} lives left`}>
@@ -467,7 +571,7 @@ export default function BalloonPop({ onScore, onFinish }) {
               ))}
               {s.atp >= ATP_MAX && <span className="mg-gauge__tap">TAP!</span>}
             </span>
-            {s.atp >= ATP_MAX && <GaugeSparks />}
+            {s.atp >= ATP_MAX && <GaugeLightning />}
           </button>
         </div>
       </div>
