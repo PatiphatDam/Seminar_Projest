@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GAMES, MAX_SCORE, bestOf } from './games/meta.js';
 import { useScores } from './scores.jsx';
-import { BalloonScene, CardTableScene, MicroscopeScene } from './covers.jsx';
+import { BalloonScene, GroupSortScene, MicroscopeScene } from './covers.jsx';
 import { Armin } from './fx/Fx.jsx';
 import { useGamesConfig } from './config.js';
 
-const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': CardTableScene, diameter: MicroscopeScene };
+const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': GroupSortScene, diameter: MicroscopeScene };
 
 function GameCard({ g, n }) {
   const { best } = useScores();
@@ -24,15 +24,17 @@ function GameCard({ g, n }) {
     >
       <div className={`mg-game-card__cover${preview ? ' mg-is-preview' : ''}`}>
         <Scene />
-        <button
-          type="button"
-          className="mg-preview-chip"
-          onClick={() => setPreview((p) => !p)}
-          aria-pressed={preview}
-          aria-label={`Preview ${g.title}`}
-        >
-          {preview ? '■ Stop' : '▶ Preview'}
-        </button>
+        {Scene.preview !== false && (
+          <button
+            type="button"
+            className="mg-preview-chip"
+            onClick={() => setPreview((p) => !p)}
+            aria-pressed={preview}
+            aria-label={`Preview ${g.title}`}
+          >
+            {preview ? '■ Stop' : '▶ Preview'}
+          </button>
+        )}
       </div>
       <div className="mg-game-card__body">
         <div className="mg-game-card__titlerow">

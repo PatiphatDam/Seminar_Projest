@@ -308,23 +308,17 @@
 
 /* Scene previews (hover / Preview button) */
 .mg-pv-dart, .mg-pv-score, .mg-pv-confetti, .mg-pv-sparkle, .mg-pv-snap { opacity: 0; }
-.mg-pv-face { transform: scaleX(0); }
 .mg-is-preview .mg-pv-dart { animation: mg-pv-dart 2.4s ease-in infinite; }
 .mg-is-preview .mg-pv-pop { animation: mg-pv-pop 2.4s ease-out infinite; }
 .mg-is-preview .mg-pv-score { animation: mg-pv-score 2.4s ease-out infinite; }
 .mg-is-preview .mg-pv-confetti { animation: mg-pv-confetti 2.4s ease-out infinite; transform-box: view-box; }
-.mg-is-preview .mg-pv-flipcard .mg-pv-back { animation: mg-pv-back 2.8s ease-in-out infinite; }
-.mg-is-preview .mg-pv-flipcard .mg-pv-face { animation: mg-pv-face 2.8s ease-in-out infinite; }
 .mg-is-preview .mg-pv-sparkle { animation: mg-pv-sparkle 2.8s ease-out infinite; }
 .mg-is-preview .mg-pv-zoom { animation: mg-pv-zoom 3s ease-in-out infinite; transform-box: view-box; }
 .mg-is-preview .mg-pv-snap { animation: mg-pv-snap 3s ease-in-out infinite; }
-.mg-pv-face-static { transform: none; }
 @keyframes mg-pv-dart { 0% { transform: translate(0, 0); opacity: 0; } 5% { opacity: 1; } 28% { transform: translate(16px, -118px); opacity: 1; } 30%, 100% { transform: translate(16px, -118px); opacity: 0; } }
 @keyframes mg-pv-pop { 0%, 28% { transform: scale(1); opacity: 1; } 34% { transform: scale(1.35); opacity: 0.6; } 40%, 82% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes mg-pv-score { 0%, 30% { opacity: 0; transform: translateY(6px); } 40%, 70% { opacity: 1; transform: translateY(-6px); } 85%, 100% { opacity: 0; transform: translateY(-14px); } }
 @keyframes mg-pv-confetti { 0%, 30% { opacity: 0; transform: scale(0.3); } 36% { opacity: 1; } 70%, 100% { opacity: 0; transform: scale(1.6); } }
-@keyframes mg-pv-back { 0%, 12% { transform: scaleX(1); } 22%, 78% { transform: scaleX(0); } 88%, 100% { transform: scaleX(1); } }
-@keyframes mg-pv-face { 0%, 22% { transform: scaleX(0); } 32%, 70% { transform: scaleX(1); } 78%, 100% { transform: scaleX(0); } }
 @keyframes mg-pv-sparkle { 0%, 35% { opacity: 0; } 45% { opacity: 1; } 70%, 100% { opacity: 0; } }
 
 /* Balloon Pop cover: the orb glows and throws sparks; in preview it turns red and fires at the near balloon,

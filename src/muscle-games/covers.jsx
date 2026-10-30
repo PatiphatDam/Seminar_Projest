@@ -101,90 +101,6 @@ export function BalloonScene() {
   );
 }
 
-function MiniCard({ x, y, face }) {
-  return (
-    <g>
-      <rect x={x} y={y} width="30" height="40" rx="5" fill="#fff" stroke="hsl(165 38% 70%)" strokeWidth="1.5" />
-      {face === 'skeletal' && (
-        <g>
-          <rect x={x + 5} y={y + 13} width="20" height="12" rx="5" fill="#f9a8d4" />
-          {[8, 12, 16, 20, 24].map((d) => (
-            <line key={d} x1={x + d} y1={y + 14} x2={x + d} y2={y + 24} stroke="#be185d" strokeWidth="1.4" opacity=".5" />
-          ))}
-        </g>
-      )}
-      {face === 'text' && (
-        <text x={x + 15} y={y + 24} textAnchor="middle" fontSize="7.5" fontWeight="700" fill="hsl(165 50% 20%)">
-          Skeletal
-        </text>
-      )}
-    </g>
-  );
-}
-
-function CardBack({ x, y }) {
-  return (
-    <g>
-      <rect x={x} y={y} width="30" height="40" rx="5" fill="hsl(165 52% 32%)" stroke="#fff" strokeWidth="2" />
-      <text x={x + 15} y={y + 26} textAnchor="middle" fontSize="15" fontWeight="800" fill="hsl(165 34% 92%)">
-        ?
-      </text>
-    </g>
-  );
-}
-
-export function CardTableScene() {
-  const backs = [
-    [70, 46], [108, 46], [184, 46], [222, 46],
-    [70, 96], [146, 96], [184, 96],
-  ];
-  return (
-    <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
-      <defs>
-        <linearGradient id="ct-bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="hsl(165 34% 92%)" />
-          <stop offset="1" stopColor="hsl(165 38% 70%)" />
-        </linearGradient>
-      </defs>
-      <rect width="320" height="200" fill="url(#ct-bg)" />
-      <ellipse cx="160" cy="92" rx="148" ry="72" fill="hsl(165 50% 22%)" />
-      <ellipse cx="160" cy="90" rx="138" ry="64" fill="hsl(165 52% 32%)" />
-      <ellipse cx="160" cy="90" rx="120" ry="52" fill="none" stroke="hsl(195 55% 66%)" strokeWidth="1.5" strokeDasharray="4 5" opacity=".7" />
-      {backs.map(([x, y], k) => (
-        <g key={k} className="mg-sc-deal" style={{ animationDelay: `${k * 0.25}s` }}>
-          <CardBack x={x} y={y} />
-        </g>
-      ))}
-      {[
-        [146, 46, 'skeletal'],
-        [108, 96, 'text'],
-        [222, 96, 'skeletal'],
-      ].map(([x, y, face], k) => (
-        <g key={k} className={k < 2 ? 'mg-pv-flipcard' : undefined}>
-          <g className="mg-pv-back" style={{ transformOrigin: `${x + 15}px ${y + 20}px` }}>
-            <CardBack x={x} y={y} />
-          </g>
-          <g className={k < 2 ? 'mg-pv-face' : 'mg-pv-face-static'} style={{ transformOrigin: `${x + 15}px ${y + 20}px` }}>
-            <MiniCard x={x} y={y} face={face} />
-          </g>
-        </g>
-      ))}
-      <g className="mg-pv-sparkle">
-        {[[150, 40], [180, 70], [100, 92], [140, 140]].map(([x, y], k) => (
-          <path key={k} d={`M${x} ${y - 7} L${x + 2} ${y - 2} L${x + 7} ${y} L${x + 2} ${y + 2} L${x} ${y + 7} L${x - 2} ${y + 2} L${x - 7} ${y} L${x - 2} ${y - 2}Z`} fill="#fde68a" />
-        ))}
-      </g>
-      <rect x="0" y="170" width="320" height="22" fill="hsl(165 45% 15%)" />
-      <line x1="0" y1="181" x2="320" y2="181" stroke="hsl(165 52% 32%)" strokeWidth="14" strokeDasharray="10 8" className="mg-sc-belt" />
-      {[0, 1, 2].map((k) => (
-        <g key={k} className="mg-sc-convey" style={{ animationDelay: `${-k * 2}s` }}>
-          <rect x="0" y="158" width="22" height="16" rx="3" fill="#fff" stroke="#f472b6" strokeWidth="1.5" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 export function MicroscopeScene() {
   const fibers = [];
   for (let r = -3; r <= 3; r++) {
@@ -249,6 +165,88 @@ export function MicroscopeScene() {
   );
 }
 
+const GS_INK = '#141010';
+
+// Group Sort hub card: the two mode covers cut down the middle and joined, Picture Match on the left and
+// Conveyor Sort on the right. Their own characters are left out; instead one character stands on the seam, the
+// detective's half (mirrored so the pipe shows) and the worker's half. Title on top, the two mode names below.
+export function GroupSortScene() {
+  return (
+    <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
+      <defs>
+        <clipPath id="gss-fig-left">
+          <rect x="-60" y="-110" width="60" height="115" />
+        </clipPath>
+        <clipPath id="gss-fig-right">
+          <rect y="-110" width="60" height="115" />
+        </clipPath>
+        <radialGradient id="gss-glow" cx="0.5" cy="0.6" r="0.5">
+          <stop offset="0" stopColor="#efe3cc" stopOpacity="0.32" />
+          <stop offset="1" stopColor="#efe3cc" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id="gss-top" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#000" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* each half shows a 120 x 150 window of its cover, scaled up to fill 160 x 200 */}
+      <svg width="160" height="200" viewBox="0 0 120 150" overflow="hidden">
+        <svg width="320" height="150">
+          <DetectiveCoverScene nested bare />
+        </svg>
+      </svg>
+      <svg x="160" width="160" height="200" viewBox="170 0 120 150" overflow="hidden">
+        <svg width="320" height="150">
+          <ConveyorCoverScene nested bare />
+        </svg>
+      </svg>
+      <rect width="160" height="200" fill="url(#gss-glow)" />
+      <rect width="320" height="58" fill="url(#gss-top)" />
+      <path d="M160 0 V200" stroke="#f5ecd8" strokeWidth="1.4" />
+
+      {/* the split character on the seam */}
+      <g transform="translate(160 204) scale(1.5)" style={{ transformBox: 'view-box' }}>
+        <g clipPath="url(#gss-fig-left)">
+          <g transform="scale(-1 1)" style={{ transformBox: 'view-box' }}>
+            <NoirDetective />
+          </g>
+        </g>
+        {/* the worker is drawn a little narrower than the detective; widen it so the shoulders meet */}
+        <g clipPath="url(#gss-fig-right)">
+          <g transform="scale(1.15 1)" style={{ transformBox: 'view-box' }}>
+            <CoverWorker />
+          </g>
+        </g>
+      </g>
+
+      {/* title across the top */}
+      <g fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="27" letterSpacing="3" textAnchor="middle">
+        <text x="160" y="36" fill="#000" opacity="0.5" transform="translate(1.4 1.8)" style={{ transformBox: 'view-box' }}>
+          GROUP SORT
+        </text>
+        <text x="160" y="36" fill="#f5ecd8" stroke={GS_INK} strokeWidth="2.4" strokeLinejoin="round" paintOrder="stroke">
+          GROUP SORT
+        </text>
+      </g>
+
+      {/* the two mode names */}
+      <text x="12" y="188" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="12.5" letterSpacing="0.8" fill="#efe3cc">
+        PICTURE MATCH
+      </text>
+      <g transform="translate(212 174)">
+        <rect width="100" height="18" rx="2.5" fill="#facc15" stroke="#1d2a30" strokeWidth="1.4" />
+        <text x="50" y="12.6" textAnchor="middle" fontFamily="Bungee, 'Nunito Sans Variable', sans-serif" fontSize="9" fill="#1d2a30">
+          CONVEYOR SORT
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+// A still poster: no gameplay preview, so the hub hides its Preview chip.
+GroupSortScene.preview = false;
+
 // Conveyor Sort mode card: the factory from the game in flat style. A yellow hazard sign carries the title,
 // the robot arm holds a crate (bobbing), the belt rollers turn, and a worker at the console watches the
 // three tissue buttons on screen.
@@ -276,10 +274,11 @@ function CvTissue({ x, y }) {
   );
 }
 
-export function ConveyorCoverScene() {
+// `bare` leaves out the worker so the split Group Sort card can draw its own.
+export function ConveyorCoverScene({ nested = false, bare = false }) {
   const hazard = [12, 26, 40, 54, 68, 82, 96, 110, 124];
   return (
-    <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className="mg-scene" aria-hidden="true">
+    <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className={nested ? undefined : 'mg-scene'} aria-hidden="true">
       <defs>
         <clipPath id="cv-sign">
           <rect x="10" y="25" width="120" height="25" rx="3" />
@@ -343,24 +342,34 @@ export function ConveyorCoverScene() {
       <rect x="238" y="92" width="10" height="8" fill="#2b3d45" />
       <rect x="222" y="95" width="40" height="5" rx="2" fill="#55707c" />
 
-      {/* Worker seen from behind: hard hat, orange safety vest, reaching for the keyboard. */}
-      <g transform="translate(294 150)">
-        <path d="M-24 0V-30C-24-46-14-52 0-52S24-46 24-30V0Z" fill="#2f4a6b" />
-        <path d="M-20 0V-31C-20-43-12-48-4-48H4C12-48 20-43 20-31V0Z" fill="#f59e0b" />
-        <rect x="-20" y="-26" width="40" height="4" fill="#fde7a8" />
-        <rect x="-20" y="-14" width="40" height="4" fill="#fde7a8" />
-        <rect x="-3" y="-48" width="6" height="48" fill="#e08a00" opacity="0.5" />
-        <path d="M-20-42C-30-46-38-50-44-52" stroke="#2f4a6b" strokeWidth="10" strokeLinecap="round" fill="none" />
-        <circle cx="-48" cy="-53" r="4" fill="#c98a63" />
-        <rect x="-6" y="-58" width="12" height="10" rx="3" fill="#c98a63" />
-        <ellipse cx="-12" cy="-66" rx="2.6" ry="4" fill="#c98a63" />
-        <ellipse cx="12" cy="-66" rx="2.6" ry="4" fill="#c98a63" />
-        <circle cy="-67" r="12" fill="#3b2a20" />
-        <path d="M-14-70C-14-86 14-86 14-70Z" fill="#facc15" />
-        <rect x="-17" y="-71" width="34" height="5" rx="2.5" fill="#eab308" />
-        <rect x="-2.5" y="-83" width="5" height="12" rx="2" fill="#eab308" />
-      </g>
+      {!bare && (
+        <g transform="translate(294 150)">
+          <CoverWorker />
+        </g>
+      )}
     </svg>
+  );
+}
+
+// The Conveyor Sort worker seen from behind, feet at (0, 0): hard hat, orange safety vest, reaching for the keyboard.
+function CoverWorker() {
+  return (
+    <>
+      <path d="M-24 0V-30C-24-46-14-52 0-52S24-46 24-30V0Z" fill="#2f4a6b" />
+      <path d="M-20 0V-31C-20-43-12-48-4-48H4C12-48 20-43 20-31V0Z" fill="#f59e0b" />
+      <rect x="-20" y="-26" width="40" height="4" fill="#fde7a8" />
+      <rect x="-20" y="-14" width="40" height="4" fill="#fde7a8" />
+      <rect x="-3" y="-48" width="6" height="48" fill="#e08a00" opacity="0.5" />
+      <path d="M-20-42C-30-46-38-50-44-52" stroke="#2f4a6b" strokeWidth="10" strokeLinecap="round" fill="none" />
+      <circle cx="-48" cy="-53" r="4" fill="#c98a63" />
+      <rect x="-6" y="-58" width="12" height="10" rx="3" fill="#c98a63" />
+      <ellipse cx="-12" cy="-66" rx="2.6" ry="4" fill="#c98a63" />
+      <ellipse cx="12" cy="-66" rx="2.6" ry="4" fill="#c98a63" />
+      <circle cy="-67" r="12" fill="#3b2a20" />
+      <path d="M-14-70C-14-86 14-86 14-70Z" fill="#facc15" />
+      <rect x="-17" y="-71" width="34" height="5" rx="2.5" fill="#eab308" />
+      <rect x="-2.5" y="-83" width="5" height="12" rx="2" fill="#eab308" />
+    </>
   );
 }
 
@@ -378,11 +387,12 @@ function NoirPhoto({ x, y, w, h, r, children }) {
   );
 }
 
-export function DetectiveCoverScene() {
+// `bare` leaves out the detective and the title so the split Group Sort card can draw its own.
+export function DetectiveCoverScene({ nested = false, bare = false }) {
   const pins = { a: [41, 25], b: [131, 15], c: [256, 72], d: [24, 61], q: [84, 62], n: [247, 38] };
   const strings = [['a', 'b'], ['a', 'd'], ['b', 'c'], ['d', 'q'], ['q', 'b'], ['c', 'n']];
   return (
-    <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className="mg-scene" aria-hidden="true">
+    <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className={nested ? undefined : 'mg-scene'} aria-hidden="true">
       <defs>
         <linearGradient id="nr-beam" x1="1" y1="0" x2="0.3" y2="1">
           <stop offset="0" stopColor="#efe3cc" stopOpacity="0.42" />
@@ -466,45 +476,12 @@ export function DetectiveCoverScene() {
       <rect x="282" y="123" width="15" height="14" rx="1.5" fill="#1d1916" />
       <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
 
-      {/* the detective, from behind, drawn flat and boxy like the Conveyor Sort worker: a squared coat with a
-          shoulder cape, a noir fedora, and a bent pipe hanging on the right with smoke curling up. Red rim light on the left. */}
       {/* view-box: .mg-scene * uses fill-box, which would move this transform off the figure's own corner */}
-      <g transform="translate(158 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
-        <ellipse cy="-52" rx="50" ry="48" fill="url(#nr-halo)" />
-        <g fill="#050404">
-          <path d="M-28 0 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V0 Z" />
-          <rect x="-5" y="-56" width="10" height="9" />
-          <circle cy="-64" r="10" />
+      {!bare && (
+        <g transform="translate(158 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
+          <NoirDetective />
         </g>
-        <path d="M-28 -24 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V-24 Z" fill="#0e0c0b" />
-        <path d="M-8 -48 L-11 -41 L0 -45 L11 -41 L8 -48 Z" fill="#141110" />
-        <path d="M-10 0 V-22 M10 0 V-22" stroke="#171310" strokeWidth="0.8" />
-        {/* pipe: stem from the mouth, bowl with a glowing ember */}
-        <path d="M7 -58 C10 -55 13 -53 16 -53" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M15 -52 L14.5 -59 L21 -59 L20.5 -52 C19.5 -49.5 16 -49.5 15 -52 Z" fill="#050404" />
-        <path d="M14.5 -59 L21 -59" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
-        <ellipse cx="17.8" cy="-59.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
-        <g stroke="#efe3cc" strokeWidth="1.1" strokeLinecap="round" fill="none">
-          <path className="mg-sc-smoke" d="M18 -61 C14 -67 22 -71 18 -77 C14 -83 21 -87 19 -93" />
-          <path className="mg-sc-smoke mg-sc-smoke--late" d="M19 -62 C23 -68 16 -73 20 -79 C24 -85 18 -89 21 -95" />
-        </g>
-        {/* rim light */}
-        <path d="M-28 -27 V-32 C-28 -42 -21 -47 -11 -48" stroke="#c0262d" strokeWidth="0.55" fill="none" />
-        <path d="M-9.4 -60.6 A10 10 0 0 1 -9.4 -67.4" stroke="#c0262d" strokeWidth="0.45" fill="none" />
-        <path d="M28 -2 V-32 C28 -42 21 -47 11 -48" stroke="#efe3cc" strokeWidth="0.4" fill="none" opacity="0.35" />
-      </g>
-      {/* fedora seen from behind: wide brim, pinched crown with a dark red band, red rim light on the left.
-          It sits 4 units lower than the body group so the brim crosses the top half of the head. */}
-      <g transform="translate(158 157.8) scale(1.45)" style={{ transformBox: 'view-box' }}>
-        <g fill="#050404">
-          <path d="M-19 -72 C-14 -77 14 -78 20 -72 C15 -68.5 -14 -68 -19 -72 Z" />
-          <path d="M-10 -74 C-11 -83 -6 -87 1 -87 C8 -87 12 -83 11 -75 Z" />
-        </g>
-        <path d="M-10.3 -76.5 C-4 -78 5 -78 11.2 -77.5" stroke="#3a1416" strokeWidth="1.6" fill="none" />
-        <path d="M-5 -86 C-2 -84 3 -84 6 -86" stroke="#1a1513" strokeWidth="0.5" fill="none" />
-        <path d="M-10 -74 C-11 -83 -6 -87 1 -87 C8 -87 12 -83 11 -75" stroke="url(#nr-rim)" strokeWidth="0.5" fill="none" />
-        <path d="M-19 -72 C-14 -77 14 -78 20 -72" stroke="url(#nr-rim)" strokeWidth="0.5" fill="none" />
-      </g>
+      )}
 
       <rect width="320" height="150" fill="url(#nr-vignette)" />
 
@@ -515,9 +492,53 @@ export function DetectiveCoverScene() {
           CASE FILE
         </text>
       </g>
-      <text x="14" y="128" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="16" letterSpacing="1.2" fill="#efe3cc">
-        PICTURE MATCH
-      </text>
+      {!bare && (
+        <text x="14" y="128" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="16" letterSpacing="1.2" fill="#efe3cc">
+          PICTURE MATCH
+        </text>
+      )}
     </svg>
+  );
+}
+
+// The Picture Match detective from behind, feet at (0, 0), drawn flat and boxy like the Conveyor Sort worker: a squared
+// coat with a shoulder cape, a noir fedora, and a bent pipe hanging on the right with smoke curling up. Red rim light on the
+// left. The fedora sits 4 units low so its brim crosses the top half of the head.
+function NoirDetective() {
+  return (
+    <>
+      <ellipse cy="-52" rx="50" ry="48" fill="url(#nr-halo)" />
+      <g fill="#050404">
+        <path d="M-28 0 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V0 Z" />
+        <rect x="-5" y="-56" width="10" height="9" />
+        <circle cy="-64" r="10" />
+      </g>
+      <path d="M-28 -24 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V-24 Z" fill="#0e0c0b" />
+      <path d="M-8 -48 L-11 -41 L0 -45 L11 -41 L8 -48 Z" fill="#141110" />
+      <path d="M-10 0 V-22 M10 0 V-22" stroke="#171310" strokeWidth="0.8" />
+      {/* pipe: stem from the mouth, bowl with a glowing ember */}
+      <path d="M7 -58 C10 -55 13 -53 16 -53" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M15 -52 L14.5 -59 L21 -59 L20.5 -52 C19.5 -49.5 16 -49.5 15 -52 Z" fill="#050404" />
+      <path d="M14.5 -59 L21 -59" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
+      <ellipse cx="17.8" cy="-59.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
+      <g stroke="#efe3cc" strokeWidth="1.1" strokeLinecap="round" fill="none">
+        <path className="mg-sc-smoke" d="M18 -61 C14 -67 22 -71 18 -77 C14 -83 21 -87 19 -93" />
+        <path className="mg-sc-smoke mg-sc-smoke--late" d="M19 -62 C23 -68 16 -73 20 -79 C24 -85 18 -89 21 -95" />
+      </g>
+      {/* rim light */}
+      <path d="M-28 -27 V-32 C-28 -42 -21 -47 -11 -48" stroke="#c0262d" strokeWidth="0.55" fill="none" />
+      <path d="M-9.4 -60.6 A10 10 0 0 1 -9.4 -67.4" stroke="#c0262d" strokeWidth="0.45" fill="none" />
+      <path d="M28 -2 V-32 C28 -42 21 -47 11 -48" stroke="#efe3cc" strokeWidth="0.4" fill="none" opacity="0.35" />
+      <g transform="translate(0 4)">
+        <g fill="#050404">
+          <path d="M-19 -72 C-14 -77 14 -78 20 -72 C15 -68.5 -14 -68 -19 -72 Z" />
+          <path d="M-10 -74 C-11 -83 -6 -87 1 -87 C8 -87 12 -83 11 -75 Z" />
+        </g>
+        <path d="M-10.3 -76.5 C-4 -78 5 -78 11.2 -77.5" stroke="#3a1416" strokeWidth="1.6" fill="none" />
+        <path d="M-5 -86 C-2 -84 3 -84 6 -86" stroke="#1a1513" strokeWidth="0.5" fill="none" />
+        <path d="M-10 -74 C-11 -83 -6 -87 1 -87 C8 -87 12 -83 11 -75" stroke="url(#nr-rim)" strokeWidth="0.5" fill="none" />
+        <path d="M-19 -72 C-14 -77 14 -78 20 -72" stroke="url(#nr-rim)" strokeWidth="0.5" fill="none" />
+      </g>
+    </>
   );
 }
