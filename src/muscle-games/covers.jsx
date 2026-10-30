@@ -483,21 +483,21 @@ export function DetectiveCoverScene() {
           <path className="mg-sc-smoke mg-sc-smoke--late" d="M19 -62 C23 -68 16 -73 20 -79 C24 -85 18 -89 21 -95" />
         </g>
         {/* rim light */}
-        <path d="M-28 -27 V-32 C-28 -40 -24 -45 -17 -47" stroke="#c0262d" strokeWidth="1" fill="none" />
-        <path d="M-9.5 -58 C-10.5 -61 -10.5 -65 -9.5 -68" stroke="#c0262d" strokeWidth="0.7" fill="none" />
-        <path d="M28 -2 V-32 C28 -40 24 -45 17 -47" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.35" />
+        <path d="M-28 -27 V-32 C-28 -42 -21 -47 -11 -48" stroke="#c0262d" strokeWidth="0.55" fill="none" />
+        <path d="M-9.4 -60.6 A10 10 0 0 1 -9.4 -67.4" stroke="#c0262d" strokeWidth="0.45" fill="none" />
+        <path d="M28 -2 V-32 C28 -42 21 -47 11 -48" stroke="#efe3cc" strokeWidth="0.4" fill="none" opacity="0.35" />
       </g>
       {/* fedora seen from behind: wide brim, pinched crown with a dark red band, red rim light on the left */}
       <g transform="translate(158 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
         <g fill="#050404">
-          <path d="M-30 -70 C-22 -77 22 -78 31 -71 C24 -66 -22 -65 -30 -70 Z" />
-          <path d="M-16 -73 C-17 -86 -10 -92 1 -92 C13 -92 19 -86 18 -74 Z" />
+          <path d="M-19 -72 C-14 -77 14 -78 20 -72 C15 -68.5 -14 -68 -19 -72 Z" />
+          <path d="M-10 -74 C-11 -83 -6 -87 1 -87 C8 -87 12 -83 11 -75 Z" />
         </g>
-        <path d="M-16 -76 C-6 -78 8 -78 18 -77" stroke="#3a1416" strokeWidth="2.4" fill="none" />
-        <path d="M-8 -91 C-4 -88 4 -88 9 -91" stroke="#1a1513" strokeWidth="0.7" fill="none" />
-        <path d="M-16 -74 C-17 -86 -10 -92 0 -92" stroke="#c0262d" strokeWidth="0.9" fill="none" />
-        <path d="M-30 -70 C-26 -73 -21 -75 -16 -76" stroke="#c0262d" strokeWidth="0.8" fill="none" />
-        <path d="M18 -75 C19 -85 13 -91 5 -92" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.45" />
+        <path d="M-10.3 -76.5 C-4 -78 5 -78 11.2 -77.5" stroke="#3a1416" strokeWidth="1.6" fill="none" />
+        <path d="M-5 -86 C-2 -84 3 -84 6 -86" stroke="#1a1513" strokeWidth="0.5" fill="none" />
+        <path d="M-10 -74 C-11 -83 -6 -87 1 -87" stroke="#c0262d" strokeWidth="0.5" fill="none" />
+        <path d="M-19 -72 C-17 -74 -14 -75.4 -10.5 -76.2" stroke="#c0262d" strokeWidth="0.5" fill="none" />
+        <path d="M11 -75 C12 -83 8 -87 1 -87" stroke="#efe3cc" strokeWidth="0.4" fill="none" opacity="0.45" />
       </g>
 
       <rect width="320" height="150" fill="url(#nr-vignette)" />
