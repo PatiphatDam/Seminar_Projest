@@ -153,15 +153,14 @@ function Bolt({ spine, w }) {
   );
 }
 
-// Round the full tube: three poses of four bolts each, hugging the top and bottom edges, whipping off the end and off
-// the bolt badge (clear of the life bars above). Drawn in the space of .mg-gauge__sparks (the gauge button, 14px bigger
-// on every side; the tube runs x 37–171, y 23–49 and the badge sits at 35, 36).
-const WHIP_POSES = [0, 1, 2].map((p) => [
-  [jagged(62 + p * 8, 24, 150 - p * 6, 19, 7, 0.06, 11 + p), 6],
-  [jagged(168, 30, 188, 60 - p * 7, 4, 0.25, 21 + p), 7.5],
-  [jagged(160 - p * 10, 50, 50 + p * 10, 59 + p * 2, 7, 0.06, 31 + p), 6.5],
-  [jagged(22, 30, 0, 12 + p * 9, 3, 0.3, 41 + p), 6],
-]);
+// Round the full tube: three poses of four short, thin bolts that run along the tube's edges and the badge's sides,
+// never across the TAP! label in the middle. Drawn in the space of .mg-gauge__sparks (the gauge button, 14px bigger on
+// every side; the tube runs x 37–171, y 23–49 and the badge is a diamond round 35, 36).
+const WHIP_POSES = [
+  [[48, 23, 74, 22], [120, 23, 146, 24], [150, 49, 126, 50], [176, 28, 172, 46]],
+  [[78, 23, 104, 22], [66, 49, 92, 50], [177, 32, 171, 48], [16, 30, 30, 16]],
+  [[130, 23, 156, 23], [100, 49, 74, 50], [14, 42, 28, 56], [58, 23, 80, 23]],
+].map((pose, p) => pose.map(([x1, y1, x2, y2], k) => [jagged(x1, y1, x2, y2, 4, 0.12, 11 + p * 10 + k), 2.4]));
 
 function GaugeLightning() {
   return (
@@ -177,51 +176,33 @@ function GaugeLightning() {
   );
 }
 
-// An electric shockwave where a wrong balloon is removed, drawn round (0, 0) and over in half a second: a hard white
-// cross for a couple of frames, then a ragged shock outline racing out with two sharp slashes sweeping across
-// and bolts crackling inside it. Nothing flies outside the outline.
-const EB_SHOCK = Array.from({ length: 18 }, (_, k) => {
-  const a = (k / 18) * Math.PI * 2 + (k % 3) * 0.05;
-  const r = k % 2 ? 35 + (k % 3) : 42 - (k % 4) * 1.5;
-  return `${(Math.cos(a) * r * 1.1).toFixed(1)},${(Math.sin(a) * r * 0.85).toFixed(1)}`;
-}).join(' ');
-const EB_SLASHES = [
-  taper([[-36, 16], [-6, 2], [32, -24]], 3.5),
-  taper([[28, 20], [6, 9], [-20, 22]], 2.5),
-];
-const EB_CRACKLE = [jagged(-6, -4, -28, -16, 4, 0.25, 7), jagged(8, 4, 28, 14, 4, 0.25, 8), jagged(2, -8, 8, -26, 3, 0.3, 9)];
+// An electric shock where a wrong balloon is removed, drawn round (0, 0): five small bolts crackle out from the
+// balloon, flipping between three poses for under half a second, over a faint glow.
+const SHOCK_POSES = [0, 1, 2].map((p) =>
+  Array.from({ length: 5 }, (_, k) => {
+    const a = (k / 5) * Math.PI * 2 + p * 0.6 + k * 0.17;
+    const r = 22 + ((k + p) % 3) * 4;
+    return jagged(Math.cos(a) * 6, Math.sin(a) * 6, Math.cos(a) * r, Math.sin(a) * r, 3, 0.3, 61 + p * 10 + k);
+  })
+);
 
-function ElectricBurst({ x, y }) {
+function ElectricShock({ x, y }) {
   return (
-    <svg className="mg-eburst" style={{ left: x, top: y }} viewBox="-70 -70 140 140" aria-hidden="true">
+    <svg className="mg-shock" style={{ left: x, top: y }} viewBox="-40 -40 80 80" aria-hidden="true">
       <defs>
-        <radialGradient id="mg-eburst-glow">
-          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.85" />
-          <stop offset="0.5" stopColor="#3b82f6" stopOpacity="0.35" />
+        <radialGradient id="mg-shock-glow">
+          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.7" />
           <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <g className="mg-eburst__glow">
-        <ellipse rx="36" ry="24" transform="rotate(-25)" fill="url(#mg-eburst-glow)" />
-      </g>
-      <g className="mg-eburst__ring" fill="none" strokeLinejoin="miter">
-        <polygon points={EB_SHOCK} stroke="#3b82f6" strokeWidth="3.5" opacity="0.35" />
-        <polygon points={EB_SHOCK} stroke="#a5f3fc" strokeWidth="1.2" />
-      </g>
-      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="0.6" strokeLinejoin="round">
-        {EB_SLASHES.map((pts) => (
-          <polygon key={pts} points={pts} />
-        ))}
-      </g>
-      <g className="mg-eburst__crackle">
-        {EB_CRACKLE.map((spine, k) => (
-          <Bolt key={k} spine={spine} w={2.2} />
-        ))}
-      </g>
-      <g className="mg-eburst__flash">
-        <polygon points="0,-46 3,-3 34,0 3,3 0,38 -3,3 -30,0 -3,-3" fill="#f0fdff" stroke="#67e8f9" strokeWidth="1.5" strokeLinejoin="round" />
-        <circle r="9" fill="#fff" />
-      </g>
+      <circle className="mg-shock__glow" r="24" fill="url(#mg-shock-glow)" />
+      {SHOCK_POSES.map((bolts, k) => (
+        <g key={k} className="mg-shock__pose" style={{ animationDelay: `${k * 0.06}s` }}>
+          {bolts.map((spine, j) => (
+            <Bolt key={j} spine={spine} w={2.4} />
+          ))}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -489,7 +470,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  // The two wrong balloons the power removes blow up in an electric shockwave, with a short shake for impact.
+  // The two wrong balloons the power removes are knocked out by a small electric shock.
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
@@ -508,12 +489,10 @@ export default function BalloonPop({ onScore, onFinish }) {
     setAssistFor(s.i);
     setBursts(targets);
     if (targets.length) {
-      fx.sound('boom');
-      fx.vibrate(60);
-      setShake(true);
-      later(() => setShake(false), 250);
+      fx.sound('pop');
+      fx.vibrate(40);
     }
-    later(() => setBursts([]), 600);
+    later(() => setBursts([]), 500);
     rerender();
   };
 
@@ -561,7 +540,7 @@ export default function BalloonPop({ onScore, onFinish }) {
           <WizardArt />
         </div>
         {bursts.map((b) => (
-          <ElectricBurst key={b.id} x={b.x} y={b.y} />
+          <ElectricShock key={b.id} x={b.x} y={b.y} />
         ))}
         {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}
         <div className="mg-gauge">
