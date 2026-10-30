@@ -746,7 +746,7 @@
 /* ---------- Group Sort: conveyor (factory + robot arm) ---------- */
 .mg-factory {
   /* size: scene height, crate box, crate bottom (= belt top), how far the arm cable reaches */
-  --fh: 190px; --cw: 96px; --ch: 62px; --cb: 46px; --reach: 44px; --mw: 64px; --crate-font: 9.5px;
+  --fh: 190px; --cw: 96px; --ch: 62px; --cb: 46px; --reach: 44px; --rest: 8px; --mw: 64px; --crate-font: 9.5px;
 }
 .mg-conveyor {
   /* factory colors, shared by the scene and the button panel */
@@ -760,7 +760,7 @@
   background: linear-gradient(var(--f-ceil) 0 12px, var(--f-sky) 12px 76%, var(--f-floor) 76%);
 }
 @media (max-width: 520px) {
-  .mg-factory { --fh: 160px; --cw: 76px; --ch: 52px; --cb: 38px; --reach: 32px; --mw: 50px; --crate-font: 7.5px; }
+  .mg-factory { --fh: 160px; --cw: 76px; --ch: 52px; --cb: 38px; --reach: 32px; --rest: 4px; --mw: 50px; --crate-font: 7.5px; }
   .mg-factory .mg-crate__box { padding: 9px 3px 3px; }
   .mg-factory .mg-crate__tape { width: 14px; height: 9px; }
   .mg-factory .mg-crate__label { padding: 1px 3px; line-height: 1.08; }
@@ -841,14 +841,21 @@
 .mg-crate__stamp--bad { background: var(--bad); }
 
 .mg-arm { position: absolute; top: 12px; z-index: 4; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); transition: left 0.22s ease-out; }
-.mg-arm__carriage { width: 28px; height: 12px; border-radius: 4px; background: var(--f-arm-top); }
-.mg-arm__cable { width: 6px; height: 4px; background: repeating-linear-gradient(var(--f-steel-dark) 0 3px, #8fb3bb 3px 6px); }
+/* Same shape as the Conveyor Sort cover: a mount, a ribbed rod, a trapezoid head on a wide bar, two claws. */
+.mg-arm__carriage { width: 30px; height: 10px; border-radius: 3px; background: var(--f-arm-top); }
+.mg-arm__cable {
+  width: 9px; height: var(--rest); background: repeating-linear-gradient(var(--f-steel-dark) 0 3px, #8fb3bb 3px 4.5px);
+  box-shadow: inset 1.5px 0 0 var(--f-steel-dark), inset -1.5px 0 0 var(--f-steel-dark);
+}
 .mg-arm--grab .mg-arm__cable { animation: mg-arm-reach 0.72s ease-in-out; }
-@keyframes mg-arm-reach { 0%, 28% { height: 4px; } 50%, 58% { height: var(--reach); } 100% { height: 4px; } }
-.mg-arm__head { position: relative; width: calc(var(--cw) + 10px); height: 15px; }
-.mg-arm__head::before { content: ''; position: absolute; left: 30%; right: 30%; top: 0; height: 10px; border-radius: 8px 8px 0 0; background: var(--f-arm); }
-.mg-arm__head::after { content: ''; position: absolute; left: 0; right: 0; top: 9px; height: 6px; border-radius: 3px; background: var(--f-arm); filter: brightness(1.15); }
-.mg-arm__claw { position: absolute; top: 12px; width: 5px; height: calc(var(--ch) * 0.42); border-radius: 3px; background: var(--f-arm); z-index: 2; transform-origin: top; transition: transform 0.15s; }
+@keyframes mg-arm-reach { 0%, 28% { height: var(--rest); } 50%, 58% { height: var(--reach); } 100% { height: var(--rest); } }
+.mg-arm__head { position: relative; width: calc(var(--cw) + 10px); height: 19px; }
+.mg-arm__head::before {
+  content: ''; position: absolute; left: 22%; right: 22%; top: 0; height: 13px; background: var(--f-arm);
+  clip-path: polygon(12% 0, 88% 0, 100% 100%, 0 100%);
+}
+.mg-arm__head::after { content: ''; position: absolute; left: 0; right: 0; top: 12px; height: 7px; border-radius: 3.5px; background: var(--f-steel); }
+.mg-arm__claw { position: absolute; top: 16px; width: 6px; height: calc(var(--ch) * 0.5 - 2px); border-radius: 3px; background: var(--f-arm); z-index: 2; transform-origin: top; transition: transform 0.15s; }
 .mg-arm__claw::after { content: ''; position: absolute; bottom: 0; width: 9px; height: 5px; border-radius: 3px; background: var(--f-arm); }
 .mg-arm__claw--l { left: 1px; transform: rotate(16deg); }
 .mg-arm__claw--l::after { left: 0; }
@@ -858,7 +865,7 @@
 .mg-arm--grab .mg-arm__claw--r { animation: mg-claw-r 0.72s ease-in-out; }
 @keyframes mg-claw-l { 0%, 44% { transform: rotate(16deg); } 52%, 92% { transform: rotate(0deg); } }
 @keyframes mg-claw-r { 0%, 44% { transform: rotate(-16deg); } 52%, 92% { transform: rotate(0deg); } }
-.mg-arm__held { position: absolute; left: 50%; top: 14px; width: var(--cw); height: var(--ch); transform: translateX(-50%); animation: mg-held 0.36s ease-in forwards; }
+.mg-arm__held { position: absolute; left: 50%; top: 16px; width: var(--cw); height: var(--ch); transform: translateX(-50%); animation: mg-held 0.36s ease-in forwards; }
 @keyframes mg-held { 0%, 55% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -20px) scale(0.85); } }
 
 .mg-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; border-radius: 18px; background: var(--f-steel); box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.25); }
