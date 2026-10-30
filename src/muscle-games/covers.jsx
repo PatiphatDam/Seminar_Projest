@@ -363,3 +363,127 @@ export function ConveyorCoverScene() {
     </svg>
   );
 }
+
+// Picture Match cover: a noir detective, seen from behind, studies an evidence wall of muscle photos tied
+// with red string, lit by a beam through the window blinds.
+function NoirPhoto({ x, y, w, h, r, children }) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${r})`}>
+      <rect width={w} height={h} fill="#8d7f6b" />
+      <rect x="2.5" y="2.5" width={w - 5} height={h - 9} fill="#2b2520" />
+      <g transform="translate(2.5 2.5)" stroke="#a8977d" fill="none" strokeWidth="1">
+        {children}
+      </g>
+    </g>
+  );
+}
+
+export function DetectiveCoverScene() {
+  const pins = { a: [41, 25], b: [131, 15], c: [256, 72], d: [24, 61], q: [84, 62], n: [247, 38] };
+  const strings = [['a', 'b'], ['a', 'd'], ['b', 'c'], ['d', 'q'], ['q', 'b'], ['c', 'n']];
+  return (
+    <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className="mg-scene" aria-hidden="true">
+      <defs>
+        <linearGradient id="nr-beam" x1="1" y1="0" x2="0.3" y2="1">
+          <stop offset="0" stopColor="#efe3cc" stopOpacity="0.42" />
+          <stop offset="1" stopColor="#efe3cc" stopOpacity="0.04" />
+        </linearGradient>
+        <radialGradient id="nr-vignette" cx="0.55" cy="0.45" r="0.75">
+          <stop offset="0.55" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.7" />
+        </radialGradient>
+      </defs>
+      <rect width="320" height="150" fill="#0f0d0c" />
+      <rect width="320" height="150" fill="#1c1815" opacity="0.6" />
+
+      {/* window blinds and the light falling through them */}
+      <rect x="266" y="0" width="50" height="64" fill="#050404" />
+      {[2, 9, 16, 23, 30, 37, 44, 51].map((y) => (
+        <rect key={y} x="269" y={y} width="44" height="4.2" fill="#e9dcc4" />
+      ))}
+      <g className="mg-sc-flicker">
+        <path d="M268 6 L314 4 L196 150 L112 150 Z" fill="url(#nr-beam)" />
+        <path d="M282 5 L289 5 L166 150 L156 150 Z M298 4 L304 4 L186 150 L177 150 Z" fill="#0f0d0c" opacity="0.55" />
+      </g>
+
+      {/* evidence wall */}
+      <NoirPhoto x={22} y={24} w={40} h={32} r={-8}>
+        <rect x="4" y="6" width="27" height="10" rx="5" />
+        {[8, 12, 16, 20, 24, 28].map((x) => (
+          <line key={x} x1={x} y1="7" x2={x} y2="15" />
+        ))}
+      </NoirPhoto>
+      <NoirPhoto x={112} y={14} w={38} h={30} r={5}>
+        <path d="M3 8 Q10 4 17 8 Q10 12 3 8Z M15 13 Q22 9 30 13 Q22 17 15 13Z M5 17 Q12 13 19 17 Q12 21 5 17Z" />
+      </NoirPhoto>
+      <NoirPhoto x={240} y={72} w={34} h={40} r={4}>
+        <circle cx="14.5" cy="15" r="11" />
+        <circle cx="10" cy="12" r="3" />
+        <circle cx="18" cy="11" r="3" />
+        <circle cx="14" cy="18" r="3" />
+        <circle cx="20" cy="18" r="2.5" />
+      </NoirPhoto>
+      <g transform="translate(12 61) rotate(-6)">
+        <rect width="26" height="32" fill="#968874" />
+        <g fill="none" stroke="#2b2520" strokeWidth="0.9">
+          {[3, 5.5, 8, 10.5].map((r) => (
+            <ellipse key={r} cx="13" cy="16" rx={r} ry={r * 1.3} />
+          ))}
+        </g>
+      </g>
+      <g transform="translate(71 62) rotate(3)">
+        <rect width="26" height="30" fill="#9c8f7c" />
+        <text x="13" y="23" textAnchor="middle" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="700" fontSize="20" fill="#1a1613">
+          ?
+        </text>
+      </g>
+      <g transform="translate(235 38) rotate(-4)">
+        <rect width="24" height="26" fill="#9c8f7c" />
+        <path d="M4 7h15M4 12h12M4 17h14M4 22h8" stroke="#2b2520" strokeWidth="1" strokeDasharray="3 1.5" />
+      </g>
+      <g stroke="#c0262d" strokeWidth="0.9">
+        {strings.map(([p, q]) => (
+          <line key={p + q} x1={pins[p][0]} y1={pins[p][1]} x2={pins[q][0]} y2={pins[q][1]} />
+        ))}
+      </g>
+      {Object.entries(pins).map(([k, [x, y]]) => (
+        <circle key={k} cx={x} cy={y} r="1.9" fill="#e03a3a" />
+      ))}
+
+      {/* desk, papers and a coffee mug */}
+      <rect y="136" width="320" height="14" fill="#0a0908" />
+      <path d="M150 140 L196 137 L204 141 L158 144 Z" fill="#cbbda5" opacity="0.55" />
+      <rect x="282" y="123" width="15" height="14" rx="1.5" fill="#1d1916" />
+      <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
+
+      {/* the detective, from behind, hand on chin; red rim light on the left */}
+      <g transform="translate(-22 -37) scale(1.25)">
+        <g fill="#050404">
+          <path d="M126 150 C128 127 140 111 158 103 C166 99 172 97 178 95 L196 95 C206 97 216 103 223 112 C232 124 238 138 241 150 Z" />
+          <ellipse cx="187" cy="84" rx="11" ry="13" />
+          <path d="M212 113 C221 104 214 92 205 90 L198 95 C205 99 208 106 205 113 Z" />
+          <path d="M152 76 C162 68 212 66 224 74 C216 80 162 82 152 76 Z" />
+          <path d="M168 73 C167 60 174 52 187 51 C200 51 206 58 206 72 Z" />
+        </g>
+        <path d="M168 70 C180 68 196 68 206 69" stroke="#3a1416" strokeWidth="2.4" fill="none" />
+        <path d="M136 120 C142 111 150 106 158 103" stroke="#c0262d" strokeWidth="1.3" fill="none" />
+        <path d="M168 72 C167 60 174 52 187 51" stroke="#c0262d" strokeWidth="1" fill="none" />
+        <path d="M152 76 C156 73 161 71 167 70" stroke="#c0262d" strokeWidth="0.9" fill="none" />
+        <path d="M206 71 C206 63 203 56 197 53" stroke="#efe3cc" strokeWidth="0.7" fill="none" opacity="0.5" />
+      </g>
+
+      <rect width="320" height="150" fill="url(#nr-vignette)" />
+
+      {/* title */}
+      <g transform="translate(14 98) rotate(-4)">
+        <rect width="54" height="13" fill="none" stroke="#c0262d" strokeWidth="1.4" />
+        <text x="27" y="9.6" textAnchor="middle" fontFamily="'Nunito Sans Variable', sans-serif" fontWeight="900" fontSize="7.5" letterSpacing="1.2" fill="#c0262d">
+          CASE FILE
+        </text>
+      </g>
+      <text x="14" y="128" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="16" letterSpacing="1.2" fill="#efe3cc">
+        PICTURE MATCH
+      </text>
+    </svg>
+  );
+}

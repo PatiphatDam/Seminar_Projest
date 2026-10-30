@@ -6,10 +6,11 @@ import { useMe } from "@/lib/auth";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { MuscleGames, type MuscleGameRun } from "@/muscle-games";
-// Cover-title fonts, self-hosted: the CSP blocks Google Fonts. Text and heading fonts come from index.css.
+// Cover-title and Picture Match handwriting fonts, self-hosted: the CSP blocks Google Fonts. Text and heading fonts come from index.css.
 import "@fontsource/bungee/latin-400.css";
 import "@fontsource/cinzel-decorative/latin-700.css";
 import "@fontsource/cinzel-decorative/latin-900.css";
+import "@fontsource/permanent-marker/latin-400.css";
 
 /** /games/* — the Muscle Games module. Every finished (or left) run, scored out of 10, is saved to the student's record (GAME-7). */
 export default function MuscleGamesPage() {

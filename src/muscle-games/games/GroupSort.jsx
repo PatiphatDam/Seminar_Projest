@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useScores } from '../scores.jsx';
 import { MAX_SCORE } from './meta.js';
-import { ConveyorCoverScene } from '../covers.jsx';
+import { ConveyorCoverScene, DetectiveCoverScene } from '../covers.jsx';
 import Memory from './sort/Memory.jsx';
 import Conveyor from './sort/Conveyor.jsx';
 
@@ -10,8 +10,8 @@ const MODES = [
     id: 'memory',
     title: 'Picture Match',
     icon: '🖼️',
-    desc: 'All pictures are shown face up. Tap a picture, then its name or key feature — 3 rounds to clear.',
-    meta: '3 rounds · 18 pairs · 150 s',
+    desc: 'Photos and notes are pinned to an evidence board. Tap a photo, then its name or key feature to tie them with a string — 3 cases to clear.',
+    meta: '3 cases · 18 pairs · 150 s',
   },
   {
     id: 'conveyor',
@@ -32,13 +32,7 @@ function ModeSelect({ onPick }) {
           <button key={m.id} type="button" className={`mg-mode mg-mode--${m.id}`} onClick={() => onPick(m.id)}>
             <span className="mg-mode__art" aria-hidden="true">
               {m.id === 'memory' ? (
-                <span className="mg-mode__cards">
-                  {['🫀', 'Aa', '💪', 'Aa'].map((c, k) => (
-                    <i key={k} style={{ animationDelay: `${k * 0.15}s` }}>
-                      {c}
-                    </i>
-                  ))}
-                </span>
+                <DetectiveCoverScene />
               ) : (
                 <ConveyorCoverScene />
               )}
