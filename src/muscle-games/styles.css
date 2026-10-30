@@ -293,6 +293,8 @@
 .mg-sc-twinkle { animation: mg-twinkle 2.4s ease-in-out infinite; transform-origin: center; }
 .mg-sc-breathe { animation: mg-breathe 4s ease-in-out infinite; transform-box: view-box; }
 .mg-sc-flicker { animation: mg-flicker 5s ease-in-out infinite; }
+.mg-sc-smoke { animation: mg-smoke 4s ease-out infinite; opacity: 0; }
+.mg-sc-smoke--late { animation-delay: 2s; }
 @keyframes mg-bob { 50% { transform: translateY(-7px); } }
 @keyframes mg-drift { to { transform: translateX(40px); } }
 @keyframes mg-spin { to { transform: rotate(360deg); } }
@@ -301,6 +303,7 @@
 @keyframes mg-convey { from { transform: translateX(-30px); } to { transform: translateX(340px); } }
 @keyframes mg-twinkle { 50% { opacity: 0.2; transform: scale(0.6); } }
 @keyframes mg-breathe { 50% { transform: scale(1.05); } }
+@keyframes mg-smoke { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: 0.45; } 100% { opacity: 0; transform: translateY(-8px); } }
 @keyframes mg-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.8; } 50% { opacity: 0.95; } 55% { opacity: 0.75; } }
 
 /* Scene previews (hover / Preview button) */
@@ -1048,5 +1051,6 @@
   .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-sc-flicker, .mg-btn--pulse,
   .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-adv__mascot, .mg-lens__ring, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
   .mg-pcard, .mg-pmatch, .mg-cork::before, .mg-cork__strings path, .mg-cork__stamp { transition: none; animation: none; }
+  .mg-sc-smoke { animation: none; opacity: 0.35; }
 }
 .mg-crash { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }

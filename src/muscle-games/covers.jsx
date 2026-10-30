@@ -364,7 +364,7 @@ export function ConveyorCoverScene() {
   );
 }
 
-// Picture Match cover: a noir detective, seen from behind, studies an evidence wall of muscle photos tied
+// Picture Match cover: a noir detective in a deerstalker, seen from behind with his pipe, studies an evidence wall of muscle photos tied
 // with red string, lit by a beam through the window blinds.
 function NoirPhoto({ x, y, w, h, r, children }) {
   return (
@@ -388,6 +388,19 @@ export function DetectiveCoverScene() {
           <stop offset="0" stopColor="#efe3cc" stopOpacity="0.42" />
           <stop offset="1" stopColor="#efe3cc" stopOpacity="0.04" />
         </linearGradient>
+        <pattern id="nr-tweed" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
+          <rect width="2.4" height="2.4" fill="#9c8662" />
+          <path d="M0 0h1.2v1.2H0z M1.2 1.2h1.2v1.2H1.2z" fill="#3e3023" />
+          <path d="M0 1.9h2.4" stroke="#6e3d24" strokeWidth="0.25" />
+        </pattern>
+        <linearGradient id="nr-hat-shade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#050404" stopOpacity="0.75" />
+          <stop offset="1" stopColor="#050404" stopOpacity="0.2" />
+        </linearGradient>
+        <radialGradient id="nr-halo">
+          <stop offset="0" stopColor="#3a322b" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#3a322b" stopOpacity="0" />
+        </radialGradient>
         <radialGradient id="nr-vignette" cx="0.55" cy="0.45" r="0.75">
           <stop offset="0.55" stopColor="#000" stopOpacity="0" />
           <stop offset="1" stopColor="#000" stopOpacity="0.7" />
@@ -456,20 +469,44 @@ export function DetectiveCoverScene() {
       <rect x="282" y="123" width="15" height="14" rx="1.5" fill="#1d1916" />
       <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
 
-      {/* the detective, from behind, hand on chin; red rim light on the left */}
-      <g transform="translate(-22 -37) scale(1.25)">
+      {/* the detective, from behind and symmetric: Inverness cape, a houndstooth deerstalker with its ear flaps
+          tied up on top, and a pipe poking out on the right with smoke curling up. Red rim light on the left. */}
+      {/* view-box: .mg-scene * uses fill-box, which would move this transform off the figure's own corner */}
+      <g transform="translate(215 162) scale(1.6)" style={{ transformBox: 'view-box' }}>
+        <ellipse cy="-55" rx="58" ry="52" fill="url(#nr-halo)" />
         <g fill="#050404">
-          <path d="M126 150 C128 127 140 111 158 103 C166 99 172 97 178 95 L196 95 C206 97 216 103 223 112 C232 124 238 138 241 150 Z" />
-          <ellipse cx="187" cy="84" rx="11" ry="13" />
-          <path d="M212 113 C221 104 214 92 205 90 L198 95 C205 99 208 106 205 113 Z" />
-          <path d="M152 76 C162 68 212 66 224 74 C216 80 162 82 152 76 Z" />
-          <path d="M168 73 C167 60 174 52 187 51 C200 51 206 58 206 72 Z" />
+          <path d="M-40 0 C-40 -20 -35 -34 -23 -41 C-16 -45 -9 -47 -6 -49 L6 -49 C9 -47 16 -45 23 -41 C35 -34 40 -20 40 0 Z" />
+          <rect x="-5" y="-58" width="10" height="10" />
+          <ellipse cy="-66" rx="10" ry="11" />
         </g>
-        <path d="M168 70 C180 68 196 68 206 69" stroke="#3a1416" strokeWidth="2.4" fill="none" />
-        <path d="M136 120 C142 111 150 106 158 103" stroke="#c0262d" strokeWidth="1.3" fill="none" />
-        <path d="M168 72 C167 60 174 52 187 51" stroke="#c0262d" strokeWidth="1" fill="none" />
-        <path d="M152 76 C156 73 161 71 167 70" stroke="#c0262d" strokeWidth="0.9" fill="none" />
-        <path d="M206 71 C206 63 203 56 197 53" stroke="#efe3cc" strokeWidth="0.7" fill="none" opacity="0.5" />
+        <path d="M-34 -22 C-30 -34 -18 -43 -6 -46 L6 -46 C18 -43 30 -34 34 -22 C20 -18 -20 -18 -34 -22 Z" fill="#0d0b0a" />
+        <path d="M-7 -49 L-10 -42 L0 -46 L10 -42 L7 -49 Z" fill="#100d0b" />
+        <path d="M-12 -24 C-10 -32 -8 -38 -6 -44 M12 -24 C10 -32 8 -38 6 -44" stroke="#1b1714" strokeWidth="0.8" fill="none" />
+        {/* pipe: stem from the mouth, bowl with a glowing ember */}
+        <path d="M7 -61 C12 -60 16 -60 19 -62" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        <path d="M18 -63 L17.5 -70 L24 -70 L23.5 -63 C22.5 -60.5 19 -60.5 18 -63 Z" fill="#050404" />
+        <path d="M17.5 -70 L24 -70" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
+        <ellipse cx="20.8" cy="-70.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
+        <g stroke="#efe3cc" strokeWidth="1.1" strokeLinecap="round" fill="none">
+          <path className="mg-sc-smoke" d="M21 -72 C17 -78 25 -82 21 -88 C17 -94 24 -98 22 -104" />
+          <path className="mg-sc-smoke mg-sc-smoke--late" d="M22 -73 C26 -79 19 -84 23 -90 C27 -96 21 -100 24 -106" />
+        </g>
+        {/* deerstalker: tweed pattern, shaded darker away from the window */}
+        {['url(#nr-tweed)', 'url(#nr-hat-shade)'].map((fill) => (
+          <g key={fill} fill={fill}>
+            <path d="M-13 -74 C-17 -78 -16 -85 -11 -86 L-9 -78 Z M13 -74 C17 -78 16 -85 11 -86 L9 -78 Z" />
+            <path d="M-13 -70 C-13 -84 -7 -90 0 -90 C7 -90 13 -84 13 -70 Z" />
+            <path d="M-14 -71 C-8 -64 8 -64 14 -71 L12 -73 C6 -69 -6 -69 -12 -73 Z" />
+          </g>
+        ))}
+        <path d="M0 -90 V-70 M-6.5 -88 C-8 -82 -8 -76 -7 -70.5 M6.5 -88 C8 -82 8 -76 7 -70.5" stroke="#1d1610" strokeWidth="0.5" fill="none" />
+        <path d="M0 -90 C-5 -95 -8 -92 -5 -89 Z M0 -90 C5 -95 8 -92 5 -89 Z" fill="#3a2a1c" />
+        <path d="M-1 -90 L-4 -84 M1 -90 L4 -84" stroke="#3a2a1c" strokeWidth="0.7" strokeLinecap="round" />
+        {/* rim light */}
+        <path d="M-33 -29 C-30 -35 -25 -39 -18 -43" stroke="#c0262d" strokeWidth="1" fill="none" />
+        <path d="M-13 -71 C-13 -84 -7 -90 -1 -90" stroke="#c0262d" strokeWidth="0.8" fill="none" />
+        <path d="M-10 -60 C-11 -63 -11 -68 -10 -71" stroke="#c0262d" strokeWidth="0.7" fill="none" />
+        <path d="M13 -72 C13 -82 9 -88 3 -90 M36 -16 C33 -30 26 -38 18 -43" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.4" />
       </g>
 
       <rect width="320" height="150" fill="url(#nr-vignette)" />
