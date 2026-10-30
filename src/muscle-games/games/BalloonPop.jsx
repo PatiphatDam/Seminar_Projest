@@ -99,6 +99,37 @@ function BombIcon() {
   );
 }
 
+// Lightning crackling round the full ATP tube. Laid over the gauge button, 14px bigger on every side; the two sets of
+// bolts flash in turn, and the whole thing bursts in once when the tube fills.
+const SPARKS_A = [
+  'M48 22 l5 -8 l4 4 l6 -10 l3 7 l7 -5',
+  'M171 30 l6 -5 l-1 7 l6 -1 l-4 7 l5 3',
+  'M84 50 l4 7 l5 -4 l5 8 l4 -5 l6 6',
+  'M12 30 l-7 -4 l2 7 l-6 0 l5 6',
+];
+const SPARKS_B = [
+  'M120 22 l-4 -8 l7 2 l-2 -9 l7 5 l4 -6',
+  'M44 50 l-3 8 l6 -3 l0 9',
+  'M140 50 l5 6 l3 -5 l6 7 l5 -3',
+  'M35 10 l-4 -5 l6 0 l-3 -5',
+];
+
+function GaugeSparks() {
+  const bolts = (paths) =>
+    paths.map((d) => (
+      <g key={d}>
+        <path d={d} stroke="#facc15" strokeWidth="5" opacity="0.55" />
+        <path d={d} stroke="#fffbe0" strokeWidth="1.8" />
+      </g>
+    ));
+  return (
+    <svg className="mg-gauge__sparks" viewBox="0 0 180 72" fill="none" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <g className="mg-gauge__sparks-a">{bolts(SPARKS_A)}</g>
+      <g className="mg-gauge__sparks-b">{bolts(SPARKS_B)}</g>
+    </svg>
+  );
+}
+
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
     const pool = PROPERTIES.includes(c.answer) ? PROPERTIES : FUNCTIONS;
@@ -436,6 +467,7 @@ export default function BalloonPop({ onScore, onFinish }) {
               ))}
               {s.atp >= ATP_MAX && <span className="mg-gauge__tap">TAP!</span>}
             </span>
+            {s.atp >= ATP_MAX && <GaugeSparks />}
           </button>
         </div>
       </div>
