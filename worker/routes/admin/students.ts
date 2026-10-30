@@ -7,7 +7,7 @@ import {
   type UnassignedStudent,
 } from "../../../shared/contract";
 import { auditStmt, nowIso, queryAll, queryFirst, stmt, type SqlValue } from "../../db";
-import { sessionKey, type AppEnv } from "../../env";
+import { envAdminEmails, sessionKey, type AppEnv } from "../../env";
 import { anonymizedIdentityHashes } from "../../identityHash";
 import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
 import {
@@ -135,8 +135,12 @@ studentAdminRoutes.get("/students/unassigned", async (c) => {
       ORDER BY COALESCE(s.last_login_at, s.created_at) DESC
       LIMIT 500`,
   );
+  // Instructors who opened the student view (student sign-in with their own e-mail) are not students to place.
+  const instructors = new Set(envAdminEmails(c.env));
+  const adminRows = await queryAll<{ email: string }>(c.env.DB, "SELECT email FROM admins");
+  adminRows.forEach((a) => instructors.add(a.email.toLowerCase()));
   return c.json(
-    rows.map<UnassignedStudent>((r) => ({
+    rows.filter((r) => !instructors.has(r.email.toLowerCase())).map<UnassignedStudent>((r) => ({
       studentId: r.id,
       studentCode: r.student_code,
       firstName: r.first_name,
