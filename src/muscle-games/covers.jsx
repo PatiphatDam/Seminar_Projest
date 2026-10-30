@@ -470,10 +470,10 @@ export function DetectiveCoverScene() {
       <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
 
       {/* the detective, from behind, drawn flat and boxy like the Conveyor Sort worker: a squared coat with a
-          shoulder cape, a dark tweed deerstalker tipped to one side with its back peak hanging over the neck,
-          and a pipe poking out on the right with smoke curling up. Red rim light on the left. */}
+          shoulder cape, a dark tweed deerstalker tipped to the right with its back peak hanging over the neck,
+          and a bent pipe hanging on the right with smoke curling up. Red rim light on the left. */}
       {/* view-box: .mg-scene * uses fill-box, which would move this transform off the figure's own corner */}
-      <g transform="translate(188 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
+      <g transform="translate(132 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
         <ellipse cy="-52" rx="50" ry="48" fill="url(#nr-halo)" />
         <g fill="#050404">
           <path d="M-28 0 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V0 Z" />
@@ -484,23 +484,25 @@ export function DetectiveCoverScene() {
         <path d="M-8 -48 L-11 -41 L0 -45 L11 -41 L8 -48 Z" fill="#141110" />
         <path d="M-10 0 V-22 M10 0 V-22" stroke="#171310" strokeWidth="0.8" />
         {/* pipe: stem from the mouth, bowl with a glowing ember */}
-        <path d="M7 -59 C12 -58 16 -58 19 -60" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
-        <path d="M18 -61 L17.5 -68 L24 -68 L23.5 -61 C22.5 -58.5 19 -58.5 18 -61 Z" fill="#050404" />
-        <path d="M17.5 -68 L24 -68" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
-        <ellipse cx="20.8" cy="-68.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
+        <path d="M7 -58 C10 -55 13 -53 16 -53" stroke="#050404" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        <path d="M15 -52 L14.5 -59 L21 -59 L20.5 -52 C19.5 -49.5 16 -49.5 15 -52 Z" fill="#050404" />
+        <path d="M14.5 -59 L21 -59" stroke="#efe3cc" strokeWidth="0.6" opacity="0.6" />
+        <ellipse cx="17.8" cy="-59.3" rx="2.4" ry="0.8" fill="#e0612a" opacity="0.85" />
         <g stroke="#efe3cc" strokeWidth="1.1" strokeLinecap="round" fill="none">
-          <path className="mg-sc-smoke" d="M21 -70 C17 -76 25 -80 21 -86 C17 -92 24 -96 22 -102" />
-          <path className="mg-sc-smoke mg-sc-smoke--late" d="M22 -71 C26 -77 19 -82 23 -88 C27 -94 21 -98 24 -104" />
+          <path className="mg-sc-smoke" d="M18 -61 C14 -67 22 -71 18 -77 C14 -83 21 -87 19 -93" />
+          <path className="mg-sc-smoke mg-sc-smoke--late" d="M19 -62 C23 -68 16 -73 20 -79 C24 -85 18 -89 21 -95" />
         </g>
         {/* rim light */}
         <path d="M-28 -27 V-32 C-28 -40 -24 -45 -17 -47" stroke="#c0262d" strokeWidth="1" fill="none" />
         <path d="M-9.5 -58 C-10.5 -61 -10.5 -65 -9.5 -68" stroke="#c0262d" strokeWidth="0.7" fill="none" />
         <path d="M28 -2 V-32 C28 -40 24 -45 17 -47" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.35" />
       </g>
-      {/* deerstalker seen from behind, tipped to the left: dark noir tweed, the back peak toward us */}
-      <g transform="translate(188 152) scale(1.45) rotate(-12 0 -66)" style={{ transformBox: 'view-box' }}>
+      {/* deerstalker seen from behind, tipped to the right: dark noir tweed, the back peak toward us and the
+          front peak sticking out to the right behind his head */}
+      <g transform="translate(132 152) scale(1.45) rotate(14 0 -66)" style={{ transformBox: 'view-box' }}>
         {['url(#nr-tweed)', 'url(#nr-hat-shade)'].map((fill) => (
           <g key={fill} fill={fill}>
+            <path d="M6 -71 C13 -74 21 -73 26 -69 C20 -67 12 -67 6 -68 Z" />
             <path d="M-12 -73 C-16 -77 -15 -84 -10 -85 L-8 -77 Z M12 -73 C16 -77 15 -84 10 -85 L8 -77 Z" />
             <path d="M-12 -68 C-12 -82 -7 -88 0 -88 C7 -88 12 -82 12 -68 Z" />
             <path d="M-14 -70 C-13 -57 13 -57 14 -70 C9 -66 -9 -66 -14 -70 Z" />
