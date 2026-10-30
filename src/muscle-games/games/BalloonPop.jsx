@@ -45,6 +45,43 @@ const FIRE_FLIGHT = 200;
 const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
 const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];
 
+// Ice and bomb flyer icons, drawn around (0, 0) so they sit exactly in the middle of the round flyer
+// (emoji glyphs carry their own padding and baseline, which pushed them off centre).
+function IceIcon() {
+  return (
+    <svg className="mg-flyer__icon" viewBox="-12 -12 24 24" aria-hidden="true">
+      <g stroke="#1d6fd6" strokeWidth="1.8" strokeLinecap="round" fill="none">
+        {[0, 60, 120].map((a) => (
+          <g key={a} transform={`rotate(${a})`}>
+            <path d="M0 -10V10" />
+            <path d="M-3 -7.5L0 -5L3 -7.5M-3 7.5L0 5L3 7.5" />
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+function BombIcon() {
+  return (
+    <svg className="mg-flyer__icon" viewBox="-12 -12 24 24" aria-hidden="true">
+      <path d="M3.5 -6.5C5 -9 7 -9.5 8.5 -8" stroke="#d6b48a" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <circle cx="9" cy="-8.5" r="2" fill="#f59e0b" />
+      <circle cx="9" cy="-8.5" r="0.9" fill="#fff7d6" />
+      <rect x="0.5" y="-8" width="4.5" height="3.4" rx="0.8" transform="rotate(40 2.75 -6.3)" fill="#6b7280" />
+      <circle r="7.5" fill="#7c3aed" />
+      <circle r="7.5" fill="url(#mg-bomb-shade)" />
+      <circle cx="-2.6" cy="-2.6" r="2" fill="#fff" opacity="0.55" />
+      <defs>
+        <radialGradient id="mg-bomb-shade" cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#fff" stopOpacity="0" />
+          <stop offset="1" stopColor="#1e0a3c" stopOpacity="0.7" />
+        </radialGradient>
+      </defs>
+    </svg>
+  );
+}
+
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
     const pool = PROPERTIES.includes(c.answer) ? PROPERTIES : FUNCTIONS;
@@ -134,7 +171,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
           }}
           aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: costs a life'}
         >
-          <span aria-hidden="true">{q.special === 'ice' ? '❄️' : '💣'}</span>
+          {q.special === 'ice' ? <IceIcon /> : <BombIcon />}
         </button>
       )}
     </div>

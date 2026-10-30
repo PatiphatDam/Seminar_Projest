@@ -529,9 +529,10 @@
 
 .mg-flyer {
   position: absolute; left: -80px; z-index: 5; width: 62px; height: 62px; border: 0; border-radius: 50%; cursor: crosshair;
-  display: grid; place-items: center; font-size: 30px; touch-action: manipulation;
+  display: grid; place-items: center; padding: 0; touch-action: manipulation;
   animation: mg-fly 5.5s linear var(--fdelay) forwards;
 }
+.mg-flyer__icon { display: block; width: 62%; height: 62%; pointer-events: none; }
 .mg-flyer--rev { animation-direction: reverse; animation-fill-mode: both; }
 .mg-flyer--ice { background: radial-gradient(circle at 35% 30%, #fff 0 15%, #bae6fd 16% 60%, #7dd3fc); box-shadow: 0 0 16px #7dd3fc; }
 .mg-flyer--bomb { background: radial-gradient(circle at 35% 30%, #6b7280 0 15%, #1f2937 16%); box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); }
