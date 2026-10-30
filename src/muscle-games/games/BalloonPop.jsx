@@ -47,16 +47,37 @@ const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon �
 
 // Ice and bomb flyer icons, drawn around (0, 0) so they sit exactly in the middle of the round flyer
 // (emoji glyphs carry their own padding and baseline, which pushed them off centre).
+
+// A star-shaped burst: `n` spikes alternating between the outer radii in `outer` and radius `inner`.
+function burst(n, outer, inner) {
+  return Array.from({ length: n * 2 }, (_, k) => {
+    const r = k % 2 ? inner : outer[(k / 2) % outer.length];
+    const a = (Math.PI * k) / n - Math.PI / 2;
+    return `${(Math.cos(a) * r).toFixed(2)},${(Math.sin(a) * r).toFixed(2)}`;
+  }).join(' ');
+}
+const BURST_RED = burst(13, [11.6, 10.4, 11.2, 9.8, 11.8], 7.6);
+const BURST_YELLOW = burst(13, [9, 8.2, 8.8, 7.8], 6.6);
+
+// Snow crystal: six feathered arms around a small hexagon.
+const ARM = 'M0 -2.4V-10.6 M0 -4.2l-2 -1.6M0 -4.2l2 -1.6 M0 -6.4l-2.6 -2M0 -6.4l2.6 -2 M0 -8.5l-1.7 -1.4M0 -8.5l1.7 -1.4';
+const HEX = Array.from({ length: 6 }, (_, k) => {
+  const a = (Math.PI * k) / 3 - Math.PI / 2;
+  return `${(Math.cos(a) * 2.2).toFixed(2)},${(Math.sin(a) * 2.2).toFixed(2)}`;
+}).join(' ');
+
 function IceIcon() {
   return (
-    <svg className="mg-flyer__icon" viewBox="-12 -12 24 24" aria-hidden="true">
-      <g stroke="#1d6fd6" strokeWidth="1.8" strokeLinecap="round" fill="none">
-        {[0, 60, 120].map((a) => (
+    <svg className="mg-flyer__icon mg-flyer__icon--ice" viewBox="-12 -12 24 24" aria-hidden="true">
+      <g strokeLinecap="round" strokeLinejoin="round" fill="none">
+        {[0, 60, 120, 180, 240, 300].map((a) => (
           <g key={a} transform={`rotate(${a})`}>
-            <path d="M0 -10V10" />
-            <path d="M-3 -7.5L0 -5L3 -7.5M-3 7.5L0 5L3 7.5" />
+            <path d={ARM} stroke="#bfe3ff" strokeWidth="1.5" />
+            <path d={ARM} stroke="#ffffff" strokeWidth="0.6" />
+            <path d="M0 -10.6l-0.9 -0.9 0.9 -0.9 0.9 0.9z" fill="#ffffff" stroke="#ffffff" strokeWidth="0.4" />
           </g>
         ))}
+        <polygon points={HEX} stroke="#ffffff" strokeWidth="0.7" fill="#dff1ff" fillOpacity="0.35" />
       </g>
     </svg>
   );
@@ -64,20 +85,16 @@ function IceIcon() {
 
 function BombIcon() {
   return (
-    <svg className="mg-flyer__icon" viewBox="-12 -12 24 24" aria-hidden="true">
-      <path d="M3.5 -6.5C5 -9 7 -9.5 8.5 -8" stroke="#d6b48a" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <circle cx="9" cy="-8.5" r="2" fill="#f59e0b" />
-      <circle cx="9" cy="-8.5" r="0.9" fill="#fff7d6" />
-      <rect x="0.5" y="-8" width="4.5" height="3.4" rx="0.8" transform="rotate(40 2.75 -6.3)" fill="#6b7280" />
-      <circle r="7.5" fill="#7c3aed" />
-      <circle r="7.5" fill="url(#mg-bomb-shade)" />
-      <circle cx="-2.6" cy="-2.6" r="2" fill="#fff" opacity="0.55" />
-      <defs>
-        <radialGradient id="mg-bomb-shade" cx="0.35" cy="0.3" r="0.8">
-          <stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <stop offset="1" stopColor="#1e0a3c" stopOpacity="0.7" />
-        </radialGradient>
-      </defs>
+    <svg className="mg-flyer__icon mg-flyer__icon--bomb" viewBox="-12 -12 24 24" aria-hidden="true">
+      <polygon points={BURST_RED} fill="#e8392b" stroke="#7a1010" strokeWidth="0.35" strokeLinejoin="round" />
+      <polygon points={BURST_YELLOW} fill="#fcd116" />
+      {/* fuse from the cap to a yellow spark, up and to the left */}
+      <path d="M-4.6 -4.6 C-6 -6.2 -6.4 -7 -7.6 -7.8" stroke="#222" strokeWidth="0.9" fill="none" strokeLinecap="round" />
+      <polygon points={burst(7, [2.4, 1.8], 1)} transform="translate(-8.6 -8.6)" fill="#fcd116" stroke="#e8a20b" strokeWidth="0.3" />
+      <rect x="-1.3" y="-7.6" width="2.6" height="2.4" rx="0.5" transform="rotate(-45)" fill="#2b2b2b" stroke="#111" strokeWidth="0.3" />
+      <circle className="mg-bomb-ball" r="6.2" fill="#2f2f33" stroke="#111" strokeWidth="0.4" />
+      <path d="M-3.6 -2.4 A4.4 4.4 0 0 1 -0.6 -4.4" stroke="#fff" strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.85" />
+      <circle cx="1.6" cy="2" r="3.6" fill="#000" opacity="0.18" />
     </svg>
   );
 }
@@ -166,10 +183,17 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
             flyerShot.current = true;
             fire(e.currentTarget, (x, y) => {
               setFlyerGone(true);
+              // the bomb blows away one wrong balloon that is still in play
+              if (q.special === 'bomb') {
+                setState((st) => {
+                  const wrong = q.options.find((o) => o !== q.answer && !st[o]);
+                  return wrong ? { ...st, [wrong]: 'gone' } : st;
+                });
+              }
               onSpecial(q.special, x, y);
             });
           }}
-          aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: costs a life'}
+          aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: blows away one wrong balloon'}
         >
           {q.special === 'ice' ? <IceIcon /> : <BombIcon />}
         </button>
@@ -330,11 +354,10 @@ export default function BalloonPop({ onScore, onFinish }) {
       fx.sound('boom');
       fx.vibrate([80, 40, 80]);
       fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
-      fx.float(x, y, '💥', 'bad');
-      fx.say('Boom! You hit a bomb and lost a heart', 'sad');
+      fx.float(x, y, '💥');
+      fx.say('Boom! The bomb blew away a wrong balloon 💥', 'wow');
       setShake(true);
       later(() => setShake(false), 500);
-      loseLife();
     }
   };
 
@@ -408,7 +431,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         </button>
       </div>
       <p className="mg-legend">
-        🧙 Tap a balloon and the wizard zaps it · ✅ Right on the first try = 1 point · ❄️ Ice = slow motion · 💣 Bomb = lose a heart · ⚡ ATP removes 2 wrong balloons
+        🧙 Tap a balloon and the wizard zaps it · ✅ Right on the first try = 1 point · ❄️ Ice = slow motion · 💣 Bomb = removes 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
       </p>
     </section>
   );
