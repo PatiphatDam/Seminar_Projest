@@ -163,37 +163,56 @@ const WHIP_POSES = [0, 1, 2].map((p) => [
   [jagged(22, 30, 0, 12 + p * 9, 3, 0.3, 41 + p), 6],
 ]);
 
-// When the tube fills, one strike leaps from the badge up into the sky: a spark, half a bolt, then the full bolt in
-// two poses with a branch. Drawn in .mg-gauge__strike, whose bottom edge runs through the badge at x 54.
-const STRIKE = [
-  [[jagged(54, 300, 70, 250, 3, 0.2, 51), 7]],
-  [[jagged(54, 300, 96, 130, 5, 0.12, 52), 11]],
-  [[jagged(54, 300, 122, 0, 8, 0.09, 53), 15], [jagged(88, 160, 150, 120, 4, 0.15, 54), 6]],
-  [[jagged(54, 300, 116, 0, 8, 0.09, 55), 15], [jagged(80, 190, 20, 140, 4, 0.15, 56), 6]],
-];
-
 function GaugeLightning() {
   return (
-    <>
-      <svg className="mg-gauge__strike" viewBox="0 0 160 300" aria-hidden="true">
-        {STRIKE.map((bolts, k) => (
-          <g key={k} className={`mg-strike-${k + 1}`}>
-            {bolts.map(([spine, w], j) => (
-              <Bolt key={j} spine={spine} w={w} />
-            ))}
-          </g>
-        ))}
-      </svg>
-      <svg className="mg-gauge__sparks" viewBox="0 0 180 72" aria-hidden="true">
+    <svg className="mg-gauge__sparks" viewBox="0 0 180 72" aria-hidden="true">
         {WHIP_POSES.map((bolts, k) => (
-          <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
-            {bolts.map(([spine, w], j) => (
-              <Bolt key={j} spine={spine} w={w} />
-            ))}
-          </g>
+        <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
+          {bolts.map(([spine, w], j) => (
+            <Bolt key={j} spine={spine} w={w} />
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// An electric explosion where a wrong balloon is removed, drawn round (0, 0): first a four-point flash with a streak
+// and flying shards, then curved arcs over a puff of smoke that swells and fades.
+const SHARDS = [
+  [-30, -14, 8], [-24, 20, 10], [26, -22, 9], [34, 12, 7], [-8, 34, 9], [12, -36, 7],
+];
+
+function ElectricBurst({ x, y }) {
+  return (
+    <svg className="mg-eburst" style={{ left: x, top: y }} viewBox="-70 -70 140 140" aria-hidden="true">
+      <defs>
+        <radialGradient id="mg-eburst-glow">
+          <stop offset="0" stopColor="#60a5fa" stopOpacity="0.8" />
+          <stop offset="1" stopColor="#60a5fa" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <g className="mg-eburst__flash">
+        <circle r="38" fill="url(#mg-eburst-glow)" />
+        <polygon points="-68,0 0,-1.6 68,0 0,1.6" fill="#1e3a8a" opacity="0.8" />
+        <polygon points="0,-58 7,-7 46,0 7,7 0,40 -7,7 -42,0 -7,-7" fill="#67e8f9" stroke="#3b82f6" strokeWidth="3" strokeLinejoin="round" />
+        <polygon points="0,-40 4,-4 30,0 4,4 0,26 -4,4 -28,0 -4,-4" fill="#f0fdff" />
+        {SHARDS.map(([sx, sy, r]) => (
+          <polygon key={`${sx}${sy}`} points={`${sx},${sy - r} ${sx + r * 0.35},${sy + r * 0.2} ${sx - r * 0.4},${sy + r * 0.5}`} fill="#e0f7ff" />
         ))}
-      </svg>
-    </>
+      </g>
+      <g className="mg-eburst__smoke" fill="#8ea3c7">
+        <circle cx="-8" cy="4" r="13" />
+        <circle cx="9" cy="-4" r="12" />
+        <circle cx="4" cy="12" r="10" />
+        <circle cx="-4" cy="-10" r="9" />
+      </g>
+      <g className="mg-eburst__arcs" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1.2" strokeLinejoin="round">
+        <path d="M-6 -46 Q30 -26 8 6 Q20 -24 -6 -46 Z" />
+        <path d="M30 18 Q2 40 -34 26 Q-2 32 30 18 Z" />
+        <path d="M-40 -6 Q-30 -30 -4 -30 Q-28 -24 -40 -6 Z" />
+      </g>
+    </svg>
   );
 }
 
@@ -312,7 +331,7 @@ export default function BalloonPop({ onScore, onFinish }) {
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
   const [casting, setCasting] = useState(0);
-  const [zap, setZap] = useState(null);
+  const [bursts, setBursts] = useState([]);
   const skyRef = useRef(null);
   const wizardRef = useRef(null);
   const timers = useRef([]);
@@ -460,36 +479,26 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  // Two bolts shoot from the badge to the two wrong balloons the power removes, and they burst where the bolts land.
-  const fireAtp = (e) => {
+  // The two wrong balloons the power removes blow up in an electric explosion.
+  const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
     const sky = skyRef.current;
     const box = sky.getBoundingClientRect();
-    const badge = e.currentTarget.querySelector('.mg-gauge__bolt').getBoundingClientRect();
-    const [sx, sy] = [badge.left + badge.width / 2 - box.left, badge.top + badge.height / 2 - box.top];
     // the same two the round removes: wrong answers not yet shot at, in lane order
     const targets = [...sky.querySelectorAll('.mg-rider')]
       .filter((el) => el.querySelector('.mg-rider__banner').textContent !== q.answer && !/mg-rider--/.test(el.className))
       .slice(0, 2)
       .map((el) => {
         const r = el.querySelector('.mg-rider__balloon').getBoundingClientRect();
-        return [r.left + r.width / 2, r.top + r.height / 2];
+        return { id: `${Date.now()}-${r.left}`, x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
       });
-    setZap({
-      id: Date.now(),
-      w: box.width,
-      h: box.height,
-      poses: [61, 62].map((seed) => targets.map(([x, y], k) => jagged(sx, sy, x - box.left, y - box.top, 9, 0.07, seed + k * 10))),
-    });
-    later(() => {
-      setAssistFor(s.i);
-      targets.forEach(([x, y]) => fx.burst(x, y, 18, ['#f0fdff', '#67e8f9', '#3b82f6']));
-      if (targets.length) fx.sound('pop');
-    }, 160);
-    later(() => setZap(null), 420);
+    setAssistFor(s.i);
+    setBursts(targets);
+    if (targets.length) fx.sound('boom');
+    later(() => setBursts([]), 800);
     rerender();
   };
 
@@ -536,18 +545,9 @@ export default function BalloonPop({ onScore, onFinish }) {
         <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
           <WizardArt />
         </div>
-        {s.atp >= ATP_MAX && <div className="mg-sky__flash" aria-hidden="true" />}
-        {zap && (
-          <svg key={zap.id} className="mg-zap" viewBox={`0 0 ${zap.w} ${zap.h}`} aria-hidden="true">
-            {zap.poses.map((bolts, k) => (
-              <g key={k} className="mg-zap__pose" style={{ animationDelay: `${-0.06 * k}s` }}>
-                {bolts.map((spine, j) => (
-                  <Bolt key={j} spine={spine} w={10} />
-                ))}
-              </g>
-            ))}
-          </svg>
-        )}
+        {bursts.map((b) => (
+          <ElectricBurst key={b.id} x={b.x} y={b.y} />
+        ))}
         {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}
         <div className="mg-gauge">
           <div className="mg-gauge__lives" role="img" aria-label={`${s.lives} of ${LIVES} lives left`}>
