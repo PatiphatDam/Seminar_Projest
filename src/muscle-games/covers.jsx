@@ -364,7 +364,7 @@ export function ConveyorCoverScene() {
   );
 }
 
-// Picture Match cover: a noir detective in a dark deerstalker, seen from behind with his pipe, studies an evidence wall of muscle photos tied
+// Picture Match cover: a noir detective in a fedora, seen from behind with his pipe, studies an evidence wall of muscle photos tied
 // with red string, lit by a beam through the window blinds.
 function NoirPhoto({ x, y, w, h, r, children }) {
   return (
@@ -387,15 +387,6 @@ export function DetectiveCoverScene() {
         <linearGradient id="nr-beam" x1="1" y1="0" x2="0.3" y2="1">
           <stop offset="0" stopColor="#efe3cc" stopOpacity="0.42" />
           <stop offset="1" stopColor="#efe3cc" stopOpacity="0.04" />
-        </linearGradient>
-        <pattern id="nr-tweed" width="2.4" height="2.4" patternUnits="userSpaceOnUse">
-          <rect width="2.4" height="2.4" fill="#3a332c" />
-          <path d="M0 0h1.2v1.2H0z M1.2 1.2h1.2v1.2H1.2z" fill="#121010" />
-          <path d="M0 1.9h2.4" stroke="#4a1c1c" strokeWidth="0.25" />
-        </pattern>
-        <linearGradient id="nr-hat-shade" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#050404" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#050404" stopOpacity="0.2" />
         </linearGradient>
         <radialGradient id="nr-halo">
           <stop offset="0" stopColor="#3a322b" stopOpacity="0.7" />
@@ -470,10 +461,9 @@ export function DetectiveCoverScene() {
       <path d="M297 126 a4 4 0 0 1 0 8" stroke="#1d1916" strokeWidth="2.2" fill="none" />
 
       {/* the detective, from behind, drawn flat and boxy like the Conveyor Sort worker: a squared coat with a
-          shoulder cape, a dark tweed deerstalker tipped to the right with its back peak hanging over the neck,
-          and a bent pipe hanging on the right with smoke curling up. Red rim light on the left. */}
+          shoulder cape, a noir fedora, and a bent pipe hanging on the right with smoke curling up. Red rim light on the left. */}
       {/* view-box: .mg-scene * uses fill-box, which would move this transform off the figure's own corner */}
-      <g transform="translate(132 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
+      <g transform="translate(158 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
         <ellipse cy="-52" rx="50" ry="48" fill="url(#nr-halo)" />
         <g fill="#050404">
           <path d="M-28 0 V-32 C-28 -42 -21 -47 -11 -48 H11 C21 -47 28 -42 28 -32 V0 Z" />
@@ -497,23 +487,17 @@ export function DetectiveCoverScene() {
         <path d="M-9.5 -58 C-10.5 -61 -10.5 -65 -9.5 -68" stroke="#c0262d" strokeWidth="0.7" fill="none" />
         <path d="M28 -2 V-32 C28 -40 24 -45 17 -47" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.35" />
       </g>
-      {/* deerstalker seen from behind, tipped to the right: dark noir tweed, the back peak toward us and the
-          front peak sticking out to the right behind his head */}
-      <g transform="translate(132 152) scale(1.45) rotate(14 0 -66)" style={{ transformBox: 'view-box' }}>
-        {['url(#nr-tweed)', 'url(#nr-hat-shade)'].map((fill) => (
-          <g key={fill} fill={fill}>
-            <path d="M6 -71 C13 -74 21 -73 26 -69 C20 -67 12 -67 6 -68 Z" />
-            <path d="M-12 -73 C-16 -77 -15 -84 -10 -85 L-8 -77 Z M12 -73 C16 -77 15 -84 10 -85 L8 -77 Z" />
-            <path d="M-12 -68 C-12 -82 -7 -88 0 -88 C7 -88 12 -82 12 -68 Z" />
-            <path d="M-14 -70 C-13 -57 13 -57 14 -70 C9 -66 -9 -66 -14 -70 Z" />
-          </g>
-        ))}
-        <path d="M0 -88 V-68 M-6 -86 C-7.5 -80 -7.5 -74 -6.5 -68.5 M6 -86 C7.5 -80 7.5 -74 6.5 -68.5" stroke="#050404" strokeWidth="0.5" fill="none" />
-        <path d="M-14 -70 C-9 -66 9 -66 14 -70" stroke="#050404" strokeWidth="0.6" fill="none" />
-        <path d="M0 -88 C-5 -93 -8 -90 -5 -87 Z M0 -88 C5 -93 8 -90 5 -87 Z" fill="#0d0b0a" />
-        <path d="M-1 -88 L-4 -82 M1 -88 L4 -82" stroke="#0d0b0a" strokeWidth="0.7" strokeLinecap="round" />
-        <path d="M-12 -69 C-12 -82 -7 -88 -1 -88" stroke="#c0262d" strokeWidth="0.8" fill="none" />
-        <path d="M12 -70 C12 -80 8 -86 3 -88" stroke="#efe3cc" strokeWidth="0.5" fill="none" opacity="0.4" />
+      {/* fedora seen from behind: wide brim, pinched crown with a dark red band, red rim light on the left */}
+      <g transform="translate(158 152) scale(1.45)" style={{ transformBox: 'view-box' }}>
+        <g fill="#050404">
+          <path d="M-30 -70 C-22 -77 22 -78 31 -71 C24 -66 -22 -65 -30 -70 Z" />
+          <path d="M-16 -73 C-17 -86 -10 -92 1 -92 C13 -92 19 -86 18 -74 Z" />
+        </g>
+        <path d="M-16 -76 C-6 -78 8 -78 18 -77" stroke="#3a1416" strokeWidth="2.4" fill="none" />
+        <path d="M-8 -91 C-4 -88 4 -88 9 -91" stroke="#1a1513" strokeWidth="0.7" fill="none" />
+        <path d="M-16 -74 C-17 -86 -10 -92 0 -92" stroke="#c0262d" strokeWidth="0.9" fill="none" />
+        <path d="M-30 -70 C-26 -73 -21 -75 -16 -76" stroke="#c0262d" strokeWidth="0.8" fill="none" />
+        <path d="M18 -75 C19 -85 13 -91 5 -92" stroke="#efe3cc" strokeWidth="0.6" fill="none" opacity="0.45" />
       </g>
 
       <rect width="320" height="150" fill="url(#nr-vignette)" />
