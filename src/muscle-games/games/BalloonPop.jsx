@@ -178,16 +178,16 @@ function GaugeLightning() {
 }
 
 // An electric shockwave where a wrong balloon is removed, drawn round (0, 0) and over in half a second: a hard white
-// cross for a couple of frames, then a spiky, angular shock outline racing out with two sharp slashes sweeping across
+// cross for a couple of frames, then a ragged shock outline racing out with two sharp slashes sweeping across
 // and bolts crackling inside it. Nothing flies outside the outline.
-const EB_SHOCK = Array.from({ length: 12 }, (_, k) => {
-  const a = (k / 12) * Math.PI * 2 + (k % 3) * 0.08;
-  const r = k % 2 ? 22 + (k % 3) * 2 : 46 - (k % 4) * 4;
+const EB_SHOCK = Array.from({ length: 18 }, (_, k) => {
+  const a = (k / 18) * Math.PI * 2 + (k % 3) * 0.05;
+  const r = k % 2 ? 35 + (k % 3) : 42 - (k % 4) * 1.5;
   return `${(Math.cos(a) * r * 1.1).toFixed(1)},${(Math.sin(a) * r * 0.85).toFixed(1)}`;
 }).join(' ');
 const EB_SLASHES = [
-  taper([[-36, 16], [-6, 2], [32, -24]], 7),
-  taper([[28, 20], [6, 9], [-20, 22]], 5),
+  taper([[-36, 16], [-6, 2], [32, -24]], 3.5),
+  taper([[28, 20], [6, 9], [-20, 22]], 2.5),
 ];
 const EB_CRACKLE = [jagged(-6, -4, -28, -16, 4, 0.25, 7), jagged(8, 4, 28, 14, 4, 0.25, 8), jagged(2, -8, 8, -26, 3, 0.3, 9)];
 
@@ -205,21 +205,21 @@ function ElectricBurst({ x, y }) {
         <ellipse rx="36" ry="24" transform="rotate(-25)" fill="url(#mg-eburst-glow)" />
       </g>
       <g className="mg-eburst__ring" fill="none" strokeLinejoin="miter">
-        <polygon points={EB_SHOCK} stroke="#3b82f6" strokeWidth="6" opacity="0.35" />
-        <polygon points={EB_SHOCK} stroke="#a5f3fc" strokeWidth="2" />
+        <polygon points={EB_SHOCK} stroke="#3b82f6" strokeWidth="3.5" opacity="0.35" />
+        <polygon points={EB_SHOCK} stroke="#a5f3fc" strokeWidth="1.2" />
       </g>
-      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1" strokeLinejoin="round">
+      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="0.6" strokeLinejoin="round">
         {EB_SLASHES.map((pts) => (
           <polygon key={pts} points={pts} />
         ))}
       </g>
       <g className="mg-eburst__crackle">
         {EB_CRACKLE.map((spine, k) => (
-          <Bolt key={k} spine={spine} w={4} />
+          <Bolt key={k} spine={spine} w={2.2} />
         ))}
       </g>
       <g className="mg-eburst__flash">
-        <polygon points="0,-46 5,-5 34,0 5,5 0,38 -5,5 -30,0 -5,-5" fill="#f0fdff" stroke="#67e8f9" strokeWidth="2.5" strokeLinejoin="round" />
+        <polygon points="0,-46 3,-3 34,0 3,3 0,38 -3,3 -30,0 -3,-3" fill="#f0fdff" stroke="#67e8f9" strokeWidth="1.5" strokeLinejoin="round" />
         <circle r="9" fill="#fff" />
       </g>
     </svg>
