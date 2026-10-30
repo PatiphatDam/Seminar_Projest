@@ -177,34 +177,19 @@ function GaugeLightning() {
   );
 }
 
-// A crescent blade along the arc of radius `r` from angle `a0` to `a1`, `w` thick in the middle and sharp at both ends.
-function crescent(r, a0, a1, w) {
-  const outer = [];
-  const inner = [];
-  for (let k = 0; k <= 10; k++) {
-    const t = k / 10;
-    const a = a0 + (a1 - a0) * t;
-    const th = Math.sin(Math.PI * t) ** 0.8 * w;
-    outer.push(`${(Math.cos(a) * (r + th / 2)).toFixed(1)},${(Math.sin(a) * (r + th / 2)).toFixed(1)}`);
-    inner.unshift(`${(Math.cos(a) * (r - th / 2)).toFixed(1)},${(Math.sin(a) * (r - th / 2)).toFixed(1)}`);
-  }
-  return [...outer, ...inner].join(' ');
-}
-
 // An electric shockwave where a wrong balloon is removed, drawn round (0, 0) and over in half a second: a hard white
-// cross for a couple of frames, then a tilted ring racing out with speed lines, two crescent slashes swinging round,
-// a few crackling bolts and sparks flying off.
-const EB_LINES = [
-  [-0.3, 26, 58, 3.2], [0.5, 24, 46, 2.4], [1.25, 26, 62, 3.4], [2.1, 22, 44, 2.2],
-  [2.75, 26, 56, 3], [3.6, 24, 50, 2.6], [4.3, 26, 64, 3.4], [5.3, 22, 42, 2.2],
-].map(([a, r1, r2, w]) => taper([[Math.cos(a) * r1, Math.sin(a) * r1], [Math.cos(a) * r2, Math.sin(a) * r2]], w));
-const EB_SPARKS = [[-46, -30], [40, -40], [52, 14], [-30, 40], [10, 50], [-54, 6], [24, -54]].map(([dx, dy]) => {
-  const ux = (dx / Math.hypot(dx, dy)) * 7;
-  const uy = (dy / Math.hypot(dx, dy)) * 7;
-  return { dx, dy, points: taper([[ux, uy], [-ux, -uy]], 2.6) };
-});
-const EB_CRACKLE = [jagged(-10, -8, -40, -26, 4, 0.25, 7), jagged(12, 6, 38, 24, 4, 0.25, 8), jagged(4, -12, 14, -40, 3, 0.3, 9)];
-const EB_SLASHES = [crescent(30, -2.6, -1.0, 7), crescent(26, 0.5, 1.9, 5.5)];
+// cross for a couple of frames, then a spiky, angular shock outline racing out with two sharp slashes sweeping across
+// and bolts crackling inside it. Nothing flies outside the outline.
+const EB_SHOCK = Array.from({ length: 12 }, (_, k) => {
+  const a = (k / 12) * Math.PI * 2 + (k % 3) * 0.08;
+  const r = k % 2 ? 22 + (k % 3) * 2 : 46 - (k % 4) * 4;
+  return `${(Math.cos(a) * r * 1.1).toFixed(1)},${(Math.sin(a) * r * 0.85).toFixed(1)}`;
+}).join(' ');
+const EB_SLASHES = [
+  taper([[-36, 16], [-6, 2], [32, -24]], 7),
+  taper([[28, 20], [6, 9], [-20, 22]], 5),
+];
+const EB_CRACKLE = [jagged(-6, -4, -28, -16, 4, 0.25, 7), jagged(8, 4, 28, 14, 4, 0.25, 8), jagged(2, -8, 8, -26, 3, 0.3, 9)];
 
 function ElectricBurst({ x, y }) {
   return (
@@ -217,18 +202,13 @@ function ElectricBurst({ x, y }) {
         </radialGradient>
       </defs>
       <g className="mg-eburst__glow">
-        <circle r="34" fill="url(#mg-eburst-glow)" />
+        <ellipse rx="36" ry="24" transform="rotate(-25)" fill="url(#mg-eburst-glow)" />
       </g>
-      <g className="mg-eburst__ring">
-        <ellipse rx="44" ry="30" fill="none" stroke="#3b82f6" strokeWidth="7" opacity="0.35" />
-        <ellipse rx="44" ry="30" fill="none" stroke="#a5f3fc" strokeWidth="2.2" />
+      <g className="mg-eburst__ring" fill="none" strokeLinejoin="miter">
+        <polygon points={EB_SHOCK} stroke="#3b82f6" strokeWidth="6" opacity="0.35" />
+        <polygon points={EB_SHOCK} stroke="#a5f3fc" strokeWidth="2" />
       </g>
-      <g className="mg-eburst__lines" fill="#e0f7ff">
-        {EB_LINES.map((pts) => (
-          <polygon key={pts} points={pts} />
-        ))}
-      </g>
-      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1">
+      <g className="mg-eburst__slash" fill="#e0f7ff" stroke="#38bdf8" strokeWidth="1" strokeLinejoin="round">
         {EB_SLASHES.map((pts) => (
           <polygon key={pts} points={pts} />
         ))}
@@ -236,13 +216,6 @@ function ElectricBurst({ x, y }) {
       <g className="mg-eburst__crackle">
         {EB_CRACKLE.map((spine, k) => (
           <Bolt key={k} spine={spine} w={4} />
-        ))}
-      </g>
-      <g className="mg-eburst__sparks">
-        {EB_SPARKS.map(({ dx, dy, points }, k) => (
-          <g key={k} style={{ '--dx': `${dx}px`, '--dy': `${dy}px`, animationDelay: `${k * 0.012}s` }}>
-            <polygon points={points} fill="#f0fdff" />
-          </g>
         ))}
       </g>
       <g className="mg-eburst__flash">
