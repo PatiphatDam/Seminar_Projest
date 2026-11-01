@@ -234,6 +234,60 @@ function BadgeBolt() {
   );
 }
 
+// Lightning crackling round a zapped balloon, drawn round the centre of its envelope (radius about 33): in each of three
+// poses, three bolts run along an oval just outside the envelope, cyan and yellow in turn, and two short ones spit
+// outwards. The poses flip every 50 ms while the balloon flickers in x-ray (see .mg-rider--zapped).
+function aroundSpine(a0, a1, seed) {
+  const r = rng(seed);
+  return Array.from({ length: 8 }, (_, k) => {
+    const a = a0 + ((a1 - a0) * k) / 7;
+    const d = k === 0 || k === 7 ? 0 : (r() * 2 - 1) * 5.5;
+    return [Math.cos(a) * (41 + d), Math.sin(a) * (44 + d)];
+  });
+}
+
+const AURA_POSES = [0, 1, 2].map((p) => {
+  const bolts = [0, 1, 2].map((k) => {
+    const a0 = (k * 2 * Math.PI) / 3 + p * 0.9;
+    return { spine: aroundSpine(a0, a0 + 1.3, 81 + p * 10 + k), color: (k + p) % 2 ? 'yellow' : 'cyan', w: 4 };
+  });
+  const spits = [0, 1].map((k) => {
+    const a = p * 1.1 + k * Math.PI + 0.6;
+    return {
+      spine: jagged(Math.cos(a) * 41, Math.sin(a) * 44, Math.cos(a) * 50, Math.sin(a) * 53, 3, 0.3, 91 + p * 10 + k),
+      color: k ? 'cyan' : 'yellow',
+      w: 3.2,
+    };
+  });
+  return [...bolts, ...spits];
+});
+
+function AuraBolt({ spine, color, w }) {
+  const [glow, body, core] = EDGE_COLORS[color];
+  const pts = taper(spine, w);
+  return (
+    <>
+      <polygon points={pts} fill={body} stroke={glow} strokeWidth={w + 1} strokeLinejoin="round" opacity="0.4" />
+      <polygon points={pts} fill={body} />
+      <polygon points={taper(spine, w * 0.45)} fill={core} />
+    </>
+  );
+}
+
+function ShockAura() {
+  return (
+    <svg className="mg-aura" viewBox="-50 -50 100 100" aria-hidden="true">
+      {AURA_POSES.map((bolts, k) => (
+        <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.05}s` }}>
+          {bolts.map((b, j) => (
+            <AuraBolt key={j} {...b} />
+          ))}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
     const pool = PROPERTIES.includes(c.answer) ? PROPERTIES : FUNCTIONS;
@@ -303,6 +357,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
         >
           <span className="mg-rider__balloon">
             <AirshipArt />
+            {state[opt] === 'zapped' && <ShockAura />}
           </span>
           <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
