@@ -42,11 +42,12 @@ class GameErrorBoundary extends Component {
  *   <Route path="/games/*" element={<MuscleGames onGameFinish={saveRun} />} />
  * Every link inside is relative, so any base path works.
  * hubTitle={false} drops the hub's own eyebrow + "Games" heading, for hosts that render their own page header there.
+ * gameHeader={false} drops each game's page header (back link, title), for hosts that render their own on game pages too.
  * playerId identifies the signed-in student: runs that could not be saved wait in this browser (outbox.js) and are
  * sent again only while the same player is signed in.
  */
-export default function MuscleGames({ onGameFinish, hubTitle = true, playerId = null, className = '' }) {
-  const config = useMemo(() => ({ onGameFinish, hubTitle, playerId }), [onGameFinish, hubTitle, playerId]);
+export default function MuscleGames({ onGameFinish, hubTitle = true, gameHeader = true, playerId = null, className = '' }) {
+  const config = useMemo(() => ({ onGameFinish, hubTitle, gameHeader, playerId }), [onGameFinish, hubTitle, gameHeader, playerId]);
 
   // Retry runs that failed to save: now, when the device comes back online, and every 20 s while any are waiting.
   useEffect(() => {

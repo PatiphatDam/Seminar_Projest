@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { Link } from 'react-router-dom';
 import { useScores } from '../scores.jsx';
 import { MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
-import { MAX_SCORE, bestOf } from '../games/meta.js';
+import { GAMES, MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
 import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
 
@@ -33,12 +33,41 @@ function dedupe(mistakes = []) {
   });
 }
 
+// Page header in the main site's style: phones get a bar with a back chevron, wider screens a breadcrumb and big title.
+function PageHead({ game }) {
+  const subtitle = `Game ${GAMES.indexOf(game) + 1} · ${game.goal}`;
+  return (
+    <header className="mg-page-head">
+      <div className="mg-page-head__bar">
+        <Link to=".." className="mg-page-head__back" aria-label="Back to games">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Link>
+        <div>
+          <h1>{game.title}</h1>
+          <p>{subtitle}</p>
+        </div>
+      </div>
+      <div className="mg-page-head__wide">
+        <nav aria-label="Breadcrumb">
+          <Link to="..">Games</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">{game.title}</span>
+        </nav>
+        <h1>{game.title}</h1>
+        <p>{subtitle}</p>
+      </div>
+    </header>
+  );
+}
+
 // Shared frame for every game: header, Armin, live score out of 10, session best, results, review and replay.
 export default function GamePage({ game, Game }) {
   const { best, submit } = useScores();
   const fx = useFx();
   const { muted } = useFxState();
-  const { onGameFinish, playerId } = useGamesConfig();
+  const { onGameFinish, gameHeader, playerId } = useGamesConfig();
   const [run, setRun] = useState(0);
   const [score, setScore] = useState(0);
   const [result, setResult] = useState(null);
@@ -146,16 +175,12 @@ export default function GamePage({ game, Game }) {
 
   return (
     <main className="mg-page mg-page--game">
-      <header className="mg-game-bar">
-        <Link to=".." className="mg-btn mg-btn--ghost mg-game-bar__back" aria-label="Back to games">
-          ← <span>Games</span>
-        </Link>
-        <div className="mg-game-bar__title">
-          <span className="mg-lo-tag" title={game.loText}>
-            {game.lo}
-          </span>
-          <h1>{game.title}</h1>
-        </div>
+      {gameHeader && <PageHead game={game} />}
+      <div className="mg-game-bar">
+        <span className="mg-lo-tag" title={game.loText}>
+          {game.lo}
+        </span>
+        <p className="mg-game-bar__lo">{game.loText}</p>
         <div className="mg-game-bar__stats">
           <div className="mg-stat">
             <span>Score</span>
@@ -181,7 +206,7 @@ export default function GamePage({ game, Game }) {
             ↻
           </button>
         </div>
-      </header>
+      </div>
 
       <MascotBar fallback={game.intro} />
 
