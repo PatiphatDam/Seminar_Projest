@@ -263,7 +263,7 @@ function Scene({ data, level, selected, onSelect, reducedMotion, timeline }: Mol
           <meshBasicMaterial color="#8c6117" />
         </mesh>
       </group>
-      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} onClick={() => onSelect(a.id)} />)}
+      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} label={level.hotspots[a.index]?.name} onClick={() => onSelect(a.id)} />)}
     </group>
   );
 }

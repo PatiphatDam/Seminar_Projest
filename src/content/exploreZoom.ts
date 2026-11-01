@@ -126,7 +126,7 @@ export const LEVELS: ZoomLevel[] = [
         ],
         lesson: TISSUE,
         anchor: "Epimysium",
-        at: [0.6, 0.35, 1],
+        at: [0.4, 0.35, 1],
         meshes: ["Epimysium"],
       },
       {

@@ -16,13 +16,16 @@ import { CameraControls, useGLTF, useProgress } from "@react-three/drei";
 import {
   Box3,
   Color,
+  DoubleSide,
   Group,
   Mesh,
   MeshStandardMaterial,
+  Raycaster,
   Sphere,
   Vector3,
   type Material,
   type Object3D,
+  type Side,
   type Intersection,
 } from "three";
 import { levelById, type CodeScene, type LevelId, type ZoomLevel } from "@/content/exploreZoom";
@@ -260,6 +263,21 @@ function LevelModel({ level, selected, onSelect, zoomTarget, onZoomDone, reduced
         const [fx, fy, fz] = h.at ?? [0.5, 0.5, 1];
         const size = box.getSize(new Vector3());
         const pos = new Vector3(box.min.x + size.x * fx, box.min.y + size.y * fy, box.min.z + size.z * fz);
+        // a point on the front of the box floats in front of curved parts and drifts off them as the model turns —
+        // drop it back onto the nearest surface along the opening view (faces count from both sides: some sheaths
+        // are modelled with their normals inward)
+        if (fz >= 1) {
+          const dir = new Vector3(...(VIEW[level.id] ?? [0.4, 0.4, 1])).normalize();
+          const ray = new Raycaster(pos.clone().addScaledVector(dir, SIZE * 2), dir.clone().negate());
+          const sides: [Material, Side][] = [];
+          node.traverse((o) => {
+            if (o instanceof Mesh) for (const m of [o.material].flat() as Material[]) sides.push([m, m.side]);
+          });
+          sides.forEach(([m]) => (m.side = DoubleSide));
+          const hit = ray.intersectObject(node, true)[0];
+          sides.forEach(([m, s]) => (m.side = s));
+          if (hit) pos.copy(hit.point);
+        }
         found.push({ id: h.id, index, pos, sphere });
       } else {
         const pos = node.getWorldPosition(new Vector3());
@@ -387,7 +405,7 @@ function LevelModel({ level, selected, onSelect, zoomTarget, onZoomDone, reduced
         onClick={onClick}
       />
       {timeline && <LevelAnimation level={level.id} root={root} meshes={meshes} clips={gltf.animations} tl={timeline} keyOf={partKey} size={SIZE} />}
-      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} onClick={() => onSelect(a.id)} />)}
+      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} label={level.hotspots[a.index]?.name} onClick={() => onSelect(a.id)} />)}
     </group>
   );
 }

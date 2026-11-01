@@ -163,7 +163,7 @@ function Scene({ data, level, selected, onSelect, reducedMotion, timeline }: Mol
       <points ref={ions} geometry={ionGeo} visible={false}>
         <pointsMaterial color="#fde047" size={0.09} sizeAttenuation transparent depthWrite={false} blending={AdditiveBlending} />
       </points>
-      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} onClick={() => onSelect(a.id)} />)}
+      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} label={level.hotspots[a.index]?.name} onClick={() => onSelect(a.id)} />)}
     </group>
   );
 }
