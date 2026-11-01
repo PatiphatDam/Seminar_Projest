@@ -234,19 +234,30 @@ function BadgeBolt() {
   );
 }
 
-// A zapped balloon's shock and exit, drawn round the centre of its envelope (an oval about 30 x 32). For 0.42 s, thin
-// bolts in the skill tube's style (cyan and yellow, white core, a small white fork) jump between points on its edge,
-// two per pose, flipping every 50 ms. Then, while the balloon art implodes (see .mg-rider--zapped), a four-point star
-// twinkles where it was, inside a yellow ring that spreads and fades.
-const ZAP_EDGE = (a) => [Math.cos(a) * 30, Math.sin(a) * 32];
+// A zapped balloon's shock and exit, drawn round the centre of its envelope (an oval about 33 x 35). For 0.42 s, short
+// crackles in the skill tube's style (thin, cyan and yellow, white core, a small white fork) run along its edge,
+// three per pose at different places, flipping every 50 ms like a current, while the balloon art flickers in x-ray.
+// Then, while the art implodes (see .mg-rider--zapped), a four-point star twinkles where it was, inside a yellow
+// ring that spreads and fades.
+function edgeSpine(a0, seed) {
+  const r = rng(seed);
+  return Array.from({ length: 6 }, (_, k) => {
+    const a = a0 + (0.7 * k) / 5;
+    const d = k === 0 || k === 5 ? 0 : (r() * 2 - 1) * 1.6;
+    return [Math.cos(a) * (33 + d), Math.sin(a) * (35 + d)];
+  });
+}
+
 const ZAP_POSES = [0, 1, 2].map((p) =>
-  [0, 1].map((k) => {
-    const a = p * 1.3 + k * 2.6;
-    const [x1, y1] = ZAP_EDGE(a);
-    const [x2, y2] = ZAP_EDGE(a + 1.4 + ((p + k) % 2) * 0.6);
-    const spine = jagged(x1, y1, x2, y2, 6, 0.12, 41 + p * 5 + k);
-    const [mx, my] = spine[3];
-    return { spine, color: k ? 'yellow' : 'cyan', fork: `M${mx.toFixed(1)} ${my.toFixed(1)} l-2 -4 l3 1 l1 -3` };
+  [0, 1, 2].map((k) => {
+    const a0 = (k * 2 * Math.PI) / 3 + p * 0.75;
+    const spine = edgeSpine(a0, 41 + p * 5 + k);
+    const [mx, my] = spine[2];
+    // the fork points away from the centre
+    const ux = mx / Math.hypot(mx, my);
+    const uy = my / Math.hypot(mx, my);
+    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 3 - uy * 1.5).toFixed(1)} ${(uy * 3 + ux * 1.5).toFixed(1)} l${(ux * 2 + uy * 1.5).toFixed(1)} ${(uy * 2 - ux * 1.5).toFixed(1)}`;
+    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork };
   })
 );
 
