@@ -234,52 +234,6 @@ function BadgeBolt() {
   );
 }
 
-// An electric shock where a wrong balloon is removed, drawn round (0, 0) and kept inside the balloon's envelope (radius
-// about 30): four zigzag bolts cut across it, cyan and yellow in turn like the skill tube's, each with a small white
-// fork. They flip between three poses every 50 ms while the whole shock jerks on and off in surges for half a second.
-const SHOCK_POSES = [0, 1, 2].map((p) =>
-  Array.from({ length: 4 }, (_, k) => {
-    const a = (k * Math.PI) / 2 + p * 0.5 + 0.3;
-    const b = a + Math.PI + (k % 2 ? 0.7 : -0.7);
-    const spine = jagged(Math.cos(a) * 27, Math.sin(a) * 27, Math.cos(b) * 24, Math.sin(b) * 24, 7, 0.14, 61 + p * 10 + k);
-    const [mx, my] = spine[3];
-    return { spine, color: k % 2 ? 'yellow' : 'cyan', fork: `M${mx.toFixed(1)} ${my.toFixed(1)} l3 -4 l2 2 l3 -3` };
-  })
-);
-
-function ShockBolt({ spine, color, fork }) {
-  const [glow, body, core] = EDGE_COLORS[color];
-  const pts = taper(spine, 3);
-  return (
-    <>
-      <polygon points={pts} fill={body} stroke={glow} strokeWidth="3.5" strokeLinejoin="round" opacity="0.35" />
-      <polygon points={pts} fill={body} />
-      <polygon points={taper(spine, 1.4)} fill={core} />
-      <path d={fork} fill="none" stroke="#fff" strokeWidth="0.9" strokeLinejoin="round" strokeLinecap="round" />
-    </>
-  );
-}
-
-// Rendered inside the balloon, so it falls with it; centred on the envelope, the upper part of the balloon.
-function ElectricShock() {
-  return (
-    <svg className="mg-shock" viewBox="-34 -34 68 68" aria-hidden="true">
-      <circle className="mg-shock__glow" r="30" fill="#e0fbff" />
-      <g className="mg-shock__surge">
-        {/* darkens the envelope so the bolts stand out against the light stripes */}
-        <circle r="27" fill="#0c1a3a" opacity="0.45" />
-        {SHOCK_POSES.map((bolts, k) => (
-          <g key={k} className="mg-shock__pose" style={{ animationDelay: `${k * 0.05}s` }}>
-            {bolts.map((bolt, j) => (
-              <ShockBolt key={j} {...bolt} />
-            ))}
-          </g>
-        ))}
-      </g>
-    </svg>
-  );
-}
-
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
     const pool = PROPERTIES.includes(c.answer) ? PROPERTIES : FUNCTIONS;
@@ -349,7 +303,6 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
         >
           <span className="mg-rider__balloon">
             <AirshipArt />
-            {state[opt] === 'zapped' && <ElectricShock />}
           </span>
           <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
@@ -543,7 +496,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  // The two wrong balloons the power removes are knocked out by an electric shock inside each balloon.
+  // The two wrong balloons the power removes get a cartoon electric shock (see .mg-rider--zapped).
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
