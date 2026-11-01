@@ -234,33 +234,55 @@ function BadgeBolt() {
   );
 }
 
-// An electric shock where a wrong balloon is removed, drawn round (0, 0): five small bolts crackle out from the
-// balloon, flipping between three poses for under half a second, over a faint glow.
+// An electric shock where a wrong balloon is removed, drawn round (0, 0) in the style of game electricity FX: six long,
+// wiggly arcs crawl out of the balloon, each with a fork, in cyan with a white core and a wide glow. They grow out fast,
+// boil between three poses every 50 ms and fade within half a second.
 const SHOCK_POSES = [0, 1, 2].map((p) =>
-  Array.from({ length: 5 }, (_, k) => {
-    const a = (k / 5) * Math.PI * 2 + p * 0.6 + k * 0.17;
-    const r = 22 + ((k + p) % 3) * 4;
-    return jagged(Math.cos(a) * 6, Math.sin(a) * 6, Math.cos(a) * r, Math.sin(a) * r, 3, 0.3, 61 + p * 10 + k);
+  Array.from({ length: 6 }, (_, k) => {
+    const a = (k / 6) * Math.PI * 2 + p * 0.35 + (k % 2) * 0.25;
+    const r = 46 + ((k * 7 + p * 5) % 16);
+    const spine = jagged(Math.cos(a) * 10, Math.sin(a) * 10, Math.cos(a) * r, Math.sin(a) * r, 9, 0.12, 61 + p * 10 + k);
+    const [fx, fy] = spine[4];
+    const fa = a + (k % 2 ? 0.7 : -0.7);
+    const fork = jagged(fx, fy, fx + Math.cos(fa) * 20, fy + Math.sin(fa) * 20, 5, 0.18, 161 + p * 10 + k);
+    return [spine, fork];
   })
 );
 
+function ShockArc({ spine, w }) {
+  const body = taper(spine, w);
+  return (
+    <>
+      <polygon points={body} fill="#22d3ee" stroke="#22d3ee" strokeWidth={w * 2.6} strokeLinejoin="round" opacity="0.18" />
+      <polygon points={body} fill="#67e8f9" stroke="#22d3ee" strokeWidth={w * 0.8} strokeLinejoin="round" opacity="0.9" />
+      <polygon points={taper(spine, w * 0.45)} fill="#f0fdff" />
+    </>
+  );
+}
+
 function ElectricShock({ x, y }) {
   return (
-    <svg className="mg-shock" style={{ left: x, top: y }} viewBox="-40 -40 80 80" aria-hidden="true">
+    <svg className="mg-shock" style={{ left: x, top: y }} viewBox="-70 -70 140 140" aria-hidden="true">
       <defs>
         <radialGradient id="mg-shock-glow">
-          <stop offset="0" stopColor="#7dd3fc" stopOpacity="0.7" />
-          <stop offset="1" stopColor="#3b82f6" stopOpacity="0" />
+          <stop offset="0" stopColor="#a5f3fc" stopOpacity="0.85" />
+          <stop offset="0.5" stopColor="#22d3ee" stopOpacity="0.35" />
+          <stop offset="1" stopColor="#0e7490" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <circle className="mg-shock__glow" r="24" fill="url(#mg-shock-glow)" />
-      {SHOCK_POSES.map((bolts, k) => (
-        <g key={k} className="mg-shock__pose" style={{ animationDelay: `${k * 0.06}s` }}>
-          {bolts.map((spine, j) => (
-            <Bolt key={j} spine={spine} w={2.4} />
-          ))}
-        </g>
-      ))}
+      <circle className="mg-shock__glow" r="34" fill="url(#mg-shock-glow)" />
+      <g className="mg-shock__arcs">
+        {SHOCK_POSES.map((arcs, k) => (
+          <g key={k} className="mg-shock__pose" style={{ animationDelay: `${k * 0.05}s` }}>
+            {arcs.map(([spine, fork], j) => (
+              <g key={j}>
+                <ShockArc spine={spine} w={3.2} />
+                <ShockArc spine={fork} w={1.6} />
+              </g>
+            ))}
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
@@ -550,7 +572,7 @@ export default function BalloonPop({ onScore, onFinish }) {
       fx.sound('pop');
       fx.vibrate(40);
     }
-    later(() => setBursts([]), 500);
+    later(() => setBursts([]), 550);
     rerender();
   };
 
