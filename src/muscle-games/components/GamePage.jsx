@@ -234,8 +234,7 @@ export default function GamePage({ game, Game }) {
               {result.score}
               <small> / {MAX_SCORE}</small>
             </p>
-            {result.summary && <p className="mg-muted">{result.summary}</p>}
-            <p className="mg-muted">
+            <p className="mg-result__best">
               Best this session: <strong>{bestOf(game, best)} / {MAX_SCORE}</strong>
             </p>
             {onGameFinish && (
