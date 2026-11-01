@@ -639,40 +639,47 @@
 .mg-gauge__lives i::after { content: ''; position: absolute; left: 3px; right: 3px; top: 1.5px; height: 2.5px; border-radius: 2px; background: rgb(255 255 255 / 0.45); }
 .mg-gauge__atp { position: relative; display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; pointer-events: auto; }
 .mg-gauge__atp:disabled { cursor: default; }
+/* round badge with a cyan-to-yellow bolt; dimmed until the tube is full */
 .mg-gauge__bolt {
-  position: relative; z-index: 1; display: grid; place-items: center; width: 34px; height: 34px; margin: 0 2px 0 4px;
-  border-radius: 6px; transform: rotate(45deg); background: linear-gradient(135deg, #4a3a85, #1a1033);
+  position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; margin-left: 2px;
+  border-radius: 50%; background: radial-gradient(circle at 40% 35%, #3b2f7a, #120b24 75%);
   border: 2px solid #f8e7d0; box-shadow: 0 2px 0 rgb(0 0 0 / 0.5);
 }
-.mg-gauge__bolt b { transform: rotate(-45deg); font-size: 17px; line-height: 1; filter: grayscale(0.6); }
+.mg-gauge__icon { width: 32px; height: 32px; opacity: 0.5; filter: saturate(0.4); }
+/* the tube and its lightning share one steep slant, so the bolts follow the tube's edges */
+.mg-gauge__slant { position: relative; display: block; margin-left: -10px; transform: skewX(-32deg); }
 .mg-gauge__tube {
-  position: relative; display: flex; gap: 3px; margin-left: -12px; padding: 4px 8px 4px 16px; overflow: hidden;
-  border-radius: 4px; transform: skewX(-20deg); background: #120b24; border: 2px solid #f8e7d0;
+  position: relative; display: flex; gap: 3px; padding: 4px 8px 4px 16px; overflow: hidden;
+  border-radius: 4px; background: #120b24; border: 2px solid #f8e7d0;
   box-shadow: inset 0 2px 4px #000, 0 2px 0 rgb(0 0 0 / 0.5);
 }
 .mg-gauge__tube i { width: 22px; height: 15px; border-radius: 2px; background: rgb(255 255 255 / 0.12); transition: background 0.3s; }
-.mg-gauge__tube i.mg-on { background: linear-gradient(180deg, #fff6b0, #facc15 45%, #d97706); box-shadow: 0 0 6px #facc15; }
+/* the filled cells read as one bar running cyan, white, then yellow */
+.mg-gauge__tube i.mg-on { background: linear-gradient(90deg, #22d3ee, #e0fbff 50%, #facc15) no-repeat; background-size: 400% 100%; box-shadow: 0 0 6px rgb(103 232 249 / 0.7); }
+.mg-gauge__tube i.mg-on:nth-child(2) { background-position: 33.3% 0; }
+.mg-gauge__tube i.mg-on:nth-child(3) { background-position: 66.6% 0; box-shadow: 0 0 6px rgb(250 204 21 / 0.7); }
+.mg-gauge__tube i.mg-on:nth-child(4) { background-position: 100% 0; box-shadow: 0 0 6px rgb(250 204 21 / 0.7); }
 /* "TAP!" stamped over the full tube, like a fighting game's MAX */
 .mg-gauge__tap {
-  position: absolute; inset: 0 0 0 8px; z-index: 1; display: grid; place-items: center; color: #3b1d00;
+  position: absolute; inset: 0 0 0 8px; z-index: 1; display: grid; place-items: center; color: #0c2a4d;
   font-size: 13px; font-weight: 900; font-style: italic; letter-spacing: 0.1em; -webkit-text-stroke: 3px #fff; paint-order: stroke fill;
   animation: mg-gauge-tap 0.8s ease-in-out infinite;
 }
-.mg-gauge__atp--ready .mg-gauge__bolt { background: linear-gradient(135deg, #fde047, #f59e0b); border-color: #fff; animation: mg-gauge-bolt 1s ease-in-out infinite; }
-.mg-gauge__atp--ready .mg-gauge__bolt b { filter: none; }
-.mg-gauge__atp--ready .mg-gauge__tube { border-color: #fde047; animation: mg-gauge-glow 1s ease-in-out infinite; }
+.mg-gauge__atp--ready .mg-gauge__bolt { border-color: #fff; animation: mg-gauge-bolt 1s ease-in-out infinite; }
+.mg-gauge__atp--ready .mg-gauge__icon { opacity: 1; filter: none; }
+.mg-gauge__atp--ready .mg-gauge__tube { border-color: #a5f3fc; animation: mg-gauge-glow 1s ease-in-out infinite; }
 .mg-gauge__atp--ready .mg-gauge__tube::after {
   content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 18px;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.8), transparent); animation: mg-gauge-shine 1.2s linear infinite;
 }
-/* anime-style lightning round the full tube: three poses, one shown at a time, flipped every 80 ms */
+/* lightning on the full tube's border: three poses, one shown at a time, flipped every 80 ms */
 .mg-gauge__sparks {
-  position: absolute; left: -14px; top: -14px; width: 180px; height: 72px; z-index: 2; overflow: visible; pointer-events: none;
-  animation: mg-gauge-burst 0.5s ease-out;
+  position: absolute; left: -6px; top: -6px; width: calc(100% + 12px); height: calc(100% + 12px); z-index: 2; overflow: visible; pointer-events: none;
+  animation: mg-gauge-burst 0.4s ease-out;
 }
 .mg-pose { opacity: 0; animation: mg-pose 0.24s steps(1) infinite; }
 @keyframes mg-pose { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
-@keyframes mg-gauge-burst { from { transform: scale(1.35); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); } }
+@keyframes mg-gauge-burst { from { opacity: 0; } to { opacity: 1; } }
 /* small electric shock where the ATP power removes a wrong balloon: three poses of bolts flash in turn, every 60 ms,
    twice round, then it is over */
 .mg-shock { position: absolute; z-index: 9; width: 80px; height: 80px; margin: -40px 0 0 -40px; overflow: visible; pointer-events: none; }
@@ -680,8 +687,8 @@
 .mg-shock__pose { opacity: 0; animation: mg-shock-pose 0.18s steps(1) 2; }
 @keyframes mg-shock-glow { 0% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes mg-shock-pose { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
-@keyframes mg-gauge-bolt { 50% { transform: rotate(45deg) scale(1.12); } }
-@keyframes mg-gauge-glow { 50% { box-shadow: inset 0 2px 4px #000, 0 0 14px 3px rgb(250 204 21 / 0.75); } }
+@keyframes mg-gauge-bolt { 50% { transform: scale(1.1); box-shadow: 0 0 12px 2px rgb(103 232 249 / 0.7); } }
+@keyframes mg-gauge-glow { 0%, 100% { box-shadow: inset 0 2px 4px #000, 0 0 10px 2px rgb(34 211 238 / 0.6); } 50% { box-shadow: inset 0 2px 4px #000, 0 0 14px 3px rgb(250 204 21 / 0.7); } }
 @keyframes mg-gauge-shine { from { transform: translateX(-20px); } to { transform: translateX(130px); } }
 @keyframes mg-gauge-tap { 50% { transform: scale(1.15); } }
 @keyframes mg-pulse-gold { 50% { box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.3); transform: scale(1.05); } }

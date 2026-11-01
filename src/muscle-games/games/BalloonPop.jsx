@@ -153,25 +153,68 @@ function Bolt({ spine, w }) {
   );
 }
 
-// Round the full tube: three poses of four short, thin bolts that run along the tube's edges and the badge's sides,
-// never across the TAP! label in the middle. Drawn in the space of .mg-gauge__sparks (the gauge button, 14px bigger on
-// every side; the tube runs x 37–171, y 23–49 and the badge is a diamond round 35, 36).
-const WHIP_POSES = [
-  [[48, 23, 74, 22], [120, 23, 146, 24], [150, 49, 126, 50], [176, 28, 172, 46]],
-  [[78, 23, 104, 22], [66, 49, 92, 50], [177, 32, 171, 48], [16, 30, 30, 16]],
-  [[130, 23, 156, 23], [100, 49, 74, 50], [14, 42, 28, 56], [58, 23, 80, 23]],
-].map((pose, p) => pose.map(([x1, y1, x2, y2], k) => [jagged(x1, y1, x2, y2, 4, 0.12, 11 + p * 10 + k), 2.4]));
+// Round the full tube: three poses of four thin bolts, cyan and yellow in turn, each with a small white fork. They sit
+// on the tube's border and the slant comes from the wrapper they share with the tube, so they follow its edges
+// exactly and never cross the TAP! label. Drawn in tube space: the tube runs x 0-125, y 0-27.
+const EDGE_COLORS = {
+  cyan: ['#0ea5e9', '#22d3ee', '#f0fdff'],
+  yellow: ['#f59e0b', '#facc15', '#fffbe6'],
+};
+const EDGE_POSES = [
+  [[10, 0, 38, -1, 'cyan'], [70, 0, 98, 1, 'yellow'], [115, 27, 88, 28, 'cyan'], [125, 4, 124, 22, 'yellow']],
+  [[40, 0, 66, -1, 'yellow'], [30, 27, 58, 28, 'cyan'], [126, 6, 124, 24, 'cyan'], [96, 0, 120, 0, 'yellow']],
+  [[60, 0, 86, 0, 'cyan'], [75, 27, 48, 28, 'yellow'], [118, 27, 100, 28, 'yellow'], [14, 0, 34, 0, 'cyan']],
+].map((pose, p) =>
+  pose.map(([x1, y1, x2, y2, color], k) => {
+    const spine = jagged(x1, y1, x2, y2, 5, 0.1, 11 + p * 10 + k);
+    // the fork leaves from the middle kink, pointing away from the tube
+    const [mx, my] = spine[2];
+    const out = x1 > 120 ? 0 : y1 > 13 ? 1 : -1;
+    const fork = out === 0 ? `M${mx} ${my} l4 -3 l2 3 l3 -1` : `M${mx} ${my} l-2 ${4 * out} l3 ${out} l1 ${3 * out}`;
+    return { spine, color, fork };
+  })
+);
+
+function EdgeBolt({ spine, color, fork }) {
+  const [glow, body, core] = EDGE_COLORS[color];
+  const pts = taper(spine, 1.8);
+  return (
+    <>
+      <polygon points={pts} fill={body} stroke={glow} strokeWidth="2" strokeLinejoin="round" opacity="0.45" />
+      <polygon points={pts} fill={body} />
+      <polygon points={taper(spine, 0.9)} fill={core} />
+      <path d={fork} fill="none" stroke="#fff" strokeWidth="0.7" strokeLinejoin="round" strokeLinecap="round" />
+    </>
+  );
+}
 
 function GaugeLightning() {
   return (
-    <svg className="mg-gauge__sparks" viewBox="0 0 180 72" aria-hidden="true">
-        {WHIP_POSES.map((bolts, k) => (
+    <svg className="mg-gauge__sparks" viewBox="-6 -6 137 39" aria-hidden="true">
+      {EDGE_POSES.map((bolts, k) => (
         <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
-          {bolts.map(([spine, w], j) => (
-            <Bolt key={j} spine={spine} w={w} />
+          {bolts.map((b, j) => (
+            <EdgeBolt key={j} {...b} />
           ))}
         </g>
       ))}
+    </svg>
+  );
+}
+
+// The badge icon: a lightning bolt fading from cyan through white to yellow, with two white crackles.
+function BadgeBolt() {
+  return (
+    <svg className="mg-gauge__icon" viewBox="0 0 24 24">
+      <defs>
+        <linearGradient id="mg-badge-bolt" x1="0.8" y1="0" x2="0.2" y2="1">
+          <stop offset="0" stopColor="#22d3ee" />
+          <stop offset="0.5" stopColor="#f0fdff" />
+          <stop offset="1" stopColor="#facc15" />
+        </linearGradient>
+      </defs>
+      <polygon points="15,1 4.5,13.5 11,13.5 8,23 19.5,9.5 13,9.5" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
+      <path d="M7 9 l-2.5 -1 l-1 -2.5 M16 14 l2.5 1 l1 2.5" fill="none" stroke="#fff" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -557,15 +600,17 @@ export default function BalloonPop({ onScore, onFinish }) {
             aria-label={`ATP power ${s.atp} of ${ATP_MAX}. ${s.atp >= ATP_MAX ? 'Ready: removes two wrong balloons' : 'Answer correctly to charge'}`}
           >
             <span className="mg-gauge__bolt" aria-hidden="true">
-              <b>⚡</b>
+              <BadgeBolt />
             </span>
-            <span className="mg-gauge__tube" aria-hidden="true">
-              {Array.from({ length: ATP_MAX }, (_, k) => (
-                <i key={k} className={k < s.atp ? 'mg-on' : undefined} />
-              ))}
-              {s.atp >= ATP_MAX && <span className="mg-gauge__tap">TAP!</span>}
+            <span className="mg-gauge__slant" aria-hidden="true">
+              <span className="mg-gauge__tube">
+                {Array.from({ length: ATP_MAX }, (_, k) => (
+                  <i key={k} className={k < s.atp ? 'mg-on' : undefined} />
+                ))}
+                {s.atp >= ATP_MAX && <span className="mg-gauge__tap">TAP!</span>}
+              </span>
+              {s.atp >= ATP_MAX && <GaugeLightning />}
             </span>
-            {s.atp >= ATP_MAX && <GaugeLightning />}
           </button>
         </div>
       </div>
