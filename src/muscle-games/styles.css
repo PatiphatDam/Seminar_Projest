@@ -527,7 +527,12 @@
   animation: mg-zap-glow 0.42s steps(1) forwards, mg-implode 0.18s ease-in 0.42s forwards;
 }
 .mg-rider--zapped .mg-rider__banner { animation: mg-banner-out 0.12s linear 0.42s forwards; }
-@keyframes mg-twitch { 0%, 28%, 56%, 84% { transform: translate(-1.5px, 0); } 14%, 42%, 70% { transform: translate(1.5px, 0); } 100% { transform: none; } }
+/* the twitch grows as the charge builds */
+@keyframes mg-twitch {
+  0% { transform: translate(-1px, 0); } 14% { transform: translate(1.2px, 0); } 28% { transform: translate(-1.6px, 0); }
+  42% { transform: translate(2px, 0); } 56% { transform: translate(-2.4px, 0); } 70% { transform: translate(2.8px, 0); }
+  84% { transform: translate(-3.4px, 0); } 100% { transform: none; }
+}
 @keyframes mg-zap-glow {
   0%, 28%, 56%, 84% { filter: grayscale(1) invert(1) sepia(1) saturate(5) hue-rotate(140deg) brightness(0.9) drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 7px #22d3ee); }
   14%, 42%, 70%, 100% { filter: drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 7px #22d3ee); }
@@ -540,22 +545,35 @@
 @keyframes mg-banner-out { to { opacity: 0; } }
 /* laid exactly over the balloon art, in its own 120 x 172 space */
 .mg-aura { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-/* the tube's electricity on the balloon: sparks run round the outline (about 1.4 laps) and two surges, at 0 and
-   0.21 s, each a white flash, crackles flipping every 40 ms and a ripple */
+/* the tube's electricity on the balloon as a 0.42 s charge-up: the sparks speed up round the outline (2.2 laps, easing
+   in), small surges at 0.05 s and 0.2 s and a big one from 0.31 s, each a white flash, crackles flipping every 40 ms
+   and a ripple */
 .mg-aura__run { animation: mg-aura-show 0.42s steps(1) forwards; }
-.mg-aura__run path { animation: mg-aura-run 0.3s linear infinite; }
-.mg-aura__run .mg-aura__head { animation-name: mg-aura-run-head; }
-.mg-aura__run .mg-aura__run-b { animation-delay: -0.15s; }
-.mg-aura__flash { opacity: 0; animation: mg-aura-flash 0.21s ease-out 2; }
-.mg-aura__ripple { opacity: 0; transform-origin: 60px 64px; animation: mg-aura-ripple 0.21s ease-out 2; }
+.mg-aura__run path { animation: mg-aura-run-a 0.42s cubic-bezier(0.55, 0, 1, 0.45) forwards; }
+.mg-aura__run .mg-aura__head { animation-name: mg-aura-head-a; }
+.mg-aura__run .mg-aura__run-b { animation-name: mg-aura-run-b; }
+.mg-aura__run .mg-aura__head.mg-aura__run-b { animation-name: mg-aura-head-b; }
+.mg-aura__flash { opacity: 0; animation: mg-aura-flash 0.42s linear forwards; }
+.mg-aura__ripple { opacity: 0; transform-origin: 60px 64px; animation: mg-aura-ripple 0.42s ease-out forwards; }
 .mg-aura__surge { opacity: 0; animation: mg-aura-surge 0.42s steps(1) forwards; }
+.mg-aura__big { opacity: 0; animation: mg-aura-big 0.42s steps(1) forwards; }
 .mg-aura__pose { opacity: 0; animation: mg-aura-pose 0.12s steps(1) infinite; }
 @keyframes mg-aura-show { 0% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes mg-aura-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
-@keyframes mg-aura-run-head { from { stroke-dashoffset: -10; } to { stroke-dashoffset: -110; } }
-@keyframes mg-aura-flash { 0% { opacity: 0.45; } 55%, 100% { opacity: 0; } }
-@keyframes mg-aura-ripple { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35); } }
-@keyframes mg-aura-surge { 0% { opacity: 1; } 28% { opacity: 0; } 50% { opacity: 1; } 78%, 100% { opacity: 0; } }
+@keyframes mg-aura-run-a { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -220; } }
+@keyframes mg-aura-head-a { from { stroke-dashoffset: -10; } to { stroke-dashoffset: -230; } }
+@keyframes mg-aura-run-b { from { stroke-dashoffset: -50; } to { stroke-dashoffset: -270; } }
+@keyframes mg-aura-head-b { from { stroke-dashoffset: -60; } to { stroke-dashoffset: -280; } }
+@keyframes mg-aura-flash {
+  0%, 11.8% { opacity: 0; } 11.9% { opacity: 0.45; } 31% { opacity: 0; } 47.5% { opacity: 0; } 47.6% { opacity: 0.45; }
+  66.7% { opacity: 0; } 73.7% { opacity: 0; } 73.8% { opacity: 0.8; } 100% { opacity: 0; }
+}
+@keyframes mg-aura-ripple {
+  0%, 11.8% { opacity: 0; transform: scale(1); } 11.9% { opacity: 0.9; transform: scale(1); } 31% { opacity: 0; transform: scale(1.35); }
+  47.5% { opacity: 0; transform: scale(1); } 47.6% { opacity: 0.9; transform: scale(1); } 66.7% { opacity: 0; transform: scale(1.35); }
+  73.7% { opacity: 0; transform: scale(1); } 73.8% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.7); }
+}
+@keyframes mg-aura-surge { 0% { opacity: 0; } 11.9% { opacity: 1; } 31% { opacity: 0; } 47.6% { opacity: 1; } 66.7%, 100% { opacity: 0; } }
+@keyframes mg-aura-big { 0% { opacity: 0; } 73.8% { opacity: 1; } 100% { opacity: 0; } }
 .mg-aura__star, .mg-aura__ring { opacity: 0; transform-origin: 0 0; }
 .mg-aura__star { animation: mg-aura-star 0.24s ease-out 0.6s forwards; }
 .mg-aura__ring { animation: mg-aura-ring 0.24s ease-out 0.6s forwards; }

@@ -236,8 +236,9 @@ function BadgeBolt() {
 
 // A zapped balloon's shock and exit, drawn in the balloon art's own space (120 x 172) so everything sits right on the
 // envelope's outline. The surge crackles are in the skill tube's style (cyan and yellow, white core, a small white
-// fork pointing out), three per pose at different places on the edge, while the art flickers in x-ray. Then, while the art implodes (see .mg-rider--zapped), a four-point star
-// twinkles in the envelope's middle, inside a yellow ring that spreads and fades.
+// fork pointing out), three per pose at different places on the edge, while the art flickers in x-ray. Then, while
+// the art implodes (see .mg-rider--zapped), a four-point star twinkles in the envelope's middle, inside a yellow ring
+// that spreads and fades.
 const ENVELOPE_CURVES = [
   [[60, 6], [98, 6], [114, 34], [112, 62]],
   [[112, 62], [110, 90], [86, 108], [74, 118]],
@@ -277,12 +278,26 @@ const ZAP_POSES = [0, 1, 2].map((p) =>
   })
 );
 
+// the final, big surge: six thicker crackles all round the edge per pose
+const ZAP_BIG_POSES = [0, 1, 2].map((p) =>
+  Array.from({ length: 6 }, (_, k) => {
+    const spine = rimSpine((k * 8 + p * 3) % ENVELOPE_RIM.length, 91 + p * 9 + k);
+    const [mx, my] = spine[3];
+    const len = Math.hypot(mx - ENVELOPE_MID[0], my - ENVELOPE_MID[1]);
+    const ux = (mx - ENVELOPE_MID[0]) / len;
+    const uy = (my - ENVELOPE_MID[1]) / len;
+    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 6 - uy * 3).toFixed(1)} ${(uy * 6 + ux * 3).toFixed(1)} l${(ux * 4 + uy * 3).toFixed(1)} ${(uy * 4 - ux * 3).toFixed(1)}`;
+    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork, w: 5.2 };
+  })
+);
+
 // the envelope's outline as one open path, mouth to mouth, for the sparks that race round it
 const ENVELOPE_RIM_PATH = 'M74 118 C86 108 110 90 112 62 C114 34 98 6 60 6 C22 6 6 34 8 62 C10 90 34 108 46 118';
 const ENVELOPE_PATH = `${ENVELOPE_RIM_PATH} Z`;
 
-// The skill tube's full-charge electricity, played on the balloon for 0.42 s: two sparks with tails (cyan and yellow)
-// race round the outline, and it surges twice, a white flash, a burst of edge crackles and a ring rippling out.
+// The skill tube's full-charge electricity, played on the balloon for 0.42 s as a charge-up: two sparks with tails
+// (cyan and yellow) race round the outline faster and faster, two small surges (a white flash, a burst of edge
+// crackles and a ring rippling out) build to one big surge with more crackles, a brighter flash and a wider ripple.
 function ShockAura() {
   return (
     <svg className="mg-aura" viewBox="0 0 120 172" aria-hidden="true">
@@ -296,6 +311,15 @@ function ShockAura() {
       <ellipse className="mg-aura__ripple" cx={ENVELOPE_MID[0]} cy={ENVELOPE_MID[1]} rx="56" ry="60" fill="none" stroke="#67e8f9" strokeWidth="3" />
       <g className="mg-aura__surge">
         {ZAP_POSES.map((bolts, k) => (
+          <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.04}s` }}>
+            {bolts.map((b, j) => (
+              <EdgeBolt key={j} {...b} />
+            ))}
+          </g>
+        ))}
+      </g>
+      <g className="mg-aura__big">
+        {ZAP_BIG_POSES.map((bolts, k) => (
           <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.04}s` }}>
             {bolts.map((b, j) => (
               <EdgeBolt key={j} {...b} />
