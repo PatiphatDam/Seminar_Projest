@@ -517,33 +517,34 @@
 .mg-rider--good { animation: mg-fall var(--dur) linear var(--delay) forwards, mg-burst 0.3s ease-out forwards; animation-play-state: paused, running; }
 .mg-rider--bad { animation: mg-fall var(--dur) linear var(--delay) forwards, mg-fizzle 0.4s ease-out forwards; animation-play-state: paused, running; }
 .mg-rider--gone { animation: mg-fall var(--dur) linear var(--delay) forwards, mg-gone 0.5s ease-out forwards; }
-/* a zapped balloon gets a cartoon electric shock: for 0.42 s it flickers between itself and an x-ray negative every
-   60 ms, twitching inside a cyan glow, with lightning crackling round it; then it is struck out: it whites out,
-   squashes to a glowing line and blinks away, like a lightning strike */
+/* a zapped balloon: for 0.42 s it twitches inside a cyan glow while bolts jump across its edge; then the art spins
+   and implodes to a point (0.18 s), and a star twinkles out in a spreading yellow ring (0.24 s) */
 .mg-rider--zapped { animation: mg-fall var(--dur) linear var(--delay) forwards; }
-.mg-rider--zapped .mg-rider__balloon {
+.mg-rider--zapped .mg-rider__balloon { animation: mg-twitch 0.42s steps(1) forwards; }
+.mg-rider--zapped .mg-rider__balloon > svg:not(.mg-aura) {
   transform-origin: 50% 36%;
-  animation: mg-twitch 0.42s steps(1) forwards, mg-struck 0.2s ease-in 0.42s forwards;
+  animation: mg-zap-glow 0.42s steps(1) forwards, mg-implode 0.18s ease-in 0.42s forwards;
 }
-/* only the balloon art turns x-ray, so the lightning round it keeps its colours */
-.mg-rider--zapped .mg-rider__balloon > svg:not(.mg-aura) { animation: mg-xray 0.42s steps(1) forwards; }
-.mg-rider--zapped .mg-rider__banner { animation: mg-banner-out 0.12s linear 0.44s forwards; }
+.mg-rider--zapped .mg-rider__banner { animation: mg-banner-out 0.12s linear 0.42s forwards; }
 @keyframes mg-twitch { 0%, 28%, 56%, 84% { transform: translate(-1.5px, 0); } 14%, 42%, 70% { transform: translate(1.5px, 0); } 100% { transform: none; } }
-@keyframes mg-xray {
-  0%, 28%, 56%, 84% { filter: grayscale(1) invert(1) sepia(1) saturate(5) hue-rotate(140deg) brightness(0.9) drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 8px #22d3ee); }
-  14%, 42%, 70% { filter: drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 8px #22d3ee); }
-  100% { filter: drop-shadow(0 0 6px #22d3ee); }
+@keyframes mg-zap-glow {
+  0%, 28%, 56%, 84% { filter: brightness(1.25) drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 7px #22d3ee); }
+  14%, 42%, 70%, 100% { filter: drop-shadow(0 0 3px #a5f3fc) drop-shadow(0 0 7px #22d3ee); }
 }
-@keyframes mg-struck {
-  0% { transform: scale(1.15); filter: brightness(4) drop-shadow(0 0 6px #fff) drop-shadow(0 0 14px #22d3ee); opacity: 1; }
-  40% { transform: scale(1.4, 0.08); filter: brightness(4) drop-shadow(0 0 6px #fff) drop-shadow(0 0 14px #22d3ee); opacity: 1; }
-  70% { transform: scale(0.1, 0.05); opacity: 1; }
+@keyframes mg-implode {
+  0% { transform: none; filter: brightness(2.5) drop-shadow(0 0 6px #22d3ee); }
+  99% { transform: scale(0.05) rotate(90deg); filter: brightness(2.5) drop-shadow(0 0 6px #22d3ee); opacity: 1; }
   100% { transform: scale(0); opacity: 0; }
 }
 @keyframes mg-banner-out { to { opacity: 0; } }
 .mg-aura { position: absolute; left: 50%; top: 36%; width: 160%; aspect-ratio: 1; transform: translate(-50%, -50%); overflow: visible; pointer-events: none; }
 .mg-aura__pose { opacity: 0; animation: mg-aura-pose 0.15s steps(1) 3; }
+.mg-aura__star, .mg-aura__ring { opacity: 0; transform-origin: 0 0; }
+.mg-aura__star { animation: mg-aura-star 0.24s ease-out 0.6s forwards; }
+.mg-aura__ring { animation: mg-aura-ring 0.24s ease-out 0.6s forwards; }
 @keyframes mg-aura-pose { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
+@keyframes mg-aura-star { 0% { opacity: 1; transform: scale(0.2); } 100% { opacity: 0; transform: scale(1.1) rotate(45deg); } }
+@keyframes mg-aura-ring { 0% { opacity: 1; transform: scale(0.2); stroke-width: 3; } 100% { opacity: 0; transform: scale(1); stroke-width: 0.5; } }
 .mg-rider:disabled { cursor: default; }
 .mg-rider:focus-visible .mg-rider__balloon { outline: 3px solid #fde68a; outline-offset: 2px; border-radius: 12px; }
 @keyframes mg-fall { from { top: -45%; } to { top: 100%; } }

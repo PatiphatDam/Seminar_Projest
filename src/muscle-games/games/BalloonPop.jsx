@@ -234,56 +234,34 @@ function BadgeBolt() {
   );
 }
 
-// Lightning crackling round a zapped balloon, drawn round the centre of its envelope (radius about 33): in each of three
-// poses, three bolts run along an oval just outside the envelope, cyan and yellow in turn, and two short ones spit
-// outwards. The poses flip every 50 ms while the balloon flickers in x-ray (see .mg-rider--zapped).
-function aroundSpine(a0, a1, seed) {
-  const r = rng(seed);
-  return Array.from({ length: 8 }, (_, k) => {
-    const a = a0 + ((a1 - a0) * k) / 7;
-    const d = k === 0 || k === 7 ? 0 : (r() * 2 - 1) * 5.5;
-    return [Math.cos(a) * (41 + d), Math.sin(a) * (44 + d)];
-  });
-}
-
-const AURA_POSES = [0, 1, 2].map((p) => {
-  const bolts = [0, 1, 2].map((k) => {
-    const a0 = (k * 2 * Math.PI) / 3 + p * 0.9;
-    return { spine: aroundSpine(a0, a0 + 1.3, 81 + p * 10 + k), color: (k + p) % 2 ? 'yellow' : 'cyan', w: 4 };
-  });
-  const spits = [0, 1].map((k) => {
-    const a = p * 1.1 + k * Math.PI + 0.6;
-    return {
-      spine: jagged(Math.cos(a) * 41, Math.sin(a) * 44, Math.cos(a) * 50, Math.sin(a) * 53, 3, 0.3, 91 + p * 10 + k),
-      color: k ? 'cyan' : 'yellow',
-      w: 3.2,
-    };
-  });
-  return [...bolts, ...spits];
-});
-
-function AuraBolt({ spine, color, w }) {
-  const [glow, body, core] = EDGE_COLORS[color];
-  const pts = taper(spine, w);
-  return (
-    <>
-      <polygon points={pts} fill={body} stroke={glow} strokeWidth={w + 1} strokeLinejoin="round" opacity="0.4" />
-      <polygon points={pts} fill={body} />
-      <polygon points={taper(spine, w * 0.45)} fill={core} />
-    </>
-  );
-}
+// A zapped balloon's shock and exit, drawn round the centre of its envelope (an oval about 30 x 32). For 0.42 s, thin
+// bolts in the skill tube's style (cyan and yellow, white core, a small white fork) jump between points on its edge,
+// two per pose, flipping every 50 ms. Then, while the balloon art implodes (see .mg-rider--zapped), a four-point star
+// twinkles where it was, inside a yellow ring that spreads and fades.
+const ZAP_EDGE = (a) => [Math.cos(a) * 30, Math.sin(a) * 32];
+const ZAP_POSES = [0, 1, 2].map((p) =>
+  [0, 1].map((k) => {
+    const a = p * 1.3 + k * 2.6;
+    const [x1, y1] = ZAP_EDGE(a);
+    const [x2, y2] = ZAP_EDGE(a + 1.4 + ((p + k) % 2) * 0.6);
+    const spine = jagged(x1, y1, x2, y2, 6, 0.12, 41 + p * 5 + k);
+    const [mx, my] = spine[3];
+    return { spine, color: k ? 'yellow' : 'cyan', fork: `M${mx.toFixed(1)} ${my.toFixed(1)} l-2 -4 l3 1 l1 -3` };
+  })
+);
 
 function ShockAura() {
   return (
     <svg className="mg-aura" viewBox="-50 -50 100 100" aria-hidden="true">
-      {AURA_POSES.map((bolts, k) => (
+      {ZAP_POSES.map((bolts, k) => (
         <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.05}s` }}>
           {bolts.map((b, j) => (
-            <AuraBolt key={j} {...b} />
+            <EdgeBolt key={j} {...b} />
           ))}
         </g>
       ))}
+      <circle className="mg-aura__ring" r="30" fill="none" stroke="#fde047" strokeWidth="2" />
+      <polygon className="mg-aura__star" points="0,-20 3,-3 20,0 3,3 0,20 -3,3 -20,0 -3,-3" fill="#f0fdff" stroke="#22d3ee" strokeWidth="1.2" strokeLinejoin="round" />
     </svg>
   );
 }
