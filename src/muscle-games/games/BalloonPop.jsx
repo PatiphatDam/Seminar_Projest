@@ -175,15 +175,15 @@ const EDGE_POSES = [
   })
 );
 
-function EdgeBolt({ spine, color, fork }) {
+function EdgeBolt({ spine, color, fork, w = 1.8 }) {
   const [glow, body, core] = EDGE_COLORS[color];
-  const pts = taper(spine, 1.8);
+  const pts = taper(spine, w);
   return (
     <>
-      <polygon points={pts} fill={body} stroke={glow} strokeWidth="2" strokeLinejoin="round" opacity="0.45" />
+      <polygon points={pts} fill={body} stroke={glow} strokeWidth={w * 1.1} strokeLinejoin="round" opacity="0.45" />
       <polygon points={pts} fill={body} />
-      <polygon points={taper(spine, 0.9)} fill={core} />
-      <path d={fork} fill="none" stroke="#fff" strokeWidth="0.7" strokeLinejoin="round" strokeLinecap="round" />
+      <polygon points={taper(spine, w / 2)} fill={core} />
+      <path d={fork} fill="none" stroke="#fff" strokeWidth={w * 0.4} strokeLinejoin="round" strokeLinecap="round" />
     </>
   );
 }
@@ -234,36 +234,53 @@ function BadgeBolt() {
   );
 }
 
-// A zapped balloon's shock and exit, drawn round the centre of its envelope (an oval about 33 x 35). For 0.42 s, short
-// crackles in the skill tube's style (thin, cyan and yellow, white core, a small white fork) run along its edge,
-// three per pose at different places, flipping every 50 ms like a current, while the balloon art flickers in x-ray.
-// Then, while the art implodes (see .mg-rider--zapped), a four-point star twinkles where it was, inside a yellow
-// ring that spreads and fades.
-function edgeSpine(a0, seed) {
+// A zapped balloon's shock and exit, drawn in the balloon art's own space (120 x 172) so the bolts sit right on the
+// envelope's outline. For 0.42 s, short crackles in the skill tube's style (cyan and yellow, white core, a small
+// white fork pointing out) run along the edge, three per pose at different places, flipping every 50 ms like a
+// current, while the art flickers in x-ray. Then, while the art implodes (see .mg-rider--zapped), a four-point star
+// twinkles in the envelope's middle, inside a yellow ring that spreads and fades.
+const ENVELOPE_CURVES = [
+  [[60, 6], [98, 6], [114, 34], [112, 62]],
+  [[112, 62], [110, 90], [86, 108], [74, 118]],
+  [[46, 118], [34, 108], [10, 90], [8, 62]],
+  [[8, 62], [6, 34], [22, 6], [60, 6]],
+];
+// points round the envelope's outline (the flat mouth at the bottom is skipped), clockwise from the top
+const ENVELOPE_RIM = ENVELOPE_CURVES.flatMap(([p0, p1, p2, p3]) =>
+  Array.from({ length: 12 }, (_, k) => {
+    const t = k / 12;
+    const u = 1 - t;
+    const f = (i) => u * u * u * p0[i] + 3 * u * u * t * p1[i] + 3 * u * t * t * p2[i] + t * t * t * p3[i];
+    return [f(0), f(1)];
+  })
+);
+const ENVELOPE_MID = [60, 64];
+
+function rimSpine(start, seed) {
   const r = rng(seed);
-  return Array.from({ length: 6 }, (_, k) => {
-    const a = a0 + (0.7 * k) / 5;
-    const d = k === 0 || k === 5 ? 0 : (r() * 2 - 1) * 1.6;
-    return [Math.cos(a) * (33 + d), Math.sin(a) * (35 + d)];
+  return Array.from({ length: 8 }, (_, k) => {
+    const [x, y] = ENVELOPE_RIM[(start + k) % ENVELOPE_RIM.length];
+    const len = Math.hypot(x - ENVELOPE_MID[0], y - ENVELOPE_MID[1]);
+    const d = k === 0 || k === 7 ? 0 : (r() * 2 - 1) * 2.6;
+    return [x + ((x - ENVELOPE_MID[0]) / len) * d, y + ((y - ENVELOPE_MID[1]) / len) * d];
   });
 }
 
 const ZAP_POSES = [0, 1, 2].map((p) =>
   [0, 1, 2].map((k) => {
-    const a0 = (k * 2 * Math.PI) / 3 + p * 0.75;
-    const spine = edgeSpine(a0, 41 + p * 5 + k);
-    const [mx, my] = spine[2];
-    // the fork points away from the centre
-    const ux = mx / Math.hypot(mx, my);
-    const uy = my / Math.hypot(mx, my);
-    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 3 - uy * 1.5).toFixed(1)} ${(uy * 3 + ux * 1.5).toFixed(1)} l${(ux * 2 + uy * 1.5).toFixed(1)} ${(uy * 2 - ux * 1.5).toFixed(1)}`;
-    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork };
+    const spine = rimSpine((k * 16 + p * 6 + 3) % ENVELOPE_RIM.length, 41 + p * 5 + k);
+    const [mx, my] = spine[3];
+    const len = Math.hypot(mx - ENVELOPE_MID[0], my - ENVELOPE_MID[1]);
+    const ux = (mx - ENVELOPE_MID[0]) / len;
+    const uy = (my - ENVELOPE_MID[1]) / len;
+    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 5 - uy * 2.5).toFixed(1)} ${(uy * 5 + ux * 2.5).toFixed(1)} l${(ux * 3.5 + uy * 2.5).toFixed(1)} ${(uy * 3.5 - ux * 2.5).toFixed(1)}`;
+    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork, w: 4.4 };
   })
 );
 
 function ShockAura() {
   return (
-    <svg className="mg-aura" viewBox="-50 -50 100 100" aria-hidden="true">
+    <svg className="mg-aura" viewBox="0 0 120 172" aria-hidden="true">
       {ZAP_POSES.map((bolts, k) => (
         <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.05}s` }}>
           {bolts.map((b, j) => (
@@ -271,8 +288,10 @@ function ShockAura() {
           ))}
         </g>
       ))}
-      <circle className="mg-aura__ring" r="30" fill="none" stroke="#fde047" strokeWidth="2" />
-      <polygon className="mg-aura__star" points="0,-20 3,-3 20,0 3,3 0,20 -3,3 -20,0 -3,-3" fill="#f0fdff" stroke="#22d3ee" strokeWidth="1.2" strokeLinejoin="round" />
+      <g transform={`translate(${ENVELOPE_MID[0]} ${ENVELOPE_MID[1]})`}>
+        <circle className="mg-aura__ring" r="50" fill="none" stroke="#fde047" strokeWidth="3" />
+        <polygon className="mg-aura__star" points="0,-34 5,-5 34,0 5,5 0,34 -5,5 -34,0 -5,-5" fill="#f0fdff" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
+      </g>
     </svg>
   );
 }
