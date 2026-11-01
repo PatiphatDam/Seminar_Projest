@@ -188,21 +188,33 @@ function EdgeBolt({ spine, color, fork }) {
   );
 }
 
+// The full tube: two sparks with tails race round its border all the time, one cyan and one yellow, and every 1.2 s
+// it surges: a white flash and a burst of the edge bolts. Dashes on the border outline (perimeter 304) are the sparks.
 function GaugeLightning() {
   return (
     <svg className="mg-gauge__sparks" viewBox="-6 -6 137 39" aria-hidden="true">
-      {EDGE_POSES.map((bolts, k) => (
-        <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
-          {bolts.map((b, j) => (
-            <EdgeBolt key={j} {...b} />
-          ))}
-        </g>
-      ))}
+      <g className="mg-gauge__run" fill="none" strokeLinecap="round">
+        <rect x="0" y="0" width="125" height="27" rx="4" stroke="#67e8f9" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
+        <rect x="0" y="0" width="125" height="27" rx="4" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
+        <rect className="mg-gauge__run-b" x="0" y="0" width="125" height="27" rx="4" stroke="#fde047" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
+        <rect className="mg-gauge__run-b" x="0" y="0" width="125" height="27" rx="4" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
+      </g>
+      <g className="mg-gauge__surge">
+        <rect x="0" y="0" width="125" height="27" rx="4" fill="#fff" className="mg-gauge__flash" />
+        {EDGE_POSES.map((bolts, k) => (
+          <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
+            {bolts.map((b, j) => (
+              <EdgeBolt key={j} {...b} />
+            ))}
+          </g>
+        ))}
+      </g>
     </svg>
   );
 }
 
-// The badge icon: a lightning bolt fading from cyan through white to yellow, with two white crackles.
+// The badge icon: a lightning bolt fading from cyan through white to yellow, with two white crackles. When the tube is
+// full it flickers like a neon sign, and its outline wobbles between two shapes.
 function BadgeBolt() {
   return (
     <svg className="mg-gauge__icon" viewBox="0 0 24 24">
@@ -213,8 +225,11 @@ function BadgeBolt() {
           <stop offset="1" stopColor="#facc15" />
         </linearGradient>
       </defs>
-      <polygon points="15,1 4.5,13.5 11,13.5 8,23 19.5,9.5 13,9.5" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
-      <path d="M7 9 l-2.5 -1 l-1 -2.5 M16 14 l2.5 1 l1 2.5" fill="none" stroke="#fff" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+      <g className="mg-gauge__neon">
+        <polygon className="mg-gauge__shape-a" points="15,1 4.5,13.5 11,13.5 8,23 19.5,9.5 13,9.5" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
+        <polygon className="mg-gauge__shape-b" points="15.5,1 5,13 11.5,13.8 7.5,23 19,10 13.2,9.2" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
+        <path d="M7 9 l-2.5 -1 l-1 -2.5 M16 14 l2.5 1 l1 2.5" fill="none" stroke="#fff" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
     </svg>
   );
 }
@@ -601,6 +616,7 @@ export default function BalloonPop({ onScore, onFinish }) {
           >
             <span className="mg-gauge__bolt" aria-hidden="true">
               <BadgeBolt />
+              {s.atp >= ATP_MAX && <i className="mg-gauge__ripple" />}
             </span>
             <span className="mg-gauge__slant" aria-hidden="true">
               <span className="mg-gauge__tube">
