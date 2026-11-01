@@ -234,10 +234,9 @@ function BadgeBolt() {
   );
 }
 
-// A zapped balloon's shock and exit, drawn in the balloon art's own space (120 x 172) so the bolts sit right on the
-// envelope's outline. For 0.42 s, short crackles in the skill tube's style (cyan and yellow, white core, a small
-// white fork pointing out) run along the edge, three per pose at different places, flipping every 50 ms like a
-// current, while the art flickers in x-ray. Then, while the art implodes (see .mg-rider--zapped), a four-point star
+// A zapped balloon's shock and exit, drawn in the balloon art's own space (120 x 172) so everything sits right on the
+// envelope's outline. The surge crackles are in the skill tube's style (cyan and yellow, white core, a small white
+// fork pointing out), three per pose at different places on the edge, while the art flickers in x-ray. Then, while the art implodes (see .mg-rider--zapped), a four-point star
 // twinkles in the envelope's middle, inside a yellow ring that spreads and fades.
 const ENVELOPE_CURVES = [
   [[60, 6], [98, 6], [114, 34], [112, 62]],
@@ -278,16 +277,32 @@ const ZAP_POSES = [0, 1, 2].map((p) =>
   })
 );
 
+// the envelope's outline as one open path, mouth to mouth, for the sparks that race round it
+const ENVELOPE_RIM_PATH = 'M74 118 C86 108 110 90 112 62 C114 34 98 6 60 6 C22 6 6 34 8 62 C10 90 34 108 46 118';
+const ENVELOPE_PATH = `${ENVELOPE_RIM_PATH} Z`;
+
+// The skill tube's full-charge electricity, played on the balloon for 0.42 s: two sparks with tails (cyan and yellow)
+// race round the outline, and it surges twice, a white flash, a burst of edge crackles and a ring rippling out.
 function ShockAura() {
   return (
     <svg className="mg-aura" viewBox="0 0 120 172" aria-hidden="true">
-      {ZAP_POSES.map((bolts, k) => (
-        <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.05}s` }}>
-          {bolts.map((b, j) => (
-            <EdgeBolt key={j} {...b} />
-          ))}
-        </g>
-      ))}
+      <g className="mg-aura__run" fill="none" strokeLinecap="round">
+        <path d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#67e8f9" strokeWidth="5" strokeDasharray="12 88" opacity="0.55" />
+        <path className="mg-aura__head" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fff" strokeWidth="3.6" strokeDasharray="2 98" />
+        <path className="mg-aura__run-b" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fde047" strokeWidth="5" strokeDasharray="12 88" opacity="0.55" />
+        <path className="mg-aura__head mg-aura__run-b" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fff" strokeWidth="3.6" strokeDasharray="2 98" />
+      </g>
+      <path className="mg-aura__flash" d={ENVELOPE_PATH} fill="#fff" />
+      <ellipse className="mg-aura__ripple" cx={ENVELOPE_MID[0]} cy={ENVELOPE_MID[1]} rx="56" ry="60" fill="none" stroke="#67e8f9" strokeWidth="3" />
+      <g className="mg-aura__surge">
+        {ZAP_POSES.map((bolts, k) => (
+          <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.04}s` }}>
+            {bolts.map((b, j) => (
+              <EdgeBolt key={j} {...b} />
+            ))}
+          </g>
+        ))}
+      </g>
       <g transform={`translate(${ENVELOPE_MID[0]} ${ENVELOPE_MID[1]})`}>
         <circle className="mg-aura__ring" r="50" fill="none" stroke="#fde047" strokeWidth="3" />
         <polygon className="mg-aura__star" points="0,-34 5,-5 34,0 5,5 0,34 -5,5 -34,0 -5,-5" fill="#f0fdff" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />

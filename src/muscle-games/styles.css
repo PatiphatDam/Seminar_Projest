@@ -540,7 +540,22 @@
 @keyframes mg-banner-out { to { opacity: 0; } }
 /* laid exactly over the balloon art, in its own 120 x 172 space */
 .mg-aura { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.mg-aura__pose { opacity: 0; animation: mg-aura-pose 0.15s steps(1) 3; }
+/* the tube's electricity on the balloon: sparks run round the outline (about 1.4 laps) and two surges, at 0 and
+   0.21 s, each a white flash, crackles flipping every 40 ms and a ripple */
+.mg-aura__run { animation: mg-aura-show 0.42s steps(1) forwards; }
+.mg-aura__run path { animation: mg-aura-run 0.3s linear infinite; }
+.mg-aura__run .mg-aura__head { animation-name: mg-aura-run-head; }
+.mg-aura__run .mg-aura__run-b { animation-delay: -0.15s; }
+.mg-aura__flash { opacity: 0; animation: mg-aura-flash 0.21s ease-out 2; }
+.mg-aura__ripple { opacity: 0; transform-origin: 60px 64px; animation: mg-aura-ripple 0.21s ease-out 2; }
+.mg-aura__surge { opacity: 0; animation: mg-aura-surge 0.42s steps(1) forwards; }
+.mg-aura__pose { opacity: 0; animation: mg-aura-pose 0.12s steps(1) infinite; }
+@keyframes mg-aura-show { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes mg-aura-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+@keyframes mg-aura-run-head { from { stroke-dashoffset: -10; } to { stroke-dashoffset: -110; } }
+@keyframes mg-aura-flash { 0% { opacity: 0.45; } 55%, 100% { opacity: 0; } }
+@keyframes mg-aura-ripple { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35); } }
+@keyframes mg-aura-surge { 0% { opacity: 1; } 28% { opacity: 0; } 50% { opacity: 1; } 78%, 100% { opacity: 0; } }
 .mg-aura__star, .mg-aura__ring { opacity: 0; transform-origin: 0 0; }
 .mg-aura__star { animation: mg-aura-star 0.24s ease-out 0.6s forwards; }
 .mg-aura__ring { animation: mg-aura-ring 0.24s ease-out 0.6s forwards; }
