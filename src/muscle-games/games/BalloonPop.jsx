@@ -234,51 +234,44 @@ function BadgeBolt() {
   );
 }
 
-// An electric shock where a wrong balloon is removed, drawn round (0, 0) in the style of game electricity FX: six long,
-// wiggly arcs crawl out of the balloon, each with a fork, in cyan with a white core and a wide glow. They grow out fast,
-// boil between three poses every 50 ms and fade within half a second.
+// An electric shock where a wrong balloon is removed, drawn round (0, 0) and kept inside the balloon's envelope (radius
+// about 30): four zigzag bolts cut across it, cyan and yellow in turn like the skill tube's, each with a small white
+// fork. They flip between three poses every 50 ms while the whole shock jerks on and off in surges for half a second.
 const SHOCK_POSES = [0, 1, 2].map((p) =>
-  Array.from({ length: 6 }, (_, k) => {
-    const a = (k / 6) * Math.PI * 2 + p * 0.35 + (k % 2) * 0.25;
-    const r = 46 + ((k * 7 + p * 5) % 16);
-    const spine = jagged(Math.cos(a) * 10, Math.sin(a) * 10, Math.cos(a) * r, Math.sin(a) * r, 9, 0.12, 61 + p * 10 + k);
-    const [fx, fy] = spine[4];
-    const fa = a + (k % 2 ? 0.7 : -0.7);
-    const fork = jagged(fx, fy, fx + Math.cos(fa) * 20, fy + Math.sin(fa) * 20, 5, 0.18, 161 + p * 10 + k);
-    return [spine, fork];
+  Array.from({ length: 4 }, (_, k) => {
+    const a = (k * Math.PI) / 2 + p * 0.5 + 0.3;
+    const b = a + Math.PI + (k % 2 ? 0.7 : -0.7);
+    const spine = jagged(Math.cos(a) * 27, Math.sin(a) * 27, Math.cos(b) * 24, Math.sin(b) * 24, 7, 0.14, 61 + p * 10 + k);
+    const [mx, my] = spine[3];
+    return { spine, color: k % 2 ? 'yellow' : 'cyan', fork: `M${mx.toFixed(1)} ${my.toFixed(1)} l3 -4 l2 2 l3 -3` };
   })
 );
 
-function ShockArc({ spine, w }) {
-  const body = taper(spine, w);
+function ShockBolt({ spine, color, fork }) {
+  const [glow, body, core] = EDGE_COLORS[color];
+  const pts = taper(spine, 3);
   return (
     <>
-      <polygon points={body} fill="#22d3ee" stroke="#22d3ee" strokeWidth={w * 2.6} strokeLinejoin="round" opacity="0.18" />
-      <polygon points={body} fill="#67e8f9" stroke="#22d3ee" strokeWidth={w * 0.8} strokeLinejoin="round" opacity="0.9" />
-      <polygon points={taper(spine, w * 0.45)} fill="#f0fdff" />
+      <polygon points={pts} fill={body} stroke={glow} strokeWidth="3.5" strokeLinejoin="round" opacity="0.35" />
+      <polygon points={pts} fill={body} />
+      <polygon points={taper(spine, 1.4)} fill={core} />
+      <path d={fork} fill="none" stroke="#fff" strokeWidth="0.9" strokeLinejoin="round" strokeLinecap="round" />
     </>
   );
 }
 
-function ElectricShock({ x, y }) {
+// Rendered inside the balloon, so it falls with it; centred on the envelope, the upper part of the balloon.
+function ElectricShock() {
   return (
-    <svg className="mg-shock" style={{ left: x, top: y }} viewBox="-70 -70 140 140" aria-hidden="true">
-      <defs>
-        <radialGradient id="mg-shock-glow">
-          <stop offset="0" stopColor="#a5f3fc" stopOpacity="0.85" />
-          <stop offset="0.5" stopColor="#22d3ee" stopOpacity="0.35" />
-          <stop offset="1" stopColor="#0e7490" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <circle className="mg-shock__glow" r="34" fill="url(#mg-shock-glow)" />
-      <g className="mg-shock__arcs">
-        {SHOCK_POSES.map((arcs, k) => (
+    <svg className="mg-shock" viewBox="-34 -34 68 68" aria-hidden="true">
+      <circle className="mg-shock__glow" r="30" fill="#e0fbff" />
+      <g className="mg-shock__surge">
+        {/* darkens the envelope so the bolts stand out against the light stripes */}
+        <circle r="27" fill="#0c1a3a" opacity="0.45" />
+        {SHOCK_POSES.map((bolts, k) => (
           <g key={k} className="mg-shock__pose" style={{ animationDelay: `${k * 0.05}s` }}>
-            {arcs.map(([spine, fork], j) => (
-              <g key={j}>
-                <ShockArc spine={spine} w={3.2} />
-                <ShockArc spine={fork} w={1.6} />
-              </g>
+            {bolts.map((bolt, j) => (
+              <ShockBolt key={j} {...bolt} />
             ))}
           </g>
         ))}
@@ -312,7 +305,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
     if (!assisted) return;
     setState((s) => {
       const wrong = q.options.filter((o) => o !== q.answer && !s[o]).slice(0, 2);
-      return { ...s, ...Object.fromEntries(wrong.map((o) => [o, 'gone'])) };
+      return { ...s, ...Object.fromEntries(wrong.map((o) => [o, 'zapped'])) };
     });
   }, [assisted, q]);
 
@@ -352,10 +345,11 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
           }}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && shoot(e.currentTarget, opt)}
           onAnimationEnd={(e) => landed(e, opt)}
-          disabled={['good', 'bad', 'gone'].includes(state[opt])}
+          disabled={['good', 'bad', 'gone', 'zapped'].includes(state[opt])}
         >
           <span className="mg-rider__balloon">
             <AirshipArt />
+            {state[opt] === 'zapped' && <ElectricShock />}
           </span>
           <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
@@ -402,7 +396,6 @@ export default function BalloonPop({ onScore, onFinish }) {
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
   const [casting, setCasting] = useState(0);
-  const [bursts, setBursts] = useState([]);
   const skyRef = useRef(null);
   const wizardRef = useRef(null);
   const timers = useRef([]);
@@ -550,29 +543,15 @@ export default function BalloonPop({ onScore, onFinish }) {
     }
   };
 
-  // The two wrong balloons the power removes are knocked out by a small electric shock.
+  // The two wrong balloons the power removes are knocked out by an electric shock inside each balloon.
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
-    const sky = skyRef.current;
-    const box = sky.getBoundingClientRect();
-    // the same two the round removes: wrong answers not yet shot at, in lane order
-    const targets = [...sky.querySelectorAll('.mg-rider')]
-      .filter((el) => el.querySelector('.mg-rider__banner').textContent !== q.answer && !/mg-rider--/.test(el.className))
-      .slice(0, 2)
-      .map((el) => {
-        const r = el.querySelector('.mg-rider__balloon').getBoundingClientRect();
-        return { id: `${Date.now()}-${r.left}`, x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
-      });
     setAssistFor(s.i);
-    setBursts(targets);
-    if (targets.length) {
-      fx.sound('pop');
-      fx.vibrate(40);
-    }
-    later(() => setBursts([]), 550);
+    fx.sound('pop');
+    fx.vibrate(40);
     rerender();
   };
 
@@ -619,9 +598,6 @@ export default function BalloonPop({ onScore, onFinish }) {
         <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
           <WizardArt />
         </div>
-        {bursts.map((b) => (
-          <ElectricShock key={b.id} x={b.x} y={b.y} />
-        ))}
         {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}
         <div className="mg-gauge">
           <div className="mg-gauge__lives" role="img" aria-label={`${s.lives} of ${LIVES} lives left`}>
