@@ -396,29 +396,34 @@ export function WizardShapes() {
     <>
       {/* cloak, shaded on the left, with folds on the lit cloth */}
       <path d="M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 250Q144 200 136 150Q134 128 128 118Z" fill={W.cloak} />
-      <path d="M88 118Q82 128 80 150Q70 200 50 248Q66 254 84 254Q84 200 94 136Z" fill={W.shade} opacity=".75" />
-      <path d="M100 150Q96 198 91 246M130 166Q136 210 140 248" stroke={W.shade} strokeWidth="2.6" fill="none" strokeLinecap="round" opacity=".8" />
+      <path d="M88 118Q82 128 80 150Q70 200 50 248Q62 253 74 254Q78 200 90 136Z" fill={W.shade} opacity=".75" />
+      <path d="M97 152Q91 200 85 246M132 166Q138 210 142 248" stroke={W.shade} strokeWidth="2.6" fill="none" strokeLinecap="round" opacity=".8" />
       <path d={CLOAK_STARS} fill={W.star} />
       <path d={CLOAK_MOONS} fill={W.moon} opacity=".9" />
-      {/* the purple robe and belt in the opening down the front */}
+      {/* the purple robe in the opening down the front, and the belt, which the cloak covers at the sides */}
       <path d="M108 132Q100 190 94 254Q110 258 128 254Q120 190 112 132Z" fill={W.inner} />
       <path d="M110 150Q107 200 110 252" stroke={W.innerDark} strokeWidth="2.4" fill="none" />
-      <path d="M99 175Q110 179 121 175L122 184Q110 188 98 184Z" fill={W.leather} />
-      <path d="M99 179.5Q110 183.5 121 179.5" stroke={W.leatherDark} strokeWidth="1" fill="none" />
-      <rect x="105.5" y="174.5" width="9" height="10.5" rx="2" fill="none" stroke={W.gold} strokeWidth="2.2" />
-      <path d="M117 185L118 191" stroke={W.leatherDark} strokeWidth="1.8" />
-      <rect x="113" y="190" width="10" height="10" rx="3" fill={W.leather} />
-      <circle cx="118" cy="195" r="1.5" fill={W.gold} />
+      <clipPath id="mg-wizard-gap">
+        <path d="M108 132Q100 190 94 254Q110 258 128 254Q120 190 112 132Z" />
+      </clipPath>
+      <g clipPath="url(#mg-wizard-gap)">
+        <path d="M96 175Q110 179 124 175L124 184Q110 188 96 184Z" fill={W.leather} />
+        <path d="M96 179.5Q110 183.5 124 179.5" stroke={W.leatherDark} strokeWidth="1" fill="none" />
+        <rect x="105.5" y="174.5" width="9" height="10.5" rx="2" fill="none" stroke={W.gold} strokeWidth="2.2" />
+        <path d="M112 185L112.5 191" stroke={W.leatherDark} strokeWidth="1.8" />
+        <rect x="107.5" y="190" width="10" height="10" rx="3" fill={W.leather} />
+        <circle cx="112.5" cy="195" r="1.5" fill={W.gold} />
+      </g>
       {/* gold trim: the front edges, the hem and its curls */}
       <path d="M108 132Q100 190 94 254M112 132Q120 190 128 254M50 248Q80 257 108 253Q132 258 150 250" stroke={W.gold} strokeWidth="2.6" fill="none" strokeLinecap="round" />
       <path d={HEM_CURLS} stroke={W.gold} strokeWidth="1.5" fill="none" strokeLinecap="round" />
       {/* the sleeve sits under the hood and turns with the staff arm, so the arm stays joined to the cloak */}
       <g className="mg-wizard__arm">
-        <path d="M120 134Q132 126 142 138Q150 148 156 160L155 179Q144 178 136 172Q126 162 120 150Q116 142 120 134Z" fill={W.shade} />
+        <path d="M126 136Q133 134 138 142Q147 152 156 162L155 176Q147 175 141 170Q132 160 127 150Q123 142 126 136Z" fill={W.shade} />
       </g>
       {/* rounded hood with a soft tip falling back and a gold rim, eyes, flowing beard */}
       <path d="M82 136Q78 98 92 78Q104 64 118 66Q134 74 137 102Q139 122 134 136Q108 126 82 136Z" fill={W.shade} />
-      <path d="M112 66Q126 58 135 64Q140 69 137 77Q133 70 126 71Q120 71 116 72Z" fill={W.shade} />
+      <path d="M112 67Q126 60 134 68Q138 74 145 79Q134 78 128 73Q121 70 116 72Z" fill={W.shade} />
       <path d="M94 127Q93 98 108 90Q123 98 122 127Z" fill={W.deep} />
       <path d="M92.5 129Q91 96 108 87Q125 96 123.5 129" stroke={W.gold} strokeWidth="2" fill="none" strokeLinecap="round" />
       <rect x="99" y="104" width="6.5" height="3.2" rx="1.5" fill="#fff" />
@@ -442,8 +447,8 @@ export function WizardShapes() {
         <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
         <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />
         </g>
-        <path d="M156 160L155 179" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
-        <rect x="153" y="164" width="14" height="13" rx="3" fill={W.skin} />
+        <path d="M156 162L155 176" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
+        <rect x="153" y="163" width="13" height="12" rx="3" fill={W.skin} />
       </g>
     </>
   );
