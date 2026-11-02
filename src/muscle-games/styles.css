@@ -713,6 +713,13 @@
 /* ATP skill: the arm lifts and the staff stays upright, held high; the pearl turns cyan to yellow, its glow pulses cyan and yellow and two rings
    spread out from it. */
 .mg-wizard__ring { transform-box: fill-box; transform-origin: center; }
+/* The staff's runes glow on and off; the ribbon sways under the head. In the skill the runes flash yellow. */
+.mg-wizard__runes { animation: mg-runes 2.4s ease-in-out infinite; }
+.mg-wizard .mg-wizard__ribbon { transform-box: view-box; transform-origin: 158px 88px; animation: mg-ribbon 2.2s ease-in-out infinite; }
+.mg-wizard--atp .mg-wizard__runes { animation: mg-runes-flash 0.35s ease-in-out 4; }
+@keyframes mg-runes { 50% { opacity: 0.35; } }
+@keyframes mg-runes-flash { 50% { stroke: #facc15; } }
+@keyframes mg-ribbon { 50% { transform: rotate(7deg); } }
 .mg-wizard--atp .mg-wizard__arm { animation: mg-arm-power 1.4s ease-in-out; }
 .mg-wizard--atp .mg-wizard__staff { animation: mg-staff-power 1.4s ease-in-out; }
 .mg-wizard--atp .mg-wizard__orb-atp { animation: mg-orb-atp 1.4s ease-in-out; }

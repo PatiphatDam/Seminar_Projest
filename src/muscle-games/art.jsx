@@ -363,11 +363,13 @@ export function MusclePoster() {
 /* ---------- Balloon Pop: the hooded sage wizard ---------- */
 
 // A long starry cloak that blows back at the hem, open down the front over a purple robe and a leather belt,
-// with gold trim. In Balloon Pop the castle wall hides the lowest third, so the belt and most stars sit above y 190. The staff is slim dark silver wound with gold, with a gold flame claw holding a glowing orb.
+// with gold trim. The staff is dark silver carved with glowing runes, with a gold three-prong claw, a blue diamond and
+// a purple ribbon.
+// In Balloon Pop the castle wall hides the lowest third, so the belt and most stars sit above y 190.
 const W = {
   cloak: '#2c56b8', shade: '#1f3f8a', deep: '#122658', inner: '#5a4aa0', innerDark: '#463a82',
   gold: '#e6bd5c', goldDark: '#a8782a', leather: '#8a5a32', leatherDark: '#6b4325', star: '#f7d36a',
-  beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150', shaftLight: '#a9b1c2',
+  beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150',
 };
 // Four-point star and crescent outlines, joined into one path each so the pattern costs a single element.
 const starPath = (x, y, r) =>
@@ -382,11 +384,8 @@ const CLOAK_MOONS = moonPath(136, 196, 5) + moonPath(127, 168, 3.6);
 const HEM_CURLS = [[58, 246], [72, 250], [138, 251], [146, 246]].map(([x, y]) => curlPath(x, y)).join('');
 const ORB_SPARKS = starPath(147, 38, 2.2) + starPath(176, 66, 1.8);
 const ORB_GLINT = starPath(153.6, 46, 2.2);
-// a gold vine wound round the staff: a sine wave along the shaft
-const VINE = Array.from({ length: 28 }, (_, i) => {
-  const y = 96 + i * 2;
-  return `${i ? 'L' : 'M'}${(160.5 + 4 * Math.sin(i * 0.29 + 0.6)).toFixed(1)} ${y}`;
-}).join('');
+// Runes carved down the staff: small diamonds with a tick under each, glowing cyan.
+const RUNES = [108, 130, 152, 174, 196, 218].map((y) => `M160.5 ${y}l1.8 2.6l-1.8 2.6l-1.8 -2.6ZM160.5 ${y + 7}v2`).join('');
 // Outer shapes, drawn twice: first as a wide dark stroke under everything, then filled on top, so only the outer
 // half of the stroke shows and the wizard gets one unbroken outline with no lines where the shapes meet.
 const CLOAK = 'M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 250Q144 200 136 150Q134 128 128 118Z';
@@ -469,11 +468,11 @@ export function WizardShapes() {
         <g className="mg-wizard__staff">
         <circle className="mg-wizard__glow" cx="161" cy="54" r="25" fill="#c4b5fd" opacity=".2" />
         <path d="M158 66H163L162.6 240L160.5 250L158.4 240Z" fill={W.shaft} />
-        <path d={SHAFT_STREAKS} stroke={W.shaftLight} strokeWidth="1.2" opacity=".7" />
         <path d="M157 232Q160.5 240 157.5 248L160.5 262L163.5 248Q161 240 164 232Q160.5 236 157 232Z" fill={W.gold} />
-        <path d={VINE} stroke={W.gold} strokeWidth="1.8" fill="none" strokeLinecap="round" />
-        <path d="M155.5 94.5a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 124a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 152a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0Z" fill={W.gold} />
-        <path d="M157 76Q146 74 141 64Q150 70 158 71ZM164 76Q175 74 180 64Q171 70 163 71Z" fill={W.gold} />
+        <path className="mg-wizard__runes" d={RUNES} stroke="#67e8f9" strokeWidth="1" fill="none" />
+        <path d="M155.5 94.5a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 236a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0Z" fill={W.gold} />
+        {/* the middle prong of the gold claw stands behind the pearl */}
+        <path d="M161 44Q157 30 161 14Q165 30 161 44Z" fill={W.gold} />
         <circle cx="161" cy="54" r="17" fill="#ece9ff" opacity=".18" />
         <circle className="mg-wizard__ring" cx="161" cy="54" r="12" fill="none" stroke="#67e8f9" strokeWidth="2" opacity="0" />
         {/* a glossy pearl: white, darker at the top and lighter at the bottom; red (cast) and cyan-to-yellow (ATP)
@@ -490,6 +489,13 @@ export function WizardShapes() {
         <path d={ORB_SPARKS} fill={W.star} />
         <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
         <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />
+        {/* a blue diamond under the head, and a purple ribbon tied below it */}
+        <path d="M160.5 72L164.5 79L160.5 86L156.5 79Z" fill="#63d0ff" stroke={W.gold} strokeWidth="1.6" />
+        <circle cx="159.4" cy="77.6" r="1" fill="#fff" />
+        <g className="mg-wizard__ribbon">
+          <path d="M158 88Q147 93 149 107Q145 120 138 127Q147 114 145 101Q145 92 158 90Z" fill="#7c5cc4" />
+          <path d="M158 89Q151 98 156 112Q153 122 150 128Q158 116 158 104Q157 96 160 90Z" fill="#9b7be0" />
+        </g>
         </g>
         <rect x="153" y="162.5" width="12.5" height="11.5" rx="3" fill={W.skin} />
         <clipPath id="mg-wizard-wrist">
