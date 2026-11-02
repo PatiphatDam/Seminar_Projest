@@ -71,15 +71,21 @@ export function BalloonScene() {
         <circle cx="250" cy="44" r=".8" />
         <circle cx="90" cy="60" r=".8" />
       </g>
-      <path d={BC_CASTLE} fill="hsl(262 24% 40%)" opacity=".55" />
-      <g className="mg-sc-drift">
-        {BC_CLOUDS.map((d) => (
-          <g key={d}>
-            <path d={d} fill="hsl(258 30% 42%)" />
-            <path d={d} fill="none" stroke="hsl(258 38% 64%)" strokeWidth="1.4" opacity=".7" />
+      {/* clouds drift one way, left to right like in the game, behind the castle; a second copy one width to the
+          left makes the loop seamless */}
+      <g className="mg-bc-clouds">
+        {[0, -320].map((dx) => (
+          <g key={dx} transform={`translate(${dx} 0)`}>
+            {BC_CLOUDS.map((d) => (
+              <g key={d}>
+                <path d={d} fill="hsl(258 30% 42%)" />
+                <path d={d} fill="none" stroke="hsl(258 38% 64%)" strokeWidth="1.4" opacity=".7" />
+              </g>
+            ))}
           </g>
         ))}
       </g>
+      <path d={BC_CASTLE} fill="hsl(262 22% 34%)" />
       <path d={BC_TOWN} fill="hsl(258 26% 24%)" />
       <path d={BC_WINDOWS} fill="hsl(258 22% 34%)" />
       <path d={BC_MERLONS} fill="hsl(255 18% 34%)" />

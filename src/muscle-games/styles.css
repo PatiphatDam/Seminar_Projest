@@ -284,6 +284,8 @@
 .mg-scene * { transform-box: fill-box; }
 .mg-sc-bob { animation: mg-bob 3s ease-in-out infinite; transform-origin: center; }
 .mg-sc-drift { animation: mg-drift 9s ease-in-out infinite alternate; }
+.mg-bc-clouds { animation: mg-bc-clouds 48s linear infinite; }
+@keyframes mg-bc-clouds { to { transform: translateX(320px); } }
 .mg-sc-drift--slow { animation-duration: 13s; animation-direction: alternate-reverse; }
 .mg-sc-spin { animation: mg-spin 14s linear infinite; transform-box: view-box; }
 .mg-sc-hop { animation: mg-float 2.6s ease-in-out infinite; }
@@ -1266,7 +1268,7 @@
 @keyframes mg-pop-in { from { transform: scale(0.85); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-sc-flicker, .mg-btn--pulse,
+  .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-bc-clouds, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-sc-flicker, .mg-btn--pulse,
   .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-adv__mascot, .mg-lens__ring, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
   .mg-pcard, .mg-pmatch, .mg-cork::before, .mg-cork__strings path, .mg-cork__stamp { transition: none; animation: none; }
   .mg-sc-smoke { animation: none; opacity: 0.35; }
