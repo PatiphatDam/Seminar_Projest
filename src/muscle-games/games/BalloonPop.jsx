@@ -34,12 +34,6 @@ const LIVES = 3;
 const TIME = 100;
 const ATP_MAX = 4;
 // Stripe colour and its shade for each lane's balloon.
-const COLORS = [
-  ['#2fb5a3', '#1f8577'],
-  ['#ec7fb0', '#bf5285'],
-  ['#4fa5e0', '#2f78ad'],
-  ['#f2954a', '#c46c27'],
-];
 const SWING_AT = 280; // ms into the cast animation when the staff swings forward
 const FIRE_FLIGHT = 200;
 const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
@@ -393,7 +387,7 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
           key={opt}
           type="button"
           className={`mg-rider${state[opt] ? ` mg-rider--${state[opt]}` : ''}`}
-          style={{ '--lane': k, '--color': COLORS[k][0], '--color-dark': COLORS[k][1], '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
+          style={{ '--lane': k, '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
           onPointerDown={(e) => {
             e.preventDefault();
             shoot(e.currentTarget, opt);

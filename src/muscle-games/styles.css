@@ -535,10 +535,6 @@
 }
 .mg-rider__balloon { position: relative; display: block; width: min(100%, 80px); aspect-ratio: 120 / 172; transition: filter 0.15s; }
 .mg-root .mg-rider__balloon .mg-air { display: block; width: 100%; height: 100%; overflow: visible; }
-.mg-air__fabric { fill: var(--color); }
-.mg-air__shade { fill: var(--color-dark); opacity: 0.28; }
-.mg-air__edge { fill: none; stroke: var(--color-dark); stroke-width: 1.6; }
-.mg-air__mouth { fill: var(--color-dark); }
 /* the sign is tied under the basket: it overlaps the basket's foot and is a little narrower than the balloon */
 .mg-rider__banner {
   position: relative; width: 100%; max-width: 110px; margin-top: -8px; padding: 4px 3px; border-radius: 6px; border: 2px solid hsl(35 45% 40%);

@@ -773,51 +773,71 @@ export function SkyClouds() {
   );
 }
 
-/* ---------- Balloon Pop: hot-air balloon with a goblin in the basket ---------- */
+/* ---------- Balloon Pop: the goblins' raider balloon ---------- */
 
+// A night raider's balloon in browns and dull cream, so it hides in the dark: the stripes swap colours at the iron
+// band (brown with cream stripes above, cream with brown stripes below), the canvas is patched, the flag is black
+// and ragged, the brass is dull, and a small lamp glows under the wooden gondola. Every balloon looks the same; the
+// answer banner tells them apart. The outline (AIR_ENVELOPE) is the one the zap effect in BalloonPop.jsx traces.
+// Nothing inside it moves: animating the flag, ribbons or lamp made four balloons repaint every frame on phones.
 const AIR_ENVELOPE = 'M60 6 C98 6 114 34 112 62 C110 90 86 108 74 118 L46 118 C34 108 10 90 8 62 C6 34 22 6 60 6 Z';
-const AIR_ROPES = 'M60 8 Q86 40 72 118 M60 8 Q34 40 48 118 M9 62 Q60 80 111 62';
-const AIR_KNOTS = [[60, 8], [79, 70], [41, 70]];
-const CREAM = '#fbf1c7';
-const ROPE = '#e8c9a0';
-const ROPE_DARK = '#a9805a';
-const WICKER = '#a9733f';
-const WICKER_DARK = '#7a4f27';
-const WICKER_LIGHT = '#c8955c';
-const GOBLIN = '#7fb069';
+const AIR_GORES = 'M60 6C74 8 79 62 70 118L50 118C41 62 46 8 60 6ZM24 16C9 36 11 82 34 110L27 112C2 82 2 36 24 16ZM96 16C111 36 109 82 86 110L93 112C118 82 118 36 96 16Z';
+const AIR_BELOW = 'M0 60L8 62Q60 80 112 62L120 60V172H0Z'; // under the iron band
+const AIR_RIVETS = [20, 34, 48, 60, 72, 86, 100].map((x) => [x, 62 + 16 * (1 - ((x - 60) / 52) ** 2)]);
+const RAIDER = {
+  brown: '#5e4330', dark: '#3a2a1e', cream: '#cbb795', iron: '#241d1a', brass: '#8f7044', brassDark: '#5a4428',
+  ribbon: '#7a5f48', patch: '#8a6a4c', stitch: '#e2d3b3', wood: '#4a3628', woodDark: '#33251b',
+};
+const GOBLIN = '#6f9a5c';
 const GOBLIN_DARK = '#4a7a40';
+const patch = (x, y, w, h, a) => (
+  <g transform={`rotate(${a} ${x + w / 2} ${y + h / 2})`}>
+    <rect x={x} y={y} width={w} height={h} rx="1" fill={RAIDER.patch} />
+    <rect x={x + 1.5} y={y + 1.5} width={w - 3} height={h - 3} fill="none" stroke={RAIDER.stitch} strokeWidth=".8" strokeDasharray="1.6 1.2" />
+  </g>
+);
 
-// The envelope takes its stripe colour from --color / --color-dark on the parent (one per lane, gold when golden).
-// Ropes down to the basket are drawn before the goblin, so nothing crosses him.
+// Ropes down to the gondola are drawn before the goblin, so nothing crosses him.
 // AirshipShapes is the drawing on its own (120x172 units), for placing inside another SVG such as a cover.
 export function AirshipShapes() {
   const id = useId().replace(/:/g, '');
+  const R = RAIDER;
   return (
     <>
       <defs>
         <clipPath id={`${id}-env`}>
           <path d={AIR_ENVELOPE} />
         </clipPath>
-        <pattern id={`${id}-weave`} width="6" height="5" patternUnits="userSpaceOnUse">
-          <path d="M0 2.5 q1.5 -2.5 3 0 q1.5 2.5 3 0" fill="none" stroke={WICKER_DARK} strokeWidth="1" />
-        </pattern>
+        <clipPath id={`${id}-below`}>
+          <path d={AIR_BELOW} />
+        </clipPath>
       </defs>
-      <path className="mg-air__fabric" d={AIR_ENVELOPE} />
+      {/* black ragged flag on top, ribbons hanging from the band */}
+      <path d="M60 6V-10" stroke={R.iron} strokeWidth="1.8" />
+      <path d="M60 -9L78 -7L73 -5L77 -2L60 -1Z" fill={R.iron} />
+      <path d="M10 64Q4 92 11 114Q14 94 17 66Z" fill={R.ribbon} />
+      <path d="M110 64Q116 92 109 114Q106 94 103 66Z" fill={R.ribbon} />
+      {/* envelope: brown with cream stripes above the band, cream with brown stripes below */}
       <g clipPath={`url(#${id}-env)`}>
-        <path d="M60 6 C76 8 80 60 70 118 L50 118 C40 60 44 8 60 6 Z" fill={CREAM} />
-        <path d="M22 16 C8 34 10 80 34 110 L28 112 C2 80 2 34 22 16 Z M98 16 C112 34 110 80 86 110 L92 112 C118 80 118 34 98 16 Z" fill={CREAM} />
-        <path className="mg-air__shade" d="M60 6 C98 6 114 34 112 62 C110 90 86 108 74 118 L120 118 L120 0 Z" />
-        <ellipse cx="38" cy="30" rx="10" ry="6" fill="#fff" opacity=".35" transform="rotate(-30 38 30)" />
+        <rect x="0" y="0" width="120" height="120" fill={R.brown} />
+        <path d={AIR_GORES} fill={R.cream} />
+        <g clipPath={`url(#${id}-below)`}>
+          <rect x="0" y="0" width="120" height="120" fill={R.cream} />
+          <path d={AIR_GORES} fill={R.brown} />
+        </g>
+        {patch(30, 26, 12, 10, -12)}
+        {patch(76, 84, 10, 9, 10)}
+        <path d="M60 6C98 6 114 34 112 62C110 90 86 108 74 118L120 118L120 0Z" fill={R.dark} opacity=".4" />
       </g>
-      <path className="mg-air__edge" d={AIR_ENVELOPE} />
-      <path d={AIR_ROPES} fill="none" stroke={ROPE_DARK} strokeWidth="3" strokeLinecap="round" />
-      <path d={AIR_ROPES} fill="none" stroke={ROPE} strokeWidth="1.8" strokeDasharray="2.4 1.6" strokeLinecap="round" />
-      {AIR_KNOTS.map(([x, y]) => (
-        <circle key={x * 1000 + y} cx={x} cy={y} r="2.6" fill={ROPE} stroke={ROPE_DARK} strokeWidth="1" />
+      <path d={AIR_ENVELOPE} fill="none" stroke={R.dark} strokeWidth="1.6" />
+      <path d="M8 62Q60 80 112 62" stroke={R.iron} strokeWidth="4" fill="none" />
+      {AIR_RIVETS.map(([x, y]) => (
+        <circle key={x} cx={x} cy={y} r="1.3" fill={R.brass} />
       ))}
-      <path className="mg-air__mouth" d="M44 117 H76 V121 H44 Z" />
-      <path d="M46 120 L36 140 M74 120 L84 140 M48 120 L52 140 M72 120 L68 140" stroke={ROPE_DARK} strokeWidth="1.6" />
-      {/* goblin: helmet, yellow eyes, fanged grin */}
+      <ellipse cx="60" cy="7" rx="8" ry="3" fill={R.brass} stroke={R.brassDark} />
+      <rect x="43" y="115" width="34" height="7" rx="2" fill={R.brass} stroke={R.brassDark} />
+      <path d="M45 122L34 136M75 122L86 136M52 122L50 136M68 122L70 136" stroke={R.iron} strokeWidth="1.6" />
+      {/* goblin in a dark bandana: yellow eyes, fanged grin */}
       <g transform="translate(60 128) scale(1.18) translate(-60 -128)">
         <path d="M44 124 L28 114 L45 132 Z M76 124 L92 114 L75 132 Z" fill={GOBLIN} />
         <path d="M42 123 L33 118 L43 128 Z M78 123 L87 118 L77 128 Z" fill={GOBLIN_DARK} opacity=".6" />
@@ -830,18 +850,24 @@ export function AirshipShapes() {
         <circle cx="65.4" cy="129.2" r="1.3" fill="#1d2a17" />
         <path d="M51 135 Q60 141 69 135" fill="#3a2418" />
         <path d="M54 135.8 l1.6 3 l1.6 -2.6 Z M66 135.8 l-1.6 3 l-1.6 -2.6 Z" fill="#fff" />
-        <path d="M42 122 A18 15 0 0 1 78 122 Z" fill="#8f97a3" />
-        <path d="M42 122 H78" stroke="#5f6670" strokeWidth="2.4" />
-        <circle cx="60" cy="110" r="2" fill="#5f6670" />
+        <path d="M42 122 A18 15 0 0 1 78 122 Z" fill="#4a3a30" />
+        <path d="M42 118 H78" stroke="#2c211b" strokeWidth="5" />
+        <path d="M78 118 l7 4 l-3 3 Z" fill="#2c211b" />
       </g>
-      {/* basket, hands on the rim, sandbags */}
-      <path d="M30 138 H90 L85 168 Q60 171 35 168 Z" fill={WICKER} />
-      <path d="M30 138 H90 L85 168 Q60 171 35 168 Z" fill={`url(#${id}-weave)`} />
-      <path d="M28 136 H92 V142 H28 Z" fill={WICKER_LIGHT} stroke={WICKER_DARK} strokeWidth="1.2" />
-      <circle cx="40" cy="140" r="3.6" fill={GOBLIN} />
-      <circle cx="80" cy="140" r="3.6" fill={GOBLIN} />
-      <path d="M31 146 q-3 6 0 11 q3 -5 0 -11 Z M89 146 q3 6 0 11 q-3 -5 0 -11 Z" fill="#c9b38f" stroke="#8a7350" strokeWidth="1" />
-      <path d="M31 142 V146 M89 142 V146" stroke="#8a7350" strokeWidth="1" />
+      {/* wooden gondola with a dull brass rim, dim portholes, a lamp and a spike underneath */}
+      <path d="M32 138H88L83 162Q60 169 37 162Z" fill={R.wood} />
+      <path d="M34 148H86M36 156H84" stroke={R.woodDark} strokeWidth="1" />
+      <rect x="29" y="134" width="62" height="6" rx="2" fill={R.brass} stroke={R.brassDark} />
+      <circle cx="40" cy="138" r="3.6" fill={GOBLIN} />
+      <circle cx="80" cy="138" r="3.6" fill={GOBLIN} />
+      {[44, 60, 76].map((x) => (
+        <circle key={x} cx={x} cy="152" r="3" fill="#b8862e" stroke={R.brass} strokeWidth="1.4" />
+      ))}
+      <path d="M88 160v4" stroke={R.iron} strokeWidth="1" />
+      <circle cx="88" cy="168" r="5" fill="#ffb347" opacity=".25" />
+      <rect x="85.4" y="164.6" width="5.2" height="6.4" rx="1" fill={R.iron} />
+      <rect x="86.4" y="166.2" width="3.2" height="3.4" fill="#ffcf6b" />
+      <path d="M54 164L60 176L66 164Z" fill={R.iron} />
     </>
   );
 }

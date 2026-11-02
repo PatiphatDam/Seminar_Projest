@@ -58,13 +58,13 @@ export function BalloonScene() {
       </g>
       <path d={BC_SKYLINE} transform="translate(0 140)" fill="hsl(258 26% 20%)" opacity=".9" />
       <g className="mg-pv-pop">
-        <g className="mg-sc-bob" style={{ '--color': '#2fb5a3', '--color-dark': '#1f8577' }}>
+        <g className="mg-sc-bob">
           <g transform="translate(208 16) scale(0.3167)">
             <AirshipShapes />
           </g>
         </g>
       </g>
-      <g className="mg-sc-bob" style={{ animationDelay: '-1s', '--color': '#ec7fb0', '--color-dark': '#bf5285' }}>
+      <g className="mg-sc-bob" style={{ animationDelay: '-1s' }}>
         <g transform="translate(262 58) scale(0.25)">
           <AirshipShapes />
         </g>
