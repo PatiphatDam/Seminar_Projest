@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { rng, sample, shuffle } from './util.js';
-import { AirshipArt, CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
+import { CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
 import { pick, useFx } from '../fx/Fx.jsx';
 import { TimerBar, useCountdown } from '../components/Hud.jsx';
 import { scoreOutOf10 } from './meta.js';
+// the raider balloon as one picture (made from AirshipShapes by scripts/airship-svg.mjs): the browser draws it once
+// and reuses it for every balloon, instead of building the drawing again for each balloon every round
+import AIRSHIP from '../airship.svg';
 import {
   BOMB_FUSE, FirePortal, ICE_FREEZE, IceSigil, RisingRunes, RuneLines, ULT_LENGTH, ULT_POP, ULT_STRIKE, UltSky, UltStrike, VOLT_SATELLITES,
 } from './BalloonSkills.jsx';
@@ -398,7 +401,7 @@ function Round({ q, duration, ult, fire, staffAt, onHit, onWrong, onMiss, onSpec
           disabled={['good', 'bad', 'gone', 'ult', 'struck', 'bombed'].includes(state[opt])}
         >
           <span className="mg-rider__balloon">
-            <AirshipArt />
+            <img className="mg-air" src={AIRSHIP} alt="" draggable={false} />
             {state[opt] === 'struck' && strikes[opt] && <UltStrike {...strikes[opt]} />}
             {state[opt] === 'bombed' && portal && <FirePortal {...portal} />}
           </span>

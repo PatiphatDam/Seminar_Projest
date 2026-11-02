@@ -805,7 +805,8 @@ const patch = (x, y, w, h, a) => (
 );
 
 // Ropes down to the gondola are drawn before the goblin, so nothing crosses him.
-// AirshipShapes is the drawing on its own (120x172 units), for placing inside another SVG such as a cover.
+// AirshipShapes is the drawing on its own (120x172 units), for placing inside another SVG such as a cover; Balloon
+// Pop shows it as a picture, airship.svg (regenerate it with scripts/airship-svg.mjs after changing the drawing).
 export function AirshipShapes() {
   const id = useId().replace(/:/g, '');
   const R = RAIDER;
@@ -876,13 +877,5 @@ export function AirshipShapes() {
       <rect x="86.4" y="166.2" width="3.2" height="3.4" fill="#ffcf6b" />
       <path d="M54 164L60 176L66 164Z" fill={R.iron} />
     </>
-  );
-}
-
-export function AirshipArt(props) {
-  return (
-    <svg className="mg-air" viewBox="0 0 120 172" aria-hidden="true" {...props}>
-      <AirshipShapes />
-    </svg>
   );
 }
