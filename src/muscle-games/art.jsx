@@ -366,7 +366,7 @@ export function MusclePoster() {
 // with gold trim. In Balloon Pop the castle wall hides the lowest third, so the belt and most stars sit above y 190. The staff is slim dark silver wound with gold, with a gold flame claw holding a glowing orb.
 const W = {
   cloak: '#2c56b8', shade: '#1f3f8a', deep: '#122658', inner: '#5a4aa0', innerDark: '#463a82',
-  gold: '#e6bd5c', goldDark: '#a8782a', leather: '#8a5a32', leatherDark: '#6b4325', star: '#f7d36a',
+  gold: '#e6bd5c', goldDark: '#a8782a', outline: '#8f6a2c', leather: '#8a5a32', leatherDark: '#6b4325', star: '#f7d36a',
   beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150', shaftLight: '#a9b1c2', orb: '#e0efff',
 };
 // Four-point star and crescent outlines, joined into one path each so the pattern costs a single element.
@@ -392,7 +392,7 @@ const CLOAK = 'M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 25
 const HOOD = 'M82 136Q78 98 92 78Q104 64 118 66Q134 74 137 102Q139 122 134 136Q108 126 82 136Z';
 const HOOD_TIP = 'M112 67Q126 60 134 68Q138 74 145 79Q134 78 128 73Q121 70 116 72Z';
 const SLEEVE = 'M127 138Q133 136 138 143Q147 153 156 163L155.5 173.5Q148 173 142 168Q133 158 128 149Q125 143 127 138Z';
-const OUTLINE = 5;
+const OUTLINE = 4; // a dim antique gold, quieter than the trim
 const SHAFT_STREAKS = [80, 104, 128, 152, 176, 200, 224].map((y) => `M158.6 ${y}L162.4 ${y + 9}`).join('');
 
 // The arm (.mg-wizard__arm, two groups: the sleeve under the hood and the hand over it) turns at the shoulder and
@@ -402,7 +402,7 @@ export function WizardShapes() {
   return (
     <>
       {/* cloak, shaded on the left, with folds on the lit cloth */}
-      <path d={CLOAK + HOOD + HOOD_TIP} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+      <path d={CLOAK + HOOD + HOOD_TIP} fill={W.outline} stroke={W.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
       <path d={CLOAK} fill={W.cloak} />
       <path d="M88 118Q82 128 80 150Q70 200 50 248Q62 253 74 254Q78 200 90 136Z" fill={W.shade} opacity=".75" />
       <path d="M97 152Q91 200 85 246M132 166Q138 210 142 248" stroke={W.shade} strokeWidth="2.6" fill="none" strokeLinecap="round" opacity=".8" />
@@ -427,7 +427,7 @@ export function WizardShapes() {
       <path d={HEM_CURLS} stroke={W.gold} strokeWidth="1.5" fill="none" strokeLinecap="round" />
       {/* the sleeve sits under the hood and turns with the staff arm, so the arm stays joined to the cloak */}
       <g className="mg-wizard__arm">
-        <path d={SLEEVE} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+        <path d={SLEEVE} fill={W.outline} stroke={W.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
         <path d={SLEEVE} fill={W.shade} />
       </g>
       {/* rounded hood with a soft tip falling back, gold on its rim and lower edge, eyes, flowing beard */}
@@ -462,7 +462,7 @@ export function WizardShapes() {
           <rect x="148" y="140" width="24" height="50" />
         </clipPath>
         <g clipPath="url(#mg-wizard-wrist)">
-          <path d={SLEEVE} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+          <path d={SLEEVE} fill={W.outline} stroke={W.outline} strokeWidth={OUTLINE} strokeLinejoin="round" />
           <path d={SLEEVE} fill={W.shade} />
         </g>
         <path d="M156 163L155.5 173.5" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
