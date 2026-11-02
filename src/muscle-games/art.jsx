@@ -421,9 +421,10 @@ export function WizardShapes() {
       <g className="mg-wizard__arm">
         <path d="M126 136Q133 134 138 142Q147 152 156 162L155 176Q147 175 141 170Q132 160 127 150Q123 142 126 136Z" fill={W.shade} />
       </g>
-      {/* rounded hood with a soft tip falling back and a gold rim, eyes, flowing beard */}
+      {/* rounded hood with a soft tip falling back, gold on its rim and lower edge, eyes, flowing beard */}
       <path d="M82 136Q78 98 92 78Q104 64 118 66Q134 74 137 102Q139 122 134 136Q108 126 82 136Z" fill={W.shade} />
       <path d="M112 67Q126 60 134 68Q138 74 145 79Q134 78 128 73Q121 70 116 72Z" fill={W.shade} />
+      <path d="M83 135Q108 125 133 135" stroke={W.gold} strokeWidth="2" fill="none" strokeLinecap="round" />
       <path d="M94 127Q93 98 108 90Q123 98 122 127Z" fill={W.deep} />
       <path d="M92.5 129Q91 96 108 87Q125 96 123.5 129" stroke={W.gold} strokeWidth="2" fill="none" strokeLinecap="round" />
       <rect x="99" y="104" width="6.5" height="3.2" rx="1.5" fill="#fff" />
@@ -447,8 +448,9 @@ export function WizardShapes() {
         <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
         <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />
         </g>
-        <path d="M156 162L155 176" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
         <rect x="153" y="163" width="13" height="12" rx="3" fill={W.skin} />
+        <path d="M141 152Q150 156 158 162.5L157 175.5Q149 175 143 171Z" fill={W.shade} />
+        <path d="M158 162.5L157 175.5" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
       </g>
     </>
   );
