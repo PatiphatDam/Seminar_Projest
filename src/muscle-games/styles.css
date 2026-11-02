@@ -652,9 +652,10 @@
   position: absolute; left: 50%; bottom: 50px; height: var(--bd-h); width: auto; aspect-ratio: 400 / 290; max-width: none;
   transform: translateX(-50%); pointer-events: none;
 }
-.mg-root .mg-backdrop--far { --bd-h: min(48cqh, 56cqw); bottom: 84px; opacity: 0.45; transform: translateX(-50%) scaleX(-1); }
+.mg-root .mg-backdrop--far { --bd-h: min(48cqh, 56cqw); bottom: 84px; transform: translateX(-50%) scaleX(-1); }
 .mg-town { --bd-h: min(60cqh, 70cqw); position: absolute; inset: auto 0 50px; height: calc(var(--bd-h) * 110 / 290); background: center bottom / auto 100% repeat-x; pointer-events: none; }
-.mg-town--far { --bd-h: min(48cqh, 56cqw); bottom: 84px; opacity: 0.45; transform: scaleX(-1); }
+.mg-town--far { --bd-h: min(48cqh, 56cqw); bottom: 84px; transform: scaleX(-1); }
+.mg-sky__far { position: absolute; inset: 0; opacity: 0.45; pointer-events: none; }
 .mg-backdrop {
   --bd-body: hsl(258 26% 24%); --bd-roof: hsl(258 26% 20%); --bd-rock: #2b243f; --bd-dark: hsl(256 30% 13%);
   --bd-window: hsl(256 34% 10%); --bd-line: hsl(258 22% 31%); --bd-tree: hsl(250 28% 14%); --bd-tree-lit: hsl(250 24% 18%);

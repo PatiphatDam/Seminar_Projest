@@ -623,8 +623,11 @@ export default function BalloonPop({ onScore, onFinish }) {
 
       <div ref={skyRef} className={`mg-sky${frozen ? ' mg-sky--frozen' : ''}${shake ? ' mg-shake' : ''}`}>
         <div className="mg-sky__moon" aria-hidden="true" />
-        <TownArt layer="far" />
-        <CastleArt layer="far" />
+        {/* the far town and castle fade as one picture, so where they overlap neither shows through the other */}
+        <div className="mg-sky__far" aria-hidden="true">
+          <TownArt layer="far" />
+          <CastleArt layer="far" />
+        </div>
         <TownArt layer="near" />
         <CastleArt layer="near" />
         <div className="mg-sky__haze" aria-hidden="true" />
