@@ -414,11 +414,17 @@ export function WizardShapes() {
           <stop offset=".85" stopColor="#ff8f7e" />
           <stop offset="1" stopColor="#ffd2c9" />
         </linearGradient>
-        <linearGradient id="mg-orb-atp" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#0b7fc4" />
-          <stop offset=".45" stopColor="#38d6f5" />
-          <stop offset=".8" stopColor="#fde68a" />
-          <stop offset="1" stopColor="#facc15" />
+        <linearGradient id="mg-orb-ice" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0b3a8a" />
+          <stop offset=".5" stopColor="#38a8f5" />
+          <stop offset=".85" stopColor="#bfe6ff" />
+          <stop offset="1" stopColor="#fff" />
+        </linearGradient>
+        <linearGradient id="mg-orb-volt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#78350f" />
+          <stop offset=".5" stopColor="#fbbf24" />
+          <stop offset=".85" stopColor="#60a5fa" />
+          <stop offset="1" stopColor="#fffbeb" />
         </linearGradient>
         <radialGradient id="mg-orb-shade" cx=".42" cy=".38" r=".64">
           <stop offset=".55" stopColor="#2e3358" stopOpacity="0" />
@@ -475,11 +481,12 @@ export function WizardShapes() {
         <path d="M161 44Q157 30 161 14Q165 30 161 44Z" fill={W.gold} />
         <circle cx="161" cy="54" r="17" fill="#ece9ff" opacity=".18" />
         <circle className="mg-wizard__ring" cx="161" cy="54" r="12" fill="none" stroke="#67e8f9" strokeWidth="2" opacity="0" />
-        {/* a glossy pearl: white, darker at the top and lighter at the bottom; red (cast) and cyan-to-yellow (ATP)
-            layers fade in over it, then the edge shading, the bounce light and the highlights sit on top */}
+        {/* a glossy pearl: white, darker at the top and lighter at the bottom; red (cast, fire skill), blue (ice skill) and
+            gold-to-blue (ATP ultimate) layers fade in over it, then the edge shading, the bounce light and the highlights sit on top */}
         <circle className="mg-wizard__orb" cx="161" cy="54" r="12" fill="url(#mg-orb-white)" />
         <circle className="mg-wizard__orb-red" cx="161" cy="54" r="12" fill="url(#mg-orb-red)" opacity="0" />
-        <circle className="mg-wizard__orb-atp" cx="161" cy="54" r="12" fill="url(#mg-orb-atp)" opacity="0" />
+        <circle className="mg-wizard__orb-ice" cx="161" cy="54" r="12" fill="url(#mg-orb-ice)" opacity="0" />
+        <circle className="mg-wizard__orb-volt" cx="161" cy="54" r="12" fill="url(#mg-orb-volt)" opacity="0" />
         <circle cx="161" cy="54" r="12" fill="url(#mg-orb-shade)" />
         <ellipse cx="161" cy="61.6" rx="7" ry="2.4" fill="#fff" opacity=".5" />
         <ellipse cx="156.6" cy="48.6" rx="4.6" ry="3" transform="rotate(-35 156.6 48.6)" fill="#fff" opacity=".95" />
@@ -778,7 +785,7 @@ export function SkyClouds() {
 // A night raider's balloon in browns and dull cream, so it hides in the dark: the stripes swap colours at the iron
 // band (brown with cream stripes above, cream with brown stripes below), the canvas is patched, the flag is black
 // and ragged, the brass is dull, and a small lamp glows under the wooden gondola. Every balloon looks the same; the
-// answer banner tells them apart. The outline (AIR_ENVELOPE) is the one the zap effect in BalloonPop.jsx traces.
+// answer banner tells them apart. The zap effect in BalloonPop.jsx rings the envelope, centred at (60, 64).
 // Nothing inside it moves: animating the flag, ribbons or lamp made four balloons repaint every frame on phones.
 const AIR_ENVELOPE = 'M60 6 C98 6 114 34 112 62 C110 90 86 108 74 118 L46 118 C34 108 10 90 8 62 C6 34 22 6 60 6 Z';
 const AIR_GORES = 'M60 6C74 8 79 62 70 118L50 118C41 62 46 8 60 6ZM24 16C9 36 11 82 34 110L27 112C2 82 2 36 24 16ZM96 16C111 36 109 82 86 110L93 112C118 82 118 36 96 16Z';

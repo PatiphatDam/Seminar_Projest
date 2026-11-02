@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { sample, shuffle } from './util.js';
+import { rng, sample, shuffle } from './util.js';
 import { AirshipArt, CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
-import { ICE, pick, useFx } from '../fx/Fx.jsx';
+import { pick, useFx } from '../fx/Fx.jsx';
 import { TimerBar, useCountdown } from '../components/Hud.jsx';
 import { scoreOutOf10 } from './meta.js';
+import {
+  BOMB_FUSE, FirePortal, ICE_FREEZE, IceSigil, RisingRunes, RuneLines, ULT_LENGTH, ULT_POP, ULT_STRIKE, UltSky, UltStrike, VOLT_SATELLITES,
+} from './BalloonSkills.jsx';
 
 // OL1 — functions and physiological properties of muscle tissue (lecture §1–2).
 const PROPERTIES = ['Excitability', 'Conductivity', 'Contractility', 'Extensibility', 'Elasticity'];
@@ -39,56 +42,136 @@ const FIRE_FLIGHT = 200;
 const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
 const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];
 
-// Ice and bomb flyer icons, drawn around (0, 0) so they sit exactly in the middle of the round flyer
-// (emoji glyphs carry their own padding and baseline, which pushed them off centre).
+// Ice and bomb flyers are skill orbs: the same glossy pearl as the wizard's staff orb (dark at the top, pale at the
+// bottom, a white shine), tinted for the skill and set in its spinning rune circle, the one the wizard casts with it.
+// Ice: the ice rune round a frost-blue pearl with a white snowflake inside, and a ring that pulses out. Bomb: the fire
+// rune, spinning the other way, round a red pearl with a little lit bomb inside, and a slow red warning pulse. Drawn
+// around (0, 0) in a 48 x 48 box.
+const ORB_R = 11;
+const ORB_COLORS = {
+  ice: ['#0b3a8a', '#38a8f5', '#bfe6ff', '#ffffff'],
+  bomb: ['#7a1010', '#e0322b', '#ff9a6b', '#ffe0b0'],
+};
+const SIXTHS = [0, 60, 120, 180, 240, 300];
 
-// A star-shaped burst: `n` spikes alternating between the outer radii in `outer` and radius `inner`.
-function burst(n, outer, inner) {
+// a star with `n` points, as polygon points
+function star(x, y, outer, inner, n) {
   return Array.from({ length: n * 2 }, (_, k) => {
-    const r = k % 2 ? inner : outer[(k / 2) % outer.length];
+    const r = k % 2 ? inner : outer;
     const a = (Math.PI * k) / n - Math.PI / 2;
-    return `${(Math.cos(a) * r).toFixed(2)},${(Math.sin(a) * r).toFixed(2)}`;
+    return `${(x + Math.cos(a) * r).toFixed(2)},${(y + Math.sin(a) * r).toFixed(2)}`;
   }).join(' ');
 }
-const BURST_RED = burst(13, [11.6, 10.4, 11.2, 9.8, 11.8], 7.6);
-const BURST_YELLOW = burst(13, [9, 8.2, 8.8, 7.8], 6.6);
+const FUSE_SPARK = star(7, -6.5, 2.5, 0.85, 5);
 
-// Snow crystal: six feathered arms around a small hexagon.
-const ARM = 'M0 -2.4V-10.6 M0 -4.2l-2 -1.6M0 -4.2l2 -1.6 M0 -6.4l-2.6 -2M0 -6.4l2.6 -2 M0 -8.5l-1.7 -1.4M0 -8.5l1.7 -1.4';
-const HEX = Array.from({ length: 6 }, (_, k) => {
-  const a = (Math.PI * k) / 3 - Math.PI / 2;
-  return `${(Math.cos(a) * 2.2).toFixed(2)},${(Math.sin(a) * 2.2).toFixed(2)}`;
-}).join(' ');
+function SkillPearl({ kind }) {
+  const id = `mg-skill-${kind}`;
+  return (
+    <>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
+          {ORB_COLORS[kind].map((c, k) => (
+            <stop key={k} offset={[0, 0.5, 0.85, 1][k]} stopColor={c} />
+          ))}
+        </linearGradient>
+        <radialGradient id={`${id}-shade`} cx=".42" cy=".38" r=".64">
+          <stop offset=".55" stopColor="#2e3358" stopOpacity="0" />
+          <stop offset="1" stopColor="#2e3358" stopOpacity=".45" />
+        </radialGradient>
+      </defs>
+      <circle r={ORB_R} fill={`url(#${id})`} />
+      <circle r={ORB_R} fill={`url(#${id}-shade)`} />
+    </>
+  );
+}
+
+// the pearl's shine, over whatever sits inside it: a bounce light at the bottom, a small highlight at the top left
+function PearlShine() {
+  return (
+    <>
+      <ellipse cy="6.9" rx="6.4" ry="2.2" fill="#fff" opacity="0.45" />
+      <ellipse cx="-4.8" cy="-5.6" rx="2.8" ry="1.8" transform="rotate(-35 -4.8 -5.6)" fill="#fff" opacity="0.95" />
+      <circle cx="4.6" cy="-4.6" r="1.1" fill="#fff" />
+    </>
+  );
+}
 
 function IceIcon() {
   return (
-    <svg className="mg-flyer__icon mg-flyer__icon--ice" viewBox="-12 -12 24 24" aria-hidden="true">
-      <g strokeLinecap="round" strokeLinejoin="round" fill="none">
-        {[0, 60, 120, 180, 240, 300].map((a) => (
-          <g key={a} transform={`rotate(${a})`}>
-            <path d={ARM} stroke="#bfe3ff" strokeWidth="1.5" />
-            <path d={ARM} stroke="#ffffff" strokeWidth="0.6" />
-            <path d="M0 -10.6l-0.9 -0.9 0.9 -0.9 0.9 0.9z" fill="#ffffff" stroke="#ffffff" strokeWidth="0.4" />
-          </g>
-        ))}
-        <polygon points={HEX} stroke="#ffffff" strokeWidth="0.7" fill="#dff1ff" fillOpacity="0.35" />
+    <svg className="mg-flyer__icon" viewBox="-24 -24 48 48" aria-hidden="true">
+      <circle className="mg-flyer__pulse" r="18" fill="none" stroke="#7dd3fc" strokeWidth="0.8" opacity="0.7" />
+      <g transform="scale(0.36)">
+        <g className="mg-flyer__rune">
+          <RuneLines kind="ice" />
+        </g>
       </g>
+      <SkillPearl kind="ice" />
+      <Snowflake r={6} width={1.4} color="#fff" />
+      <PearlShine />
     </svg>
   );
 }
 
 function BombIcon() {
   return (
-    <svg className="mg-flyer__icon mg-flyer__icon--bomb" viewBox="-12 -12 24 24" aria-hidden="true">
-      <polygon points={BURST_RED} fill="#e8392b" stroke="#7a1010" strokeWidth="0.35" strokeLinejoin="round" />
-      <polygon points={BURST_YELLOW} fill="#fcd116" />
-      {/* fuse from the cap to a yellow spark, up and to the left */}
-      <path d="M-4.6 -4.6 C-6 -6.2 -6.4 -7 -7.6 -7.8" stroke="#222" strokeWidth="0.9" fill="none" strokeLinecap="round" />
-      <polygon points={burst(7, [2.4, 1.8], 1)} transform="translate(-8.6 -8.6)" fill="#fcd116" stroke="#e8a20b" strokeWidth="0.3" />
-      <rect x="-1.3" y="-7.6" width="2.6" height="2.4" rx="0.5" transform="rotate(-45)" fill="#2b2b2b" stroke="#111" strokeWidth="0.3" />
-      <circle className="mg-bomb-ball" r="6.2" fill="#2f2f33" stroke="#111" strokeWidth="0.4" />
-      <path d="M-3.6 -2.4 A4.4 4.4 0 0 1 -0.6 -4.4" stroke="#fff" strokeWidth="0.9" strokeLinecap="round" fill="none" opacity="0.85" />
-      <circle cx="1.6" cy="2" r="3.6" fill="#000" opacity="0.18" />
+    <svg className="mg-flyer__icon" viewBox="-24 -24 48 48" aria-hidden="true">
+      <circle className="mg-flyer__pulse" r="18" fill="#ef4444" opacity="0.25" />
+      <g transform="scale(0.36)">
+        <g className="mg-flyer__rune mg-flyer__rune--back">
+          <RuneLines kind="fire" />
+        </g>
+      </g>
+      <SkillPearl kind="bomb" />
+      <path d="M2.5 -4q1.5 -2.7 4 -2.1" stroke="#1f1f23" strokeWidth="1.05" fill="none" strokeLinecap="round" />
+      <circle r="4.75" fill="#1f1f23" />
+      <path d="M-2.7 -1.5a2.9 2.9 0 0 1 1.9 -1.9" stroke="#fff" strokeWidth="0.75" fill="none" strokeLinecap="round" opacity="0.7" />
+      <polygon className="mg-flyer__spark" points={FUSE_SPARK} fill="#fde047" />
+      <PearlShine />
+    </svg>
+  );
+}
+
+// a snow crystal of radius r round (0, 0): three crossing arms with a small V near each tip
+function Snowflake({ r, width, color }) {
+  const v = `M${(-r * 0.32).toFixed(2)} ${(-r * 0.78).toFixed(2)}L0 ${(-r * 0.48).toFixed(2)}L${(r * 0.32).toFixed(2)} ${(-r * 0.78).toFixed(2)}`;
+  return (
+    <g stroke={color} strokeLinecap="round" fill="none">
+      {[0, 60, 120].map((a) => (
+        <path key={a} d={`M0 ${-r}V${r}`} strokeWidth={width} transform={`rotate(${a})`} />
+      ))}
+      {SIXTHS.map((a) => (
+        <path key={a} d={v} strokeWidth={width * 0.8} transform={`rotate(${a})`} />
+      ))}
+    </g>
+  );
+}
+
+// Hitting the ice orb: it flashes white and shatters into twelve shards of ice that fly out, spin and fade. Drawn in
+// pixels round the hit point.
+const ICE_SHARDS = (() => {
+  const r = rng(7);
+  return Array.from({ length: 12 }, (_, k) => {
+    const a = (k / 12) * Math.PI * 2 + (r() - 0.5) * 0.4;
+    const d = 60 + r() * 60;
+    return { dx: Math.cos(a) * d, dy: Math.sin(a) * d + 20, rot: (r() - 0.5) * 480, s: 4 + r() * 5 };
+  });
+})();
+
+function IceShatter({ x, y }) {
+  return (
+    <svg className="mg-shatter" style={{ left: x, top: y }} viewBox="-130 -130 260 260" aria-hidden="true">
+      <circle className="mg-shatter__flash" r="18" fill="#fff" />
+      {ICE_SHARDS.map(({ dx, dy, rot, s }, k) => (
+        <polygon
+          key={k}
+          className="mg-shatter__shard"
+          points={`0,${(-s).toFixed(1)} ${(s * 0.5).toFixed(1)},${(s * 0.4).toFixed(1)} ${(-s * 0.4).toFixed(1)},${(s * 0.6).toFixed(1)}`}
+          fill={s > 6 ? '#e0f2fe' : '#7dd3fc'}
+          stroke="#fff"
+          strokeWidth="0.6"
+          style={{ '--dx': `${dx.toFixed(1)}px`, '--dy': `${dy.toFixed(1)}px`, '--rot': `${rot.toFixed(0)}deg` }}
+        />
+      ))}
     </svg>
   );
 }
@@ -96,14 +179,6 @@ function BombIcon() {
 // Lightning in the style of 2D anime effects: each bolt is a solid shape, wide at its root and sharp at its tip, with a
 // white core, a cyan body and a blue glow. A bolt keeps a few shapes ("poses") and flips between them every few frames
 // so it seems to boil.
-function rng(seed) {
-  return () => {
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 // The centre line of a bolt from (x1, y1) to (x2, y2), kinked `kinks` times, each kink thrown sideways up to `jag` of
 // the length.
@@ -228,106 +303,9 @@ function BadgeBolt() {
   );
 }
 
-// A zapped balloon's shock and exit, drawn in the balloon art's own space (120 x 172) so everything sits right on the
-// envelope's outline. The surge crackles are in the skill tube's style (cyan and yellow, white core, a small white
-// fork pointing out), three per pose at different places on the edge, while the art flickers in x-ray. Then, while
-// the art implodes (see .mg-rider--zapped), a four-point star twinkles in the envelope's middle, inside a yellow ring
-// that spreads and fades.
-const ENVELOPE_CURVES = [
-  [[60, 6], [98, 6], [114, 34], [112, 62]],
-  [[112, 62], [110, 90], [86, 108], [74, 118]],
-  [[46, 118], [34, 108], [10, 90], [8, 62]],
-  [[8, 62], [6, 34], [22, 6], [60, 6]],
-];
-// points round the envelope's outline (the flat mouth at the bottom is skipped), clockwise from the top
-const ENVELOPE_RIM = ENVELOPE_CURVES.flatMap(([p0, p1, p2, p3]) =>
-  Array.from({ length: 12 }, (_, k) => {
-    const t = k / 12;
-    const u = 1 - t;
-    const f = (i) => u * u * u * p0[i] + 3 * u * u * t * p1[i] + 3 * u * t * t * p2[i] + t * t * t * p3[i];
-    return [f(0), f(1)];
-  })
-);
-const ENVELOPE_MID = [60, 64];
-
-function rimSpine(start, seed) {
-  const r = rng(seed);
-  return Array.from({ length: 8 }, (_, k) => {
-    const [x, y] = ENVELOPE_RIM[(start + k) % ENVELOPE_RIM.length];
-    const len = Math.hypot(x - ENVELOPE_MID[0], y - ENVELOPE_MID[1]);
-    const d = k === 0 || k === 7 ? 0 : (r() * 2 - 1) * 2.6;
-    return [x + ((x - ENVELOPE_MID[0]) / len) * d, y + ((y - ENVELOPE_MID[1]) / len) * d];
-  });
-}
-
-const ZAP_POSES = [0, 1, 2].map((p) =>
-  [0, 1, 2].map((k) => {
-    const spine = rimSpine((k * 16 + p * 6 + 3) % ENVELOPE_RIM.length, 41 + p * 5 + k);
-    const [mx, my] = spine[3];
-    const len = Math.hypot(mx - ENVELOPE_MID[0], my - ENVELOPE_MID[1]);
-    const ux = (mx - ENVELOPE_MID[0]) / len;
-    const uy = (my - ENVELOPE_MID[1]) / len;
-    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 5 - uy * 2.5).toFixed(1)} ${(uy * 5 + ux * 2.5).toFixed(1)} l${(ux * 3.5 + uy * 2.5).toFixed(1)} ${(uy * 3.5 - ux * 2.5).toFixed(1)}`;
-    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork, w: 4.4 };
-  })
-);
-
-// the final, big surge: six thicker crackles all round the edge per pose
-const ZAP_BIG_POSES = [0, 1, 2].map((p) =>
-  Array.from({ length: 6 }, (_, k) => {
-    const spine = rimSpine((k * 8 + p * 3) % ENVELOPE_RIM.length, 91 + p * 9 + k);
-    const [mx, my] = spine[3];
-    const len = Math.hypot(mx - ENVELOPE_MID[0], my - ENVELOPE_MID[1]);
-    const ux = (mx - ENVELOPE_MID[0]) / len;
-    const uy = (my - ENVELOPE_MID[1]) / len;
-    const fork = `M${mx.toFixed(1)} ${my.toFixed(1)} l${(ux * 6 - uy * 3).toFixed(1)} ${(uy * 6 + ux * 3).toFixed(1)} l${(ux * 4 + uy * 3).toFixed(1)} ${(uy * 4 - ux * 3).toFixed(1)}`;
-    return { spine, color: (k + p) % 2 ? 'yellow' : 'cyan', fork, w: 5.2 };
-  })
-);
-
-// the envelope's outline as one open path, mouth to mouth, for the sparks that race round it
-const ENVELOPE_RIM_PATH = 'M74 118 C86 108 110 90 112 62 C114 34 98 6 60 6 C22 6 6 34 8 62 C10 90 34 108 46 118';
-const ENVELOPE_PATH = `${ENVELOPE_RIM_PATH} Z`;
-
-// The skill tube's full-charge electricity, played on the balloon for 0.42 s as a charge-up: two sparks with tails
-// (cyan and yellow) race round the outline faster and faster, two small surges (a white flash, a burst of edge
-// crackles and a ring rippling out) build to one big surge with more crackles, a brighter flash and a wider ripple.
-function ShockAura() {
-  return (
-    <svg className="mg-aura" viewBox="0 0 120 172" aria-hidden="true">
-      <g className="mg-aura__run" fill="none" strokeLinecap="round">
-        <path d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#67e8f9" strokeWidth="5" strokeDasharray="12 88" opacity="0.55" />
-        <path className="mg-aura__head" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fff" strokeWidth="3.6" strokeDasharray="2 98" />
-        <path className="mg-aura__run-b" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fde047" strokeWidth="5" strokeDasharray="12 88" opacity="0.55" />
-        <path className="mg-aura__head mg-aura__run-b" d={ENVELOPE_RIM_PATH} pathLength="100" stroke="#fff" strokeWidth="3.6" strokeDasharray="2 98" />
-      </g>
-      <path className="mg-aura__flash" d={ENVELOPE_PATH} fill="#fff" />
-      <ellipse className="mg-aura__ripple" cx={ENVELOPE_MID[0]} cy={ENVELOPE_MID[1]} rx="56" ry="60" fill="none" stroke="#67e8f9" strokeWidth="3" />
-      <g className="mg-aura__surge">
-        {ZAP_POSES.map((bolts, k) => (
-          <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.04}s` }}>
-            {bolts.map((b, j) => (
-              <EdgeBolt key={j} {...b} />
-            ))}
-          </g>
-        ))}
-      </g>
-      <g className="mg-aura__big">
-        {ZAP_BIG_POSES.map((bolts, k) => (
-          <g key={k} className="mg-aura__pose" style={{ animationDelay: `${k * 0.04}s` }}>
-            {bolts.map((b, j) => (
-              <EdgeBolt key={j} {...b} />
-            ))}
-          </g>
-        ))}
-      </g>
-      <g transform={`translate(${ENVELOPE_MID[0]} ${ENVELOPE_MID[1]})`}>
-        <circle className="mg-aura__ring" r="50" fill="none" stroke="#fde047" strokeWidth="3" />
-        <polygon className="mg-aura__star" points="0,-34 5,-5 34,0 5,5 0,34 -5,5 -34,0 -5,-5" fill="#f0fdff" stroke="#22d3ee" strokeWidth="2" strokeLinejoin="round" />
-      </g>
-    </svg>
-  );
-}
+// the middle of the balloon's envelope, as a share of the art's height (the art is 120 x 172; the envelope is centred
+// at (60, 64))
+const ENVELOPE_MID = 64 / 172;
 
 function buildQuestions() {
   return sample(CLUES, ROUNDS).map((c, i) => {
@@ -342,21 +320,41 @@ function buildQuestions() {
   });
 }
 
-function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial }) {
+function Round({ q, duration, ult, fire, staffAt, onHit, onWrong, onMiss, onSpecial }) {
   const [state, setState] = useState({});
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const riders = useRef({});
+  const [portal, setPortal] = useState(null);
+  const [strikes, setStrikes] = useState({});
   const done = useRef(false);
   const [flyerGone, setFlyerGone] = useState(false);
   const flyerShot = useRef(false);
   const delays = useMemo(() => shuffle([0, 0.35, 0.7, 1.05]).map((d) => d + Math.random() * 0.25), []);
   const flyer = useMemo(() => ({ top: 10 + Math.random() * 24, delay: 1 + Math.random() * 1.5, rev: Math.random() < 0.5 }), []);
 
+  // the ATP ultimate marks two wrong balloons at once, and ULT_STRIKE s later a bolt from the sky rune's lower small
+  // circles hits each (the left balloon from the left circle), measured then since they keep falling; a balloon not
+  // yet below its circle is struck straight down from the top of the sky instead
   useEffect(() => {
-    if (!assisted) return;
-    setState((s) => {
-      const wrong = q.options.filter((o) => o !== q.answer && !s[o]).slice(0, 2);
-      return { ...s, ...Object.fromEntries(wrong.map((o) => [o, 'zapped'])) };
-    });
-  }, [assisted, q]);
+    if (!ult) return undefined;
+    const wrong = q.options.filter((o) => o !== q.answer && !stateRef.current[o]).slice(0, 2);
+    setState((s) => ({ ...s, ...Object.fromEntries(wrong.map((o) => [o, 'ult'])) }));
+    const timer = setTimeout(() => {
+      const hit = wrong
+        .map((o) => {
+          const r = riders.current[o]?.querySelector('.mg-rider__balloon')?.getBoundingClientRect();
+          return r && { o, x: r.left + r.width / 2, y: r.top + r.height * ENVELOPE_MID };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.x - b.x);
+      const from = hit.length === 1 ? [ult.sats[hit[0].x < ult.mid ? 0 : 1]] : ult.sats;
+      const start = ([x, y], h) => (h.y > y + 40 ? [x - h.x, y - h.y] : [0, ult.top - h.y]);
+      setStrikes(Object.fromEntries(hit.map((h, k) => [h.o, { from: start(from[k], h), blue: k === 1 }])));
+      setState((s) => ({ ...s, ...Object.fromEntries(hit.map((h) => [h.o, 'struck'])) }));
+    }, ULT_STRIKE * 1000);
+    return () => clearTimeout(timer);
+  }, [ult, q]);
 
   const shoot = (el, opt) => {
     if (done.current || state[opt]) return;
@@ -385,6 +383,9 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
       {q.options.map((opt, k) => (
         <button
           key={opt}
+          ref={(el) => {
+            riders.current[opt] = el;
+          }}
           type="button"
           className={`mg-rider${state[opt] ? ` mg-rider--${state[opt]}` : ''}`}
           style={{ '--lane': k, '--dur': `${duration}s`, '--delay': `${delays[k]}s` }}
@@ -394,11 +395,12 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
           }}
           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && shoot(e.currentTarget, opt)}
           onAnimationEnd={(e) => landed(e, opt)}
-          disabled={['good', 'bad', 'gone', 'zapped'].includes(state[opt])}
+          disabled={['good', 'bad', 'gone', 'ult', 'struck', 'bombed'].includes(state[opt])}
         >
           <span className="mg-rider__balloon">
             <AirshipArt />
-            {state[opt] === 'zapped' && <ShockAura />}
+            {state[opt] === 'struck' && strikes[opt] && <UltStrike {...strikes[opt]} />}
+            {state[opt] === 'bombed' && portal && <FirePortal {...portal} />}
           </span>
           <span className="mg-rider__banner" lang="en">{opt}</span>
         </button>
@@ -414,14 +416,21 @@ function Round({ q, duration, assisted, fire, onHit, onWrong, onMiss, onSpecial 
             flyerShot.current = true;
             fire(e.currentTarget, (x, y) => {
               setFlyerGone(true);
-              // the bomb blows away one wrong balloon that is still in play
-              if (q.special === 'bomb') {
-                setState((st) => {
-                  const wrong = q.options.find((o) => o !== q.answer && !st[o]);
-                  return wrong ? { ...st, [wrong]: 'gone' } : st;
-                });
+              // the bomb's fire rune flies from the staff to one wrong balloon that is still in play and burns it
+              // away; the blast is reported where that balloon is
+              const wrong = q.special === 'bomb' && q.options.find((o) => o !== q.answer && !stateRef.current[o]);
+              const art = wrong && riders.current[wrong]?.querySelector('.mg-rider__balloon');
+              if (art) {
+                const r = art.getBoundingClientRect();
+                const cx = r.left + r.width / 2;
+                const cy = r.top + r.height * ENVELOPE_MID;
+                const [sx, sy] = staffAt();
+                setPortal({ from: [sx - cx, sy - cy], lift: cy - r.top + 20 });
+                setState((st) => ({ ...st, [wrong]: 'bombed' }));
+                onSpecial(q.special, cx, cy);
+              } else {
+                onSpecial(q.special, x, y);
               }
-              onSpecial(q.special, x, y);
             });
           }}
           aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: blows away one wrong balloon'}
@@ -441,10 +450,17 @@ export default function BalloonPop({ onScore, onFinish }) {
     i: 0, right: 0, lives: LIVES, atp: 0, over: false, mistakes: [],
   });
   const [, rerender] = useReducer((x) => x + 1, 0);
-  const [assistFor, setAssistFor] = useState(-1);
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
-  // The wizard's last move ('cast' = fireball, 'atp' = ATP skill); n remounts him so the animation replays.
+  const [shatter, setShatter] = useState(null);
+  // the skills on screen: the runes rising round the wizard, the ice sky rune, and the ATP ultimate (with the round
+  // it was used in); each carries n so a new cast replays its animation (several start in the same millisecond, so
+  // their keys also name the effect)
+  const [rising, setRising] = useState(null);
+  const [sigil, setSigil] = useState(null);
+  const [ult, setUlt] = useState(null);
+  // The wizard's last move ('cast' = fireball, 'ice' / 'fire' = casting that skill, 'ult' = the ATP ultimate); n
+  // remounts him so the animation replays.
   const [wizardMove, setWizardMove] = useState({ n: 0, kind: '' });
   const skyRef = useRef(null);
   const wizardRef = useRef(null);
@@ -479,6 +495,24 @@ export default function BalloonPop({ onScore, onFinish }) {
         rerender();
       }
     }, 1000);
+
+  // where the staff's orb is, in the page
+  const staffAt = () => {
+    const box = skyRef.current.getBoundingClientRect();
+    const orb = wizardRef.current?.querySelector('.mg-wizard__orb')?.getBoundingClientRect();
+    return orb ? [orb.left + orb.width / 2, orb.top + orb.height / 2] : [box.left + box.width / 2, box.bottom - 90];
+  };
+
+  // The wizard raises his staff to cast a skill and his orb takes its colour; for the ultimate, runes rise round him.
+  const castSkill = (kind) => {
+    const box = skyRef.current?.getBoundingClientRect();
+    const wiz = wizardRef.current?.getBoundingClientRect();
+    setWizardMove((m) => ({ n: m.n + 1, kind: kind === 'volt' ? 'ult' : kind }));
+    if (kind === 'volt' && box && wiz) {
+      setRising({ n: Date.now(), x: wiz.left + wiz.width * 0.46 - box.left });
+      later(() => setRising(null), ULT_LENGTH * 1000);
+    }
+  };
 
   const loseLife = () => {
     s.lives -= 1;
@@ -567,39 +601,70 @@ export default function BalloonPop({ onScore, onFinish }) {
     if (kind === 'ice') {
       fx.sound('pop');
       fx.sound('freeze');
-      fx.burst(x, y, 24, ICE);
+      // the orb shatters, the wizard casts, and his ice rune flies up behind the balloons and opens across the sky
+      const sky = skyRef.current?.getBoundingClientRect();
+      if (sky) {
+        setShatter({ n: Date.now(), x: x - sky.left, y: y - sky.top });
+        later(() => setShatter(null), 1000);
+        const [sx, sy] = staffAt();
+        setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, sky.height * 0.38], d: sky.width * 0.88 });
+        later(() => setSigil(null), (ICE_FREEZE + 2.6) * 1000);
+      }
+      castSkill('ice');
       fx.say('Ice spell! Everything falls slower ❄️', 'wow');
       const setRate = (rate) =>
         skyRef.current?.getAnimations({ subtree: true }).forEach((a) => {
           if (a.animationName === 'mg-fall') a.playbackRate = rate;
         });
-      setRate(0.35);
-      setFrozen(true);
       later(() => {
-        setRate(1);
-        setFrozen(false);
-      }, 3500);
+        setRate(0.35);
+        setFrozen(true);
+        later(() => {
+          setRate(1);
+          setFrozen(false);
+        }, 3500);
+      }, ICE_FREEZE * 1000);
     } else {
-      fx.sound('boom');
-      fx.vibrate([80, 40, 80]);
-      fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
-      fx.float(x, y, '💥');
+      castSkill('fire');
       fx.say('Boom! The bomb blew away a wrong balloon 💥', 'wow');
-      setShake(true);
-      later(() => setShake(false), 500);
+      // the blast lands when the fire pillar hits the balloon (see FirePortal)
+      later(() => {
+        fx.sound('boom');
+        fx.vibrate([80, 40, 80]);
+        fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
+        setShake(true);
+        later(() => setShake(false), 500);
+      }, BOMB_FUSE * 1000);
     }
   };
 
-  // The two wrong balloons the power removes get a cartoon electric shock (see .mg-rider--zapped).
+  // The ATP ultimate, Heaven's seal: the sky darkens, the wizard's lightning rune opens high in the sky and two bolts
+  // come down on two wrong balloons (UltSky here, UltStrike in the balloons).
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
+    const box = skyRef.current?.getBoundingClientRect();
+    if (!box) return;
     s.atp = 0;
-    setWizardMove((m) => ({ n: m.n + 1, kind: 'atp' }));
+    castSkill('volt');
+    const [sx, sy] = staffAt();
+    const r = Math.min(box.width * 0.42, 150);
+    const at = [box.width / 2, box.height * 0.2];
+    // the rune's two lower small circles, in the page, left then right
+    const sat = (i) => [box.left + at[0] + (VOLT_SATELLITES[i][0] * r) / 50, box.top + at[1] + (VOLT_SATELLITES[i][1] * r) / 50];
+    setUlt({ n: Date.now(), round: s.i, from: [sx - box.left, sy - box.top], at, d: r * 2, sats: [sat(3), sat(2)], mid: box.left + at[0], top: box.top });
+    later(() => setUlt(null), ULT_LENGTH * 1000);
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
-    setAssistFor(s.i);
-    fx.sound('pop');
     fx.vibrate(40);
+    later(() => {
+      fx.sound('boom');
+      fx.vibrate([60, 30, 60]);
+      later(() => {
+        fx.sound('pop');
+        setShake(true);
+        later(() => setShake(false), 500);
+      }, ULT_POP * 1000);
+    }, ULT_STRIKE * 1000);
     rerender();
   };
 
@@ -632,19 +697,25 @@ export default function BalloonPop({ onScore, onFinish }) {
         <CastleArt layer="near" />
         <div className="mg-sky__haze" aria-hidden="true" />
         <SkyClouds />
+        {ult && <UltSky key={`ult${ult.n}`}from={ult.from} at={ult.at} d={ult.d} />}
+        {ult && <div key={`flash${ult.n}`} className="mg-ult-flash" aria-hidden="true" />}
+        {sigil && <IceSigil key={`sigil${sigil.n}`}from={sigil.from} to={sigil.to} d={sigil.d} />}
         {!s.over && (
           <Round
             key={s.i}
             q={q}
             duration={duration}
-            assisted={assistFor === s.i}
+            ult={ult?.round === s.i ? ult : null}
             fire={fire}
+            staffAt={staffAt}
             onHit={hit}
             onWrong={wrong}
             onMiss={miss}
             onSpecial={special}
           />
         )}
+        {shatter && <IceShatter key={`shatter${shatter.n}`}x={shatter.x} y={shatter.y} />}
+        {rising && <RisingRunes key={`rising${rising.n}`} x={rising.x} />}
         <div className="mg-castle" aria-hidden="true" />
         <div ref={wizardRef} key={`wizard${wizardMove.n}`} className={`mg-wizard${wizardMove.kind ? ` mg-wizard--${wizardMove.kind}` : ''}`} aria-hidden="true">
           <WizardArt />
