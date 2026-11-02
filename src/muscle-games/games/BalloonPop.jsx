@@ -40,7 +40,7 @@ const COLORS = [
   ['#4fa5e0', '#2f78ad'],
   ['#f2954a', '#c46c27'],
 ];
-const SWING_AT = 180; // ms into the cast animation when the staff swings forward
+const SWING_AT = 280; // ms into the cast animation when the staff swings forward
 const FIRE_FLIGHT = 200;
 const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
 const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];

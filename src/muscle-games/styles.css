@@ -696,13 +696,19 @@
   transform: translateX(-62%); filter: drop-shadow(0 0 8px rgba(196, 181, 253, 0.45));
 }
 .mg-root .mg-wizard svg { width: 100%; height: 100%; overflow: visible; }
-.mg-wizard__arm { transform-box: view-box; transform-origin: 160px 170px; }
+.mg-wizard__arm { transform-box: view-box; transform-origin: 130px 140px; }
+.mg-wizard__staff { transform-box: view-box; transform-origin: 160px 170px; }
 .mg-wizard__glow { transform-box: fill-box; transform-origin: center; }
-/* Cast: raise the staff high, then swing it forward; only the orb flashes red. */
-.mg-wizard--cast .mg-wizard__arm { animation: mg-staff-swing 0.45s ease-out; }
-.mg-wizard--cast .mg-wizard__orb { animation: mg-orb-red 0.45s ease-out; }
-.mg-wizard--cast .mg-wizard__glow { animation: mg-orb-aura 0.45s ease-out; }
-@keyframes mg-staff-swing { 20% { transform: translateY(-40px) rotate(10deg); } 40% { transform: translateY(-26px) rotate(-26deg); } }
+/* Idle: the arm breathes gently at the shoulder. Cast: a small wind-up, the arm lifts the staff, the staff swings
+   forward on the hand, then both overshoot a little and settle (SWING_AT in BalloonPop.jsx = the forward swing). */
+.mg-wizard .mg-wizard__arm { animation: mg-arm-idle 3.2s ease-in-out infinite; }
+.mg-wizard--cast .mg-wizard__arm { animation: mg-arm-cast 0.5s ease-in-out; }
+.mg-wizard--cast .mg-wizard__staff { animation: mg-staff-swing 0.5s ease-in-out; }
+.mg-wizard--cast .mg-wizard__orb { animation: mg-orb-red 0.5s ease-out; }
+.mg-wizard--cast .mg-wizard__glow { animation: mg-orb-aura 0.5s ease-out; }
+@keyframes mg-arm-idle { 50% { transform: rotate(-2.5deg); } }
+@keyframes mg-arm-cast { 16% { transform: rotate(7deg); } 42% { transform: rotate(-42deg); } 58% { transform: rotate(-32deg); } 80% { transform: rotate(3deg); } }
+@keyframes mg-staff-swing { 16% { transform: rotate(6deg); } 42% { transform: rotate(12deg); } 58% { transform: rotate(-26deg); } 80% { transform: rotate(4deg); } }
 @keyframes mg-orb-red { 8%, 70% { fill: #e0322b; } }
 @keyframes mg-orb-aura { 20%, 45% { fill: #e0322b; opacity: 0.45; transform: scale(1.5); } }
 .mg-fireball {
