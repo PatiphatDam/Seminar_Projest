@@ -450,7 +450,8 @@ export default function BalloonPop({ onScore, onFinish }) {
   const [assistFor, setAssistFor] = useState(-1);
   const [frozen, setFrozen] = useState(false);
   const [shake, setShake] = useState(false);
-  const [casting, setCasting] = useState(0);
+  // The wizard's last move ('cast' = fireball, 'atp' = ATP skill); n remounts him so the animation replays.
+  const [wizardMove, setWizardMove] = useState({ n: 0, kind: '' });
   const skyRef = useRef(null);
   const wizardRef = useRef(null);
   const timers = useRef([]);
@@ -499,7 +500,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     if (!sky || !el) return;
     const aim = (r) => [r.left + r.width / 2, r.top + Math.min(r.height / 2, 40)];
     let [tx, ty] = aim(el.getBoundingClientRect());
-    setCasting((c) => c + 1);
+    setWizardMove((m) => ({ n: m.n + 1, kind: 'cast' }));
     later(() => {
       const box = sky.getBoundingClientRect();
       if (el.isConnected) [tx, ty] = aim(el.getBoundingClientRect());
@@ -602,6 +603,7 @@ export default function BalloonPop({ onScore, onFinish }) {
   const fireAtp = () => {
     if (s.atp < ATP_MAX || s.over) return;
     s.atp = 0;
+    setWizardMove((m) => ({ n: m.n + 1, kind: 'atp' }));
     fx.sound('power');
     fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
     setAssistFor(s.i);
@@ -650,7 +652,7 @@ export default function BalloonPop({ onScore, onFinish }) {
           />
         )}
         <div className="mg-castle" aria-hidden="true" />
-        <div ref={wizardRef} key={`wizard${casting}`} className={`mg-wizard${casting ? ' mg-wizard--cast' : ''}`} aria-hidden="true">
+        <div ref={wizardRef} key={`wizard${wizardMove.n}`} className={`mg-wizard${wizardMove.kind ? ` mg-wizard--${wizardMove.kind}` : ''}`} aria-hidden="true">
           <WizardArt />
         </div>
         {/* fighting-game gauge: three blood-vessel life bars over the ATP storage tube, which is tapped once full */}

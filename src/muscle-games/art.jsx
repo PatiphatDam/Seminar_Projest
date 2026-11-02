@@ -367,7 +367,7 @@ export function MusclePoster() {
 const W = {
   cloak: '#2c56b8', shade: '#1f3f8a', deep: '#122658', inner: '#5a4aa0', innerDark: '#463a82',
   gold: '#e6bd5c', goldDark: '#a8782a', leather: '#8a5a32', leatherDark: '#6b4325', star: '#f7d36a',
-  beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150', shaftLight: '#a9b1c2', orb: '#e0efff',
+  beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150', shaftLight: '#a9b1c2',
 };
 // Four-point star and crescent outlines, joined into one path each so the pattern costs a single element.
 const starPath = (x, y, r) =>
@@ -381,6 +381,7 @@ const CLOAK_STARS = [[80, 214, 3.4], [144, 226, 3], [68, 238, 2.4], [134, 242, 2
 const CLOAK_MOONS = moonPath(136, 196, 5) + moonPath(127, 168, 3.6);
 const HEM_CURLS = [[58, 246], [72, 250], [138, 251], [146, 246]].map(([x, y]) => curlPath(x, y)).join('');
 const ORB_SPARKS = starPath(147, 38, 2.2) + starPath(176, 66, 1.8);
+const ORB_GLINT = starPath(153.6, 46, 2.2);
 // a gold vine wound round the staff: a sine wave along the shaft
 const VINE = Array.from({ length: 28 }, (_, i) => {
   const y = 96 + i * 2;
@@ -401,6 +402,30 @@ const SHAFT_STREAKS = [80, 104, 128, 152, 176, 200, 224].map((y) => `M158.6 ${y}
 export function WizardShapes() {
   return (
     <>
+      <defs>
+        <linearGradient id="mg-orb-white" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#aab1cd" />
+          <stop offset=".5" stopColor="#e3e6f4" />
+          <stop offset=".85" stopColor="#fafaff" />
+          <stop offset="1" stopColor="#fff" />
+        </linearGradient>
+        <linearGradient id="mg-orb-red" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#8f1a1f" />
+          <stop offset=".5" stopColor="#e0322b" />
+          <stop offset=".85" stopColor="#ff8f7e" />
+          <stop offset="1" stopColor="#ffd2c9" />
+        </linearGradient>
+        <linearGradient id="mg-orb-atp" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#0b7fc4" />
+          <stop offset=".45" stopColor="#38d6f5" />
+          <stop offset=".8" stopColor="#fde68a" />
+          <stop offset="1" stopColor="#facc15" />
+        </linearGradient>
+        <radialGradient id="mg-orb-shade" cx=".42" cy=".38" r=".64">
+          <stop offset=".55" stopColor="#2e3358" stopOpacity="0" />
+          <stop offset="1" stopColor="#2e3358" stopOpacity=".45" />
+        </radialGradient>
+      </defs>
       {/* cloak, shaded on the left, with folds on the lit cloth */}
       <path d={CLOAK + HOOD + HOOD_TIP} fill={W.deep} stroke={W.deep} strokeWidth={OUTLINE} strokeLinejoin="round" />
       <path d={CLOAK} fill={W.cloak} />
@@ -442,17 +467,26 @@ export function WizardShapes() {
       <path d="M104 123Q102 136 106 148M112 123Q114 134 110 146" stroke={W.beardLine} strokeWidth="1.5" fill="none" strokeLinecap="round" />
       <g className="mg-wizard__arm">
         <g className="mg-wizard__staff">
-        <circle className="mg-wizard__glow" cx="161" cy="54" r="25" fill="#a78bfa" opacity=".22" />
+        <circle className="mg-wizard__glow" cx="161" cy="54" r="25" fill="#c4b5fd" opacity=".2" />
         <path d="M158 66H163L162.6 240L160.5 250L158.4 240Z" fill={W.shaft} />
         <path d={SHAFT_STREAKS} stroke={W.shaftLight} strokeWidth="1.2" opacity=".7" />
         <path d="M157 232Q160.5 240 157.5 248L160.5 262L163.5 248Q161 240 164 232Q160.5 236 157 232Z" fill={W.gold} />
         <path d={VINE} stroke={W.gold} strokeWidth="1.8" fill="none" strokeLinecap="round" />
         <path d="M155.5 94.5a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 124a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 152a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0Z" fill={W.gold} />
         <path d="M157 76Q146 74 141 64Q150 70 158 71ZM164 76Q175 74 180 64Q171 70 163 71Z" fill={W.gold} />
-        <circle cx="161" cy="54" r="17" fill="#93c5fd" opacity=".25" />
-        <circle className="mg-wizard__orb" cx="161" cy="54" r="12" fill={W.orb} />
-        <circle cx="161" cy="54" r="7.4" fill="#a5c8ff" opacity=".8" />
-        <circle cx="158" cy="50.5" r="3" fill="#fff" />
+        <circle cx="161" cy="54" r="17" fill="#ece9ff" opacity=".18" />
+        <circle className="mg-wizard__ring" cx="161" cy="54" r="12" fill="none" stroke="#67e8f9" strokeWidth="2" opacity="0" />
+        {/* a glossy pearl: white, darker at the top and lighter at the bottom; red (cast) and cyan-to-yellow (ATP)
+            layers fade in over it, then the edge shading, the bounce light and the highlights sit on top */}
+        <circle className="mg-wizard__orb" cx="161" cy="54" r="12" fill="url(#mg-orb-white)" />
+        <circle className="mg-wizard__orb-red" cx="161" cy="54" r="12" fill="url(#mg-orb-red)" opacity="0" />
+        <circle className="mg-wizard__orb-atp" cx="161" cy="54" r="12" fill="url(#mg-orb-atp)" opacity="0" />
+        <circle cx="161" cy="54" r="12" fill="url(#mg-orb-shade)" />
+        <ellipse cx="161" cy="61.6" rx="7" ry="2.4" fill="#fff" opacity=".5" />
+        <ellipse cx="156.6" cy="48.6" rx="4.6" ry="3" transform="rotate(-35 156.6 48.6)" fill="#fff" opacity=".95" />
+        <circle cx="166" cy="49" r="1.3" fill="#fff" />
+        <circle cx="163.6" cy="57.4" r=".8" fill="#fff" opacity=".9" />
+        <path d={ORB_GLINT} fill="#fff" />
         <path d={ORB_SPARKS} fill={W.star} />
         <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
         <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />

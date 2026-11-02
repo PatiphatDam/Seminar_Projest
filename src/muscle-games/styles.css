@@ -331,10 +331,10 @@
 @keyframes mg-bc-spark { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); } }
 .mg-bc-redglow, .mg-bc-fire { opacity: 0; }
 .mg-is-preview .mg-bc-redglow { animation: mg-bc-red 2.4s ease-out infinite; }
-.mg-is-preview .mg-bc .mg-wizard__orb { animation: mg-bc-orb 2.4s ease-out infinite; }
+.mg-is-preview .mg-bc .mg-wizard__orb-red { animation: mg-bc-orb 2.4s ease-out infinite; }
 .mg-is-preview .mg-bc-fire { animation: mg-bc-fire 2.4s ease-in infinite; }
 @keyframes mg-bc-red { 0%, 2% { opacity: 0; } 6%, 26% { opacity: 1; } 36%, 100% { opacity: 0; } }
-@keyframes mg-bc-orb { 0%, 2% { fill: #fff; } 6%, 26% { fill: #e0322b; } 36%, 100% { fill: #fff; } }
+@keyframes mg-bc-orb { 0%, 2% { opacity: 0; } 6%, 26% { opacity: 1; } 36%, 100% { opacity: 0; } }
 @keyframes mg-bc-fire { 0%, 8% { opacity: 0; transform: translate(0, 0); } 10% { opacity: 1; } 28% { opacity: 1; transform: translate(97px, -38px); } 30%, 100% { opacity: 0; transform: translate(97px, -38px); } }
 @keyframes mg-pv-zoom { 0%, 100% { transform: scale(1); } 35%, 65% { transform: scale(1.45); } }
 @keyframes mg-pv-snap { 0%, 30% { opacity: 1; transform: translate(0, 0); } 55%, 80% { opacity: 1; transform: translate(-118px, -58px); } 90%, 100% { opacity: 0; transform: translate(-118px, -58px); } }
@@ -704,12 +704,28 @@
 .mg-wizard .mg-wizard__arm { animation: mg-arm-idle 3.2s ease-in-out infinite; }
 .mg-wizard--cast .mg-wizard__arm { animation: mg-arm-cast 0.5s ease-in-out; }
 .mg-wizard--cast .mg-wizard__staff { animation: mg-staff-swing 0.5s ease-in-out; }
-.mg-wizard--cast .mg-wizard__orb { animation: mg-orb-red 0.5s ease-out; }
+.mg-wizard--cast .mg-wizard__orb-red { animation: mg-orb-red 0.5s ease-out; }
 .mg-wizard--cast .mg-wizard__glow { animation: mg-orb-aura 0.5s ease-out; }
 @keyframes mg-arm-idle { 50% { transform: rotate(-2.5deg); } }
 @keyframes mg-arm-cast { 16% { transform: rotate(7deg); } 42% { transform: rotate(-42deg); } 58% { transform: rotate(-32deg); } 80% { transform: rotate(3deg); } }
 @keyframes mg-staff-swing { 16% { transform: rotate(6deg); } 42% { transform: rotate(12deg); } 58% { transform: rotate(-26deg); } 80% { transform: rotate(4deg); } }
-@keyframes mg-orb-red { 8%, 70% { fill: #e0322b; } }
+@keyframes mg-orb-red { 8%, 70% { opacity: 1; } }
+/* ATP skill: the arm lifts and the staff stays upright, held high; the pearl turns cyan to yellow, its glow pulses cyan and yellow and two rings
+   spread out from it. */
+.mg-wizard__ring { transform-box: fill-box; transform-origin: center; }
+.mg-wizard--atp .mg-wizard__arm { animation: mg-arm-power 1.4s ease-in-out; }
+.mg-wizard--atp .mg-wizard__staff { animation: mg-staff-power 1.4s ease-in-out; }
+.mg-wizard--atp .mg-wizard__orb-atp { animation: mg-orb-atp 1.4s ease-in-out; }
+.mg-wizard--atp .mg-wizard__glow { animation: mg-glow-atp 1.4s ease-in-out; }
+.mg-wizard--atp .mg-wizard__ring { animation: mg-orb-ring 0.7s ease-out 0.25s 2; }
+@keyframes mg-arm-power { 18%, 75% { transform: rotate(-32deg); } }
+@keyframes mg-staff-power { 18%, 75% { transform: rotate(28deg); } }
+@keyframes mg-orb-atp { 15%, 80% { opacity: 1; } }
+@keyframes mg-glow-atp {
+  15%, 55% { fill: #22d3ee; opacity: 0.5; transform: scale(1.6); }
+  35%, 75% { fill: #facc15; opacity: 0.5; transform: scale(1.9); }
+}
+@keyframes mg-orb-ring { 0% { opacity: 0.9; transform: scale(1); } 100% { opacity: 0; transform: scale(3); } }
 @keyframes mg-orb-aura { 20%, 45% { fill: #e0322b; opacity: 0.45; transform: scale(1.5); } }
 .mg-fireball {
   position: absolute; left: -5px; top: -5px; z-index: 8; width: 10px; height: 10px; border-radius: 50%; pointer-events: none;
