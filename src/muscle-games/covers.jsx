@@ -4,22 +4,38 @@ import { AirshipShapes, WizardShapes } from './art.jsx';
 // Animated cartoon scenes for the hub cards.
 // Idle loops run all the time; ".is-preview" on the cover plays a short gameplay preview.
 
-// Balloon Pop: the hooded sage close up, his orb glowing on the left, goblin balloons over the shadow castle.
+// Balloon Pop: the hooded sage close up, his orb glowing on the left, goblin balloons over the night castle.
 // Preview: the orb turns red, a fireball flies to the near balloon, it bursts and "+30" floats up.
-const BC_SKYLINE =
-  'M0 46h320v24H0z M0 40h8v6H0z M16 40h8v6h-8z M300 40h8v6h-8z M284 40h8v6h-8z ' +
-  'M20 46V22h20v24z M16 22L30 6l14 16z M60 46V16h30v30z M54 16L75 0l21 16z M120 46V6h40v40z M114 8l26-22 26 22z ' +
-  'M178 46v-70h24v70z M172-24l18-32 18 32z M224 46V18h40v28z M218 18l26-20 26 20z M286 46V24h20v22z M282 24l14-16 14 16z';
+// The backdrop is the game's night scene, simplified: a big moon, puffy clouds, a faded castle, a row of town houses
+// and the stone wall the wizard stands behind.
+const puff = (x, y, w) =>
+  `M${x} ${y}a${w * 0.18} ${w * 0.18} 0 0 1 ${w * 0.26} ${-w * 0.12}a${w * 0.22} ${w * 0.22} 0 0 1 ${w * 0.4} ${-w * 0.04}` +
+  `a${w * 0.17} ${w * 0.17} 0 0 1 ${w * 0.34} ${w * 0.16}z`;
+const BC_CLOUDS = [puff(4, 92, 74), puff(236, 124, 82), puff(150, 108, 60)];
+const BC_CASTLE =
+  'M34 170V104h16v66z M30 104l12-20 12 20z M246 170V98h18v72z M242 98l13-22 13 22z ' +
+  'M268 170v-36h40v36z M264 134l24-18 24 18z M92 170v-28h30v28z M88 142l19-14 19 14z';
+const BC_TOWN =
+  'M0 176v-26l14-12 14 12v26z M28 176v-20l16-12 16 12v20z M66 176v-30l12-10 12 10v30z ' +
+  'M232 176v-24l14-12 14 12v24z M258 176v-30l16-14 16 14v30z M290 176v-20l15-12 15 12v20z';
+const BC_WINDOWS = 'M8 156h5v6h-5z M38 162h5v5h-5z M72 154h5v6h-5z M240 160h5v6h-5z M266 156h5v6h-5z M280 156h5v6h-5z M298 162h5v5h-5z';
+const BC_MERLONS = Array.from({ length: 14 }, (_, k) => `M${k * 24} 172h14v6h-14z`).join(' ');
+const BC_BRICKS =
+  'M0 186H320M0 194H320 ' + Array.from({ length: 14 }, (_, k) => `M${k * 24 + 8} 178v8M${k * 24 + 20} 186v8`).join('');
 
 export function BalloonScene() {
   return (
     <svg viewBox="0 0 320 200" className="mg-scene mg-bc" aria-hidden="true">
       <defs>
         <linearGradient id="bc-night" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="hsl(245 55% 12%)" />
-          <stop offset=".6" stopColor="hsl(262 48% 24%)" />
-          <stop offset="1" stopColor="hsl(285 40% 34%)" />
+          <stop offset="0" stopColor="hsl(250 48% 15%)" />
+          <stop offset=".6" stopColor="hsl(262 45% 28%)" />
+          <stop offset="1" stopColor="hsl(272 40% 36%)" />
         </linearGradient>
+        <radialGradient id="bc-moon">
+          <stop offset=".4" stopColor="#fde68a" stopOpacity=".45" />
+          <stop offset="1" stopColor="#fde68a" stopOpacity="0" />
+        </radialGradient>
         <radialGradient id="bc-orb">
           <stop offset="0" stopColor="#fff" stopOpacity=".95" />
           <stop offset=".35" stopColor="#ffd9a8" stopOpacity=".55" />
@@ -46,17 +62,30 @@ export function BalloonScene() {
         </linearGradient>
       </defs>
       <rect width="320" height="200" fill="url(#bc-night)" />
-      <circle cx="300" cy="22" r="11" fill="#fde68a" opacity=".9" />
+      <circle cx="292" cy="30" r="30" fill="url(#bc-moon)" />
+      <circle cx="292" cy="30" r="15" fill="#fde68a" />
+      <circle cx="288" cy="26" r="9" fill="#fffbeb" opacity=".55" />
       <g fill="#fff">
         <circle cx="40" cy="22" r=".9" />
         <circle cx="170" cy="14" r="1.1" />
         <circle cx="250" cy="44" r=".8" />
         <circle cx="90" cy="60" r=".8" />
       </g>
+      <path d={BC_CASTLE} fill="hsl(262 24% 40%)" opacity=".55" />
       <g className="mg-sc-drift">
-        <path d="M10 66q8-10 18-4q8-8 18 0q10-3 12 6z" fill="hsl(258 28% 40%)" opacity=".55" />
+        {BC_CLOUDS.map((d) => (
+          <g key={d}>
+            <path d={d} fill="hsl(258 30% 42%)" />
+            <path d={d} fill="none" stroke="hsl(258 38% 64%)" strokeWidth="1.4" opacity=".7" />
+          </g>
+        ))}
       </g>
-      <path d={BC_SKYLINE} transform="translate(0 140)" fill="hsl(258 26% 20%)" opacity=".9" />
+      <path d={BC_TOWN} fill="hsl(258 26% 24%)" />
+      <path d={BC_WINDOWS} fill="hsl(258 22% 34%)" />
+      <path d={BC_MERLONS} fill="hsl(255 18% 34%)" />
+      <rect y="178" width="320" height="22" fill="hsl(255 18% 34%)" />
+      <path d={BC_BRICKS} stroke="hsl(255 20% 26%)" strokeWidth="1" />
+      <path d="M0 178.5H320" stroke="hsl(255 18% 46%)" strokeWidth="1" />
       <g className="mg-pv-pop">
         <g className="mg-sc-bob">
           <g transform="translate(208 16) scale(0.3167)">
