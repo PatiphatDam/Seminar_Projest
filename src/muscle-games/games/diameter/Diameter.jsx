@@ -153,8 +153,8 @@ export default function Diameter({ onScore, onFinish, fresh, runId, setExitRepor
   const [current, setCurrent] = useState(Math.min(saved?.current ?? 0, LEVELS.length - 1));
   const [clear, setClear] = useState(null);
   const s = st.current;
-  // Out of 10: right drops over every piece of all 6 stages plus every wrong drop (unplayed stages count against you).
-  const score = () => scoreOutOf10(s.right, TOTAL_PLACEMENTS + s.misses);
+  // Out of 10: right drops over every piece of all 6 stages (unplayed stages count against you). Wrong drops cost no points.
+  const score = () => scoreOutOf10(s.right, TOTAL_PLACEMENTS);
 
   const report = () => {
     const cleared = s.results.filter(Boolean).length;

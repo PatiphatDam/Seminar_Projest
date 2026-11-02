@@ -443,8 +443,8 @@ export default function BalloonPop({ onScore, onFinish }) {
   const fx = useFx();
   const questions = useMemo(buildQuestions, []);
   const st = useRef({
-    // right = clues answered right on the first try; each is worth 1 of the 10 points.
-    i: 0, right: 0, roundWrong: false, lives: LIVES, atp: 0, over: false, mistakes: [],
+    // right = clues answered right (a wrong tap first costs a heart, not the point); each is worth 1 of the 10 points.
+    i: 0, right: 0, lives: LIVES, atp: 0, over: false, mistakes: [],
   });
   const [, rerender] = useReducer((x) => x + 1, 0);
   const [assistFor, setAssistFor] = useState(-1);
@@ -470,7 +470,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     rerender();
     later(() => {
       onFinish(scoreOutOf10(s.right, ROUNDS), {
-        summary: `${s.right}/${ROUNDS} clues right on the first try`,
+        summary: `${s.right}/${ROUNDS} clues right`,
         mistakes: s.mistakes,
       });
     }, 1000);
@@ -482,7 +482,6 @@ export default function BalloonPop({ onScore, onFinish }) {
       if (s.lives <= 0 || s.i + 1 >= ROUNDS) end();
       else {
         s.i += 1;
-        s.roundWrong = false;
         rerender();
       }
     }, 1000);
@@ -536,21 +535,19 @@ export default function BalloonPop({ onScore, onFinish }) {
   };
 
   const hit = ({ x, y }) => {
-    const firstTry = !s.roundWrong;
-    if (firstTry) s.right += 1;
+    s.right += 1;
     s.atp = Math.min(ATP_MAX, s.atp + 1);
     onScore(scoreOutOf10(s.right, ROUNDS));
     fx.sound('pop');
     fx.sound('good');
     fx.burst(x, y, 16);
-    fx.float(x, y - 24, firstTry ? '+1' : '✓', 'good');
-    fx.say(s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : firstTry ? pick(PRAISE) : 'Got it, but no point this time', 'happy');
+    fx.float(x, y - 24, '+1', 'good');
+    fx.say(s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : pick(PRAISE), 'happy');
     rerender();
     nextRound();
   };
 
   const wrong = ({ opt, x, y }) => {
-    s.roundWrong = true;
     s.mistakes.push({ prompt: q.text, yours: opt, answer: q.answer });
     fx.sound('pop');
     fx.sound('bad');
@@ -686,7 +683,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         </div>
       </div>
       <p className="mg-legend">
-        🧙 Tap a balloon and the wizard zaps it · ✅ Right on the first try = 1 point · ❄️ Ice = slow motion · 💣 Bomb = removes 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
+        🧙 Tap a balloon and the wizard zaps it · ✅ Each right answer = 1 point · ❄️ Ice = slow motion · 💣 Bomb = removes 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
       </p>
     </section>
   );

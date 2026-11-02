@@ -45,8 +45,8 @@ export default function Memory({ onScore, onFinish }) {
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   const s = st.current;
 
-  // Out of 10: pairs found over every pair plus every wrong match (unfound pairs count against you).
-  const score = () => scoreOutOf10(s.found, TOTAL_PAIRS + s.misses);
+  // Out of 10: pairs found over all 18 pairs. Wrong matches cost time but no points.
+  const score = () => scoreOutOf10(s.found, TOTAL_PAIRS);
   const [left] = useCountdown(TIME, { running: !between && !over, onExpire: () => end(false) });
 
   useEffect(() => {
