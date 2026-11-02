@@ -386,13 +386,13 @@ const VINE = Array.from({ length: 28 }, (_, i) => {
   const y = 96 + i * 2;
   return `${i ? 'L' : 'M'}${(160.5 + 4 * Math.sin(i * 0.29 + 0.6)).toFixed(1)} ${y}`;
 }).join('');
-// Outer shapes, drawn twice: first as a wide gold stroke under everything, then filled on top, so only the outer
-// half of the stroke shows and the wizard gets one unbroken gold outline with no lines where the shapes meet.
+// Outer shapes, drawn twice: first as a wide dark stroke under everything, then filled on top, so only the outer
+// half of the stroke shows and the wizard gets one unbroken outline with no lines where the shapes meet.
 const CLOAK = 'M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 250Q144 200 136 150Q134 128 128 118Z';
 const HOOD = 'M82 136Q78 98 92 78Q104 64 118 66Q134 74 137 102Q139 122 134 136Q108 126 82 136Z';
 const HOOD_TIP = 'M112 67Q126 60 134 68Q138 74 145 79Q134 78 128 73Q121 70 116 72Z';
 const SLEEVE = 'M127 138Q133 136 138 143Q147 153 156 163L155.5 173.5Q148 173 142 168Q133 158 128 149Q125 143 127 138Z';
-const OUTLINE = 4; // the same gold as the front trim, about as thin
+const OUTLINE = 4; // dark navy, the hood's inner colour
 const SHAFT_STREAKS = [80, 104, 128, 152, 176, 200, 224].map((y) => `M158.6 ${y}L162.4 ${y + 9}`).join('');
 
 // The arm (.mg-wizard__arm, two groups: the sleeve under the hood and the hand over it) turns at the shoulder and
@@ -402,7 +402,7 @@ export function WizardShapes() {
   return (
     <>
       {/* cloak, shaded on the left, with folds on the lit cloth */}
-      <path d={CLOAK + HOOD + HOOD_TIP} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+      <path d={CLOAK + HOOD + HOOD_TIP} fill={W.deep} stroke={W.deep} strokeWidth={OUTLINE} strokeLinejoin="round" />
       <path d={CLOAK} fill={W.cloak} />
       <path d="M88 118Q82 128 80 150Q70 200 50 248Q62 253 74 254Q78 200 90 136Z" fill={W.shade} opacity=".75" />
       <path d="M97 152Q91 200 85 246M132 166Q138 210 142 248" stroke={W.shade} strokeWidth="2.6" fill="none" strokeLinecap="round" opacity=".8" />
@@ -427,7 +427,7 @@ export function WizardShapes() {
       <path d={HEM_CURLS} stroke={W.gold} strokeWidth="1.5" fill="none" strokeLinecap="round" />
       {/* the sleeve sits under the hood and turns with the staff arm, so the arm stays joined to the cloak */}
       <g className="mg-wizard__arm">
-        <path d={SLEEVE} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+        <path d={SLEEVE} fill={W.deep} stroke={W.deep} strokeWidth={OUTLINE} strokeLinejoin="round" />
         <path d={SLEEVE} fill={W.shade} />
       </g>
       {/* rounded hood with a soft tip falling back, gold on its rim and lower edge, eyes, flowing beard */}
@@ -462,7 +462,7 @@ export function WizardShapes() {
           <rect x="148" y="140" width="24" height="50" />
         </clipPath>
         <g clipPath="url(#mg-wizard-wrist)">
-          <path d={SLEEVE} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
+          <path d={SLEEVE} fill={W.deep} stroke={W.deep} strokeWidth={OUTLINE} strokeLinejoin="round" />
           <path d={SLEEVE} fill={W.shade} />
         </g>
         <path d="M156 163L155.5 173.5" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
