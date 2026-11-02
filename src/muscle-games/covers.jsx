@@ -78,8 +78,8 @@ export function BalloonScene() {
           <g key={dx} transform={`translate(${dx} 0)`}>
             {BC_CLOUDS.map((d) => (
               <g key={d}>
-                <path d={d} fill="hsl(258 30% 42%)" />
-                <path d={d} fill="none" stroke="hsl(258 38% 64%)" strokeWidth="1.4" opacity=".7" />
+                <path d={d} fill="hsl(258 24% 30%)" />
+                <path d={d} fill="none" stroke="hsl(258 26% 42%)" strokeWidth="1.2" opacity=".6" />
               </g>
             ))}
           </g>
