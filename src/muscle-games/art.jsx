@@ -362,40 +362,83 @@ export function MusclePoster() {
 
 /* ---------- Balloon Pop: the hooded sage wizard ---------- */
 
-const ROBE = '#2f5fd6';
-const ROBE_SHADE = '#1d3f9e';
-const ROBE_DEEP = '#122a6b';
-const TRIM = '#9cbcff';
-const STAFF = '#8a5a32';
-const STAFF_DARK = '#6b4325';
-const STAFF_LIGHT = '#c48a55';
-const ORB = '#ffffff';
+// A long starry cloak that blows back at the hem, open down the front over a purple robe and a leather belt,
+// with gold trim. In Balloon Pop the castle wall hides the lowest third, so the belt and most stars sit above y 190. The staff is slim dark silver wound with gold, with a gold flame claw holding a glowing orb.
+const W = {
+  cloak: '#2c56b8', shade: '#1f3f8a', deep: '#122658', inner: '#5a4aa0', innerDark: '#463a82',
+  gold: '#e6bd5c', goldDark: '#a8782a', leather: '#8a5a32', leatherDark: '#6b4325', star: '#fde9a8', moon: '#dfe8ff',
+  beard: '#f3f5ff', beardLine: '#c9d2f5', skin: '#f0d3b8', shaft: '#3d4150', shaftLight: '#a9b1c2', orb: '#e0efff',
+};
+// Four-point star and crescent outlines, joined into one path each so the pattern costs a single element.
+const starPath = (x, y, r) =>
+  `M${x} ${y - r}Q${x + r * 0.2} ${y - r * 0.2} ${x + r} ${y}Q${x + r * 0.2} ${y + r * 0.2} ${x} ${y + r}` +
+  `Q${x - r * 0.2} ${y + r * 0.2} ${x - r} ${y}Q${x - r * 0.2} ${y - r * 0.2} ${x} ${y - r}Z`;
+const moonPath = (x, y, r) =>
+  `M${x} ${y - r}A${r} ${r} 0 1 0 ${x + r * 0.9} ${y + r * 0.45}A${r * 0.78} ${r * 0.78} 0 1 1 ${x} ${y - r}Z`;
+const curlPath = (x, y) => `M${x} ${y}q4 -6 9 -2q3 3 -1 5q-3 0 -2 -3`;
+const CLOAK_STARS = [[80, 214, 3.4], [144, 226, 3], [68, 238, 2.4], [134, 242, 2.4], [86, 176, 2.6], [90, 148, 2.4], [130, 146, 2.2], [96, 162, 2], [130, 186, 2.6]]
+  .map(([x, y, r]) => starPath(x, y, r)).join('');
+const CLOAK_MOONS = moonPath(136, 196, 5) + moonPath(127, 168, 3.6);
+const HEM_CURLS = [[58, 246], [72, 250], [138, 251], [146, 246]].map(([x, y]) => curlPath(x, y)).join('');
+const ORB_SPARKS = starPath(147, 38, 2.2) + starPath(176, 66, 1.8);
+// a gold vine wound round the staff: a sine wave along the shaft
+const VINE = Array.from({ length: 28 }, (_, i) => {
+  const y = 96 + i * 2;
+  return `${i ? 'L' : 'M'}${(160.5 + 4 * Math.sin(i * 0.29 + 0.6)).toFixed(1)} ${y}`;
+}).join('');
+const SHAFT_STREAKS = [80, 104, 128, 152, 176, 200, 224].map((y) => `M158.6 ${y}L162.4 ${y + 9}`).join('');
 
 // The staff arm (.mg-wizard__arm) pivots on the hand; fireballs start from .mg-wizard__orb.
 // WizardShapes is the drawing on its own (200x260 units), for placing inside another SVG such as a cover.
 export function WizardShapes() {
   return (
     <>
-      <path d="M60 252 L78 124 Q108 104 138 124 L156 252 Z" fill={ROBE} />
-      <path d="M60 252 L78 124 Q90 116 100 114 L88 252 Z" fill={ROBE_SHADE} />
-      <path d="M76 176 H140 V184 H76 Z M96 184 L102 184 L98 212 L92 210 Z" fill={TRIM} />
-      <path d="M74 132 Q70 74 108 54 Q146 74 142 132 Q108 114 74 132 Z M108 54 L128 38 L122 62 Z" fill={ROBE_SHADE} />
-      <path d="M90 124 Q90 88 108 82 Q126 88 126 124 Z" fill={ROBE_DEEP} />
-      <path d="M94 114 H122 L115 160 L108 182 L101 160 Z" fill="#f3f5ff" />
-      <rect x="97" y="99" width="7" height="3.4" rx="1.5" fill={ORB} />
-      <rect x="112" y="99" width="7" height="3.4" rx="1.5" fill={ORB} />
+      {/* cloak, shaded on the left, with folds */}
+      <path d="M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 250Q144 200 136 150Q134 128 128 118Z" fill={W.cloak} />
+      <path d="M88 118Q82 128 80 150Q70 200 50 248Q66 254 84 254Q84 200 94 136Z" fill={W.shade} opacity=".75" />
+      <path d="M92 160Q86 206 80 248M130 166Q136 210 140 248" stroke={W.shade} strokeWidth="2.6" fill="none" strokeLinecap="round" opacity=".8" />
+      <path d={CLOAK_STARS} fill={W.star} />
+      <path d={CLOAK_MOONS} fill={W.moon} opacity=".9" />
+      {/* the purple robe and belt in the opening down the front */}
+      <path d="M108 132Q100 190 94 254Q110 258 128 254Q120 190 112 132Z" fill={W.inner} />
+      <path d="M110 150Q107 200 110 252" stroke={W.innerDark} strokeWidth="2.4" fill="none" />
+      <path d="M99 175Q110 179 121 175L122 184Q110 188 98 184Z" fill={W.leather} />
+      <path d="M99 179.5Q110 183.5 121 179.5" stroke={W.leatherDark} strokeWidth="1" fill="none" />
+      <rect x="105.5" y="174.5" width="9" height="10.5" rx="2" fill="none" stroke={W.gold} strokeWidth="2.2" />
+      <path d="M117 185L118 191" stroke={W.leatherDark} strokeWidth="1.8" />
+      <rect x="113" y="190" width="10" height="10" rx="3" fill={W.leather} />
+      <circle cx="118" cy="195" r="1.5" fill={W.gold} />
+      {/* gold trim: the front edges, the hem and its curls */}
+      <path d="M108 132Q100 190 94 254M112 132Q120 190 128 254M50 248Q80 257 108 253Q132 258 150 250" stroke={W.gold} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      <path d={HEM_CURLS} stroke={W.gold} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      {/* hood with a drooping tip and a gold rim, eyes, flowing beard */}
+      <path d="M78 134Q74 76 108 56Q142 76 140 134Q108 120 78 134Z" fill={W.shade} />
+      <path d="M104 60Q122 40 142 46Q134 50 130 57Q126 64 118 68Z" fill={W.shade} />
+      <path d="M92 124Q92 90 108 84Q124 90 124 124Z" fill={W.deep} />
+      <path d="M90 126Q88 86 108 80Q128 86 126 126" stroke={W.gold} strokeWidth="2.4" fill="none" strokeLinecap="round" />
+      <rect x="98" y="99" width="7" height="3.4" rx="1.5" fill="#fff" />
+      <rect x="111" y="99" width="7" height="3.4" rx="1.5" fill="#fff" />
+      <path d="M96 113H120Q123 128 117 140Q121 150 114 158Q115 168 106 172Q109 164 104 160Q98 154 101 146Q94 132 96 113Z" fill={W.beard} />
+      <path d="M104 120Q102 134 106 146M113 120Q115 132 111 144" stroke={W.beardLine} strokeWidth="1.6" fill="none" strokeLinecap="round" />
       <g className="mg-wizard__arm">
-        <circle className="mg-wizard__glow" cx="161" cy="54" r="26" fill={ORB} opacity=".18" />
-        <path d="M156 100 H165 Q163 170 164 236 Q165 246 160 252 Q155 246 156 236 Q157 170 156 100 Z" fill={STAFF} />
-        <circle className="mg-wizard__orb" cx="161" cy="54" r="17" fill={ORB} />
-        <ellipse cx="155" cy="46" rx="6" ry="4" transform="rotate(-30 155 46)" fill={TRIM} opacity=".65" />
-        <path d="M159 98 Q141 86 141 66 Q141 52 148 44 Q147 60 152 72 Q156 82 164 90 Z" fill={STAFF} />
-        <path d="M157 102 Q172 92 179 74 Q184 56 175 38 Q188 48 188 68 Q186 90 165 104 Z" fill={STAFF_DARK} />
-        <path d="M155 104 Q160 92 172 86 Q166 96 166 104 Z" fill={STAFF} />
-        <rect x="153.5" y="104" width="14" height="5" rx="2.5" fill={STAFF_LIGHT} />
-        <rect x="155" y="112" width="11" height="3.5" rx="1.75" fill={STAFF_LIGHT} />
-        <path d="M126 150 L154 160 L154 182 L130 176 Z" fill={ROBE_SHADE} />
-        <rect x="153" y="164" width="14" height="13" rx="2" fill="#f0d3b8" />
+        <circle className="mg-wizard__glow" cx="161" cy="54" r="25" fill="#a78bfa" opacity=".22" />
+        <path d="M158 66H163L162.6 240L160.5 250L158.4 240Z" fill={W.shaft} />
+        <path d={SHAFT_STREAKS} stroke={W.shaftLight} strokeWidth="1.2" opacity=".7" />
+        <path d="M157 232Q160.5 240 157.5 248L160.5 262L163.5 248Q161 240 164 232Q160.5 236 157 232Z" fill={W.gold} />
+        <path d={VINE} stroke={W.gold} strokeWidth="1.8" fill="none" strokeLinecap="round" />
+        <path d="M155.5 94.5a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 124a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0M155.5 152a5 2.6 0 1 0 10 0a5 2.6 0 1 0 -10 0Z" fill={W.gold} />
+        <path d="M157 76Q146 74 141 64Q150 70 158 71ZM164 76Q175 74 180 64Q171 70 163 71Z" fill={W.gold} />
+        <circle cx="161" cy="54" r="17" fill="#93c5fd" opacity=".25" />
+        <circle className="mg-wizard__orb" cx="161" cy="54" r="12" fill={W.orb} />
+        <circle cx="161" cy="54" r="7.4" fill="#a5c8ff" opacity=".8" />
+        <circle cx="158" cy="50.5" r="3" fill="#fff" />
+        <path d={ORB_SPARKS} fill="#e9e3ff" />
+        <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
+        <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />
+        {/* the hand comes out of a slit in the cloak */}
+        <path d="M134 150Q146 154 154 160L155 179Q144 178 135 172Z" fill={W.shade} />
+        <path d="M154 160L155 179" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
+        <rect x="153" y="164" width="14" height="13" rx="3" fill={W.skin} />
       </g>
     </>
   );
