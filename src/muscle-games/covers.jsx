@@ -69,6 +69,11 @@ export function BalloonScene() {
           <AirshipShapes />
         </g>
       </g>
+      <g className="mg-sc-bob" style={{ animationDelay: '-2s' }}>
+        <g transform="translate(34 14) scale(0.27)">
+          <AirshipShapes />
+        </g>
+      </g>
       <g className="mg-pv-confetti" style={{ transformOrigin: '227px 34px' }}>
         {Array.from({ length: 8 }, (_, k) => (
           <circle key={k} cx={227 + Math.cos(k * 0.79) * 14} cy={34 + Math.sin(k * 0.79) * 14} r="2.4" fill={['#ffb020', '#fbf1c7', '#2fb5a3', '#ff5a3c'][k % 4]} />
