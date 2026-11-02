@@ -391,7 +391,7 @@ const VINE = Array.from({ length: 28 }, (_, i) => {
 const CLOAK = 'M88 118Q82 128 80 150Q70 200 50 248Q80 257 108 253Q132 258 150 250Q144 200 136 150Q134 128 128 118Z';
 const HOOD = 'M82 136Q78 98 92 78Q104 64 118 66Q134 74 137 102Q139 122 134 136Q108 126 82 136Z';
 const HOOD_TIP = 'M112 67Q126 60 134 68Q138 74 145 79Q134 78 128 73Q121 70 116 72Z';
-const SLEEVE = 'M126 136Q133 134 138 142Q147 152 156 162L155 176Q147 175 141 170Q132 160 127 150Q123 142 126 136Z';
+const SLEEVE = 'M127 138Q133 136 138 143Q147 153 156 163L155.5 173.5Q148 173 142 168Q133 158 128 149Q125 143 127 138Z';
 const OUTLINE = 5;
 const SHAFT_STREAKS = [80, 104, 128, 152, 176, 200, 224].map((y) => `M158.6 ${y}L162.4 ${y + 9}`).join('');
 
@@ -457,7 +457,7 @@ export function WizardShapes() {
         <path d="M157 72Q140 62 144 44Q147 30 160 22Q154 32 157 37Q147 46 151 58Q153 66 160 70Z" fill={W.gold} />
         <path d="M164 72Q178 66 176 52Q175 44 168 40Q175 49 170 60Q168 66 161 70Z" fill={W.goldDark} />
         </g>
-        <rect x="153" y="163" width="13" height="12" rx="3" fill={W.skin} />
+        <rect x="153" y="162.5" width="12.5" height="11.5" rx="3" fill={W.skin} />
         <clipPath id="mg-wizard-wrist">
           <rect x="148" y="140" width="24" height="50" />
         </clipPath>
@@ -465,7 +465,7 @@ export function WizardShapes() {
           <path d={SLEEVE} fill={W.gold} stroke={W.gold} strokeWidth={OUTLINE} strokeLinejoin="round" />
           <path d={SLEEVE} fill={W.shade} />
         </g>
-        <path d="M156 162L155 176" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
+        <path d="M156 163L155.5 173.5" stroke={W.gold} strokeWidth="2.4" strokeLinecap="round" />
       </g>
     </>
   );
