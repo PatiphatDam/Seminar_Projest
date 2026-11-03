@@ -209,7 +209,8 @@ const GS_INK = '#141010';
 
 // Group Sort hub card: the two mode covers cut down the middle and joined, Picture Match on the left and
 // Conveyor Sort on the right. Their own characters are left out; instead one character stands on the seam, the
-// detective's half (mirrored so the pipe shows) and the worker's half. Title on top, the two mode names below.
+// detective's half (mirrored so the pipe shows) and the worker's half. The title is split across the top too:
+// "Group" on the detective's half, "SORT" on the factory's.
 export function GroupSortScene() {
   return (
     <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
@@ -260,27 +261,58 @@ export function GroupSortScene() {
         </g>
       </g>
 
-      {/* title across the top */}
-      <g fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="27" letterSpacing="3" textAnchor="middle">
-        <text x="160" y="36" fill="#000" opacity="0.5" transform="translate(1.4 1.8)" style={{ transformBox: 'view-box' }}>
-          GROUP SORT
-        </text>
-        <text x="160" y="36" fill="#f5ecd8" stroke={GS_INK} strokeWidth="2.4" strokeLinejoin="round" paintOrder="stroke">
-          GROUP SORT
-        </text>
+      {/* the title, one word on each half: "Group" for the detective, its o a magnifying glass */}
+      <g fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="27" fill="#fff" stroke={GS_INK} strokeWidth="2.6" strokeLinejoin="round" paintOrder="stroke">
+        <text x="67" y="42" textAnchor="end">Gr</text>
+        <text x="94" y="42" textAnchor="start">up</text>
       </g>
-
-      {/* the two mode names */}
-      <text x="12" y="188" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="800" fontSize="12.5" letterSpacing="0.8" fill="#efe3cc">
-        PICTURE MATCH
-      </text>
-      <g transform="translate(212 174)">
-        <rect width="100" height="18" rx="2.5" fill="#facc15" stroke="#1d2a30" strokeWidth="1.4" />
-        <text x="50" y="12.6" textAnchor="middle" fontFamily="Bungee, 'Nunito Sans Variable', sans-serif" fontSize="9" fill="#1d2a30">
-          CONVEYOR SORT
-        </text>
+      <GsLens x={80} y={32.5} />
+      {/* ...and "SORT" stencilled black on a yellow steel plate for the factory, its O a hex nut */}
+      <g transform="translate(180 14)">
+        <path d="M5 0H115L120 5V35L115 40H5L0 35V5Z" fill="#facc15" stroke={GS_INK} strokeWidth="2" />
+        {[[6, 6], [114, 6], [6, 34], [114, 34]].map(([x, y]) => (
+          <rect key={x * 100 + y} x={x - 1.6} y={y - 1.6} width="3.2" height="3.2" fill={GS_INK} />
+        ))}
       </g>
+      <g fontFamily="'Black Ops One', 'Nunito Sans Variable', sans-serif" fontSize="27" fill={GS_INK}>
+        <text x="218" y="44" textAnchor="end">S</text>
+        <text x="244" y="44" textAnchor="start">RT</text>
+      </g>
+      <GsNut x={231} y={34} />
     </svg>
+  );
+}
+
+// a black magnifying glass for the o of "Group", outlined in cream so it reads on the dark half
+function GsLens({ x, y }) {
+  const lens = (stroke, w) => (
+    <g fill="none" stroke={stroke} strokeLinecap="round">
+      <circle cx={x} cy={y} r="9.5" strokeWidth={2.8 + w} />
+      <path d={`M${x + 6.8} ${y + 6.8}l3 3`} strokeWidth={2.8 + w} />
+      <path d={`M${x + 9.8} ${y + 9.8}l5.5 5.5`} strokeWidth={5 + w} />
+    </g>
+  );
+  return (
+    <g>
+      {lens('#f5ecd8', 2.4)}
+      <circle cx={x} cy={y} r="9.5" fill="#cfe3ea" fillOpacity="0.35" />
+      {lens(GS_INK, 0)}
+      <path d={`M${x - 5.6} ${y - 1.2}a5.8 5.8 0 0 1 4.3 -4.3`} fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity="0.8" />
+    </g>
+  );
+}
+
+// a black hex nut with a yellow hole for the O of "SORT"
+function GsNut({ x, y }) {
+  const corners = [0, 1, 2, 3, 4, 5].map((i) => {
+    const a = Math.PI / 6 + (i * Math.PI) / 3;
+    return `${(x + Math.cos(a) * 11).toFixed(1)},${(y + Math.sin(a) * 11).toFixed(1)}`;
+  });
+  return (
+    <g>
+      <polygon points={corners.join(' ')} fill={GS_INK} />
+      <circle cx={x} cy={y} r="4.4" fill="#facc15" />
+    </g>
   );
 }
 

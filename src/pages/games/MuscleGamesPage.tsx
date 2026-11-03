@@ -8,6 +8,7 @@ import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { GAMES, MuscleGames, type MuscleGameRun } from "@/muscle-games";
 // Cover-title fonts, self-hosted: the CSP blocks Google Fonts. Text and heading fonts come from index.css.
 import "@fontsource/bungee/latin-400.css";
+import "@fontsource/black-ops-one/latin-400.css";
 import "@fontsource/cinzel-decorative/latin-700.css";
 import "@fontsource/cinzel-decorative/latin-900.css";
 
