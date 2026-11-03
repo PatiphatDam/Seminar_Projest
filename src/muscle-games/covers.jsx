@@ -261,57 +261,58 @@ export function GroupSortScene() {
         </g>
       </g>
 
-      {/* the title, one word on each half: "Group" for the detective, its o a magnifying glass */}
-      <g fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="27" fill="#fff" stroke={GS_INK} strokeWidth="2.6" strokeLinejoin="round" paintOrder="stroke">
-        <text x="67" y="42" textAnchor="end">Gr</text>
-        <text x="94" y="42" textAnchor="start">up</text>
+      {/* the title, one word on each side of the seam: "Group" for the detective, its o a magnifying glass... */}
+      <g fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="22" fill="#fff" stroke={GS_INK} strokeWidth="2.2" strokeLinejoin="round" paintOrder="stroke">
+        <text x="99.5" y="38" textAnchor="end">Gr</text>
+        <text x="118.5" y="38">up</text>
       </g>
-      <GsLens x={80} y={32.5} />
+      <GsLens x={109} y={30.3} />
       {/* ...and "SORT" stencilled black on a yellow steel plate for the factory, its O a hex nut */}
-      <g transform="translate(180 14)">
-        <path d="M5 0H115L120 5V35L115 40H5L0 35V5Z" fill="#facc15" stroke={GS_INK} strokeWidth="2" />
-        {[[6, 6], [114, 6], [6, 34], [114, 34]].map(([x, y]) => (
-          <rect key={x * 100 + y} x={x - 1.6} y={y - 1.6} width="3.2" height="3.2" fill={GS_INK} />
+      <g transform="translate(168 15)">
+        <path d="M4 0H82L86 4V27L82 31H4L0 27V4Z" fill="#facc15" stroke={GS_INK} strokeWidth="1.8" />
+        {[[4.5, 4.5], [81.5, 4.5], [4.5, 26.5], [81.5, 26.5]].map(([x, y]) => (
+          <rect key={x * 100 + y} x={x - 1.3} y={y - 1.3} width="2.6" height="2.6" fill={GS_INK} />
         ))}
       </g>
-      <g fontFamily="'Black Ops One', 'Nunito Sans Variable', sans-serif" fontSize="27" fill={GS_INK}>
-        <text x="218" y="44" textAnchor="end">S</text>
-        <text x="244" y="44" textAnchor="start">RT</text>
+      <g fontFamily="'Black Ops One', 'Nunito Sans Variable', sans-serif" fontSize="22" fill={GS_INK}>
+        <text x="194" y="38" textAnchor="end">S</text>
+        <text x="215" y="38">RT</text>
       </g>
-      <GsNut x={231} y={34} />
+      <GsNut x={204.5} y={30.5} />
     </svg>
   );
 }
 
-// a black magnifying glass for the o of "Group", outlined in cream so it reads on the dark half
+// a black magnifying glass for the o of "Group", as tall as the capitals, outlined in cream so it reads on the
+// dark half
 function GsLens({ x, y }) {
   const lens = (stroke, w) => (
     <g fill="none" stroke={stroke} strokeLinecap="round">
-      <circle cx={x} cy={y} r="9.5" strokeWidth={2.8 + w} />
-      <path d={`M${x + 6.8} ${y + 6.8}l3 3`} strokeWidth={2.8 + w} />
-      <path d={`M${x + 9.8} ${y + 9.8}l5.5 5.5`} strokeWidth={5 + w} />
+      <circle cx={x} cy={y} r="6.6" strokeWidth={2.4 + w} />
+      <path d={`M${x + 4.8} ${y + 4.8}l2 2`} strokeWidth={2.4 + w} />
+      <path d={`M${x + 6.8} ${y + 6.8}l3.6 3.6`} strokeWidth={4.2 + w} />
     </g>
   );
   return (
     <g>
-      {lens('#f5ecd8', 2.4)}
-      <circle cx={x} cy={y} r="9.5" fill="#cfe3ea" fillOpacity="0.35" />
+      {lens('#f5ecd8', 2.2)}
+      <circle cx={x} cy={y} r="6.6" fill="#cfe3ea" fillOpacity="0.35" />
       {lens(GS_INK, 0)}
-      <path d={`M${x - 5.6} ${y - 1.2}a5.8 5.8 0 0 1 4.3 -4.3`} fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" opacity="0.8" />
+      <path d={`M${x - 3.9} ${y - 0.8}a4 4 0 0 1 3 -3`} fill="none" stroke="#fff" strokeWidth="1" strokeLinecap="round" opacity="0.8" />
     </g>
   );
 }
 
-// a black hex nut with a yellow hole for the O of "SORT"
+// a black hex nut with a yellow hole for the O of "SORT", flat on top and bottom and as tall as the capitals
 function GsNut({ x, y }) {
   const corners = [0, 1, 2, 3, 4, 5].map((i) => {
-    const a = Math.PI / 6 + (i * Math.PI) / 3;
-    return `${(x + Math.cos(a) * 11).toFixed(1)},${(y + Math.sin(a) * 11).toFixed(1)}`;
+    const a = (i * Math.PI) / 3;
+    return `${(x + Math.cos(a) * 8.6).toFixed(1)},${(y + Math.sin(a) * 8.6).toFixed(1)}`;
   });
   return (
     <g>
       <polygon points={corners.join(' ')} fill={GS_INK} />
-      <circle cx={x} cy={y} r="4.4" fill="#facc15" />
+      <circle cx={x} cy={y} r="3.4" fill="#facc15" />
     </g>
   );
 }
