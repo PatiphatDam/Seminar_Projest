@@ -610,7 +610,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         setShatter({ n: Date.now(), x: x - sky.left, y: y - sky.top });
         later(() => setShatter(null), 1000);
         const [sx, sy] = staffAt();
-        setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, sky.height * 0.38], d: sky.width * 0.88 });
+        setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, sky.height * 0.38], d: Math.min(sky.width * 0.6, 320) });
         later(() => setSigil(null), (ICE_FREEZE + 2.6) * 1000);
       }
       castSkill('ice');
@@ -650,7 +650,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     s.atp = 0;
     castSkill('volt');
     const [sx, sy] = staffAt();
-    const r = Math.min(box.width * 0.42, 150);
+    const r = Math.min(box.width * 0.3, 105);
     const at = [box.width / 2, box.height * 0.2];
     // the rune's two lower small circles, in the page, left then right
     const sat = (i) => [box.left + at[0] + (VOLT_SATELLITES[i][0] * r) / 50, box.top + at[1] + (VOLT_SATELLITES[i][1] * r) / 50];
