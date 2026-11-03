@@ -505,6 +505,14 @@ export default function BalloonPop({ onScore, onFinish }) {
     const orb = wizardRef.current?.querySelector('.mg-wizard__orb')?.getBoundingClientRect();
     return orb ? [orb.left + orb.width / 2, orb.top + orb.height / 2] : [box.left + box.width / 2, box.bottom - 90];
   };
+  // Where a sky rune of radius r is centred, in the sky: a little above the middle, but never down over the wizard
+  // (a phone's sky is short), and whole: on a short sky it may touch the top of his hat rather than leave the sky.
+  const runeY = (r) => {
+    const box = skyRef.current.getBoundingClientRect();
+    const wiz = wizardRef.current?.getBoundingClientRect();
+    const floor = (wiz ? wiz.top - box.top : box.height * 0.75) - r - 6;
+    return Math.max(r + 4, Math.min(box.height * 0.45, floor));
+  };
 
   // The wizard raises his staff to cast a skill and his orb takes its colour; for the ultimate, runes rise round him.
   const castSkill = (kind) => {
@@ -610,7 +618,8 @@ export default function BalloonPop({ onScore, onFinish }) {
         setShatter({ n: Date.now(), x: x - sky.left, y: y - sky.top });
         later(() => setShatter(null), 1000);
         const [sx, sy] = staffAt();
-        setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, sky.height * 0.38], d: Math.min(sky.width * 0.6, 320) });
+        const d = Math.min(sky.width * 0.6, 320);
+        setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, runeY(d / 2)], d });
         later(() => setSigil(null), (ICE_FREEZE + 2.6) * 1000);
       }
       castSkill('ice');
@@ -650,8 +659,8 @@ export default function BalloonPop({ onScore, onFinish }) {
     s.atp = 0;
     castSkill('volt');
     const [sx, sy] = staffAt();
-    const r = Math.min(box.width * 0.3, 105);
-    const at = [box.width / 2, box.height * 0.2];
+    const r = Math.min(box.width * 0.3, 130);
+    const at = [box.width / 2, runeY(r)];
     // the rune's two lower small circles, in the page, left then right
     const sat = (i) => [box.left + at[0] + (VOLT_SATELLITES[i][0] * r) / 50, box.top + at[1] + (VOLT_SATELLITES[i][1] * r) / 50];
     setUlt({ n: Date.now(), round: s.i, from: [sx - box.left, sy - box.top], at, d: r * 2, sats: [sat(3), sat(2)], mid: box.left + at[0], top: box.top });
