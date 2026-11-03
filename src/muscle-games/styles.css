@@ -637,14 +637,14 @@
 }
 
 /* Bomb: inside the balloon, the fire rune leaves the staff at 0.25 s, flattens into a portal above the balloon by
-   0.65 s, and drops a pillar of fire that reaches the balloon at BOMB_FUSE (0.73 s); embers rise as it burns away. */
+   0.65 s (fading to half, like the sky runes), and drops a pillar of fire that reaches the balloon at BOMB_FUSE (0.73 s); embers rise as it burns away. */
 .mg-portal { position: absolute; left: 50%; top: 37.2%; width: 0; height: 0; pointer-events: none; }
 .mg-portal__rune { position: absolute; left: -36px; top: -36px; width: 72px; height: 72px; animation: mg-portal-rune 0.9s linear 0.25s both; }
 @keyframes mg-portal-rune {
   0% { opacity: 1; transform: translate(var(--fx), var(--fy)) scale(0.3); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
   28.9% { transform: translate(0, var(--lift)) scale(0.56, 0.2); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
-  44.4% { transform: translate(0, var(--lift)) scale(1, 0.35); }
-  77.8% { opacity: 1; }
+  44.4% { opacity: 0.5; transform: translate(0, var(--lift)) scale(1, 0.35); }
+  77.8% { opacity: 0.5; }
   100% { opacity: 0; transform: translate(0, var(--lift)) scale(1, 0.35); }
 }
 .mg-portal__pillar {
