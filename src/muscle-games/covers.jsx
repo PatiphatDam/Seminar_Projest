@@ -210,7 +210,7 @@ const GS_INK = '#141010';
 // Group Sort hub card: the two mode covers cut down the middle and joined, Picture Match on the left and
 // Conveyor Sort on the right. Their own characters are left out; instead one character stands on the seam, the
 // detective's half (mirrored so the pipe shows) and the worker's half. The title is split across the top too:
-// "Group" on the detective's half, "SORT" on the factory's.
+// "Group" on the detective's half, "SORT" on the factory's; the two mode names sit along the bottom.
 export function GroupSortScene() {
   return (
     <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
@@ -279,6 +279,17 @@ export function GroupSortScene() {
         <text x="209" y="38">RT</text>
       </g>
       <GsNut x={198.5} y={30.5} />
+
+      {/* the two mode names along the bottom, in the same two styles */}
+      <text x="12" y="188" fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="11" letterSpacing="0.6" fill="#fff" stroke={GS_INK} strokeWidth="1.6" strokeLinejoin="round" paintOrder="stroke">
+        Picture Match
+      </text>
+      <g transform="translate(212 176)">
+        <path d="M4 0H92L96 4V12L92 16H4L0 12V4Z" fill="#facc15" stroke={GS_INK} strokeWidth="1.3" />
+        <text x="48" y="11.6" textAnchor="middle" fontFamily="'Black Ops One', 'Nunito Sans Variable', sans-serif" fontSize="9.5" fill={GS_INK}>
+          CONVEYOR SORT
+        </text>
+      </g>
     </svg>
   );
 }
