@@ -149,6 +149,9 @@ function Snowflake({ r, width, color }) {
   );
 }
 
+// The ice and lightning runes open in the sky at the same width: 60% of a phone's sky, 320 px on a computer.
+const skyRuneSize = (skyWidth) => Math.min(skyWidth * 0.6, 320);
+
 // Hitting the ice orb: it flashes white and shatters into twelve shards of ice that fly out, spin and fade. Drawn in
 // pixels round the hit point.
 const ICE_SHARDS = (() => {
@@ -618,7 +621,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         setShatter({ n: Date.now(), x: x - sky.left, y: y - sky.top });
         later(() => setShatter(null), 1000);
         const [sx, sy] = staffAt();
-        const d = Math.min(sky.width * 0.6, 320);
+        const d = skyRuneSize(sky.width);
         setSigil({ n: Date.now(), from: [sx - sky.left, sy - sky.top], to: [sky.width / 2, runeY(d / 2)], d });
         later(() => setSigil(null), (ICE_FREEZE + 2.6) * 1000);
       }
@@ -659,7 +662,7 @@ export default function BalloonPop({ onScore, onFinish }) {
     s.atp = 0;
     castSkill('volt');
     const [sx, sy] = staffAt();
-    const r = Math.min(box.width * 0.3, 130);
+    const r = skyRuneSize(box.width) / 2;
     const at = [box.width / 2, runeY(r)];
     // the rune's two lower small circles, in the page, left then right
     const sat = (i) => [box.left + at[0] + (VOLT_SATELLITES[i][0] * r) / 50, box.top + at[1] + (VOLT_SATELLITES[i][1] * r) / 50];
