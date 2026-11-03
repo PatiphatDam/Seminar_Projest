@@ -263,22 +263,22 @@ export function GroupSortScene() {
 
       {/* the title, one word on each side of the seam: "Group" for the detective, its o a magnifying glass... */}
       <g fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="22" fill="#fff" stroke={GS_INK} strokeWidth="2.2" strokeLinejoin="round" paintOrder="stroke">
-        <text x="99.5" y="38" textAnchor="end">Gr</text>
-        <text x="118.5" y="38">up</text>
+        <text x="95.5" y="38" textAnchor="end">Gr</text>
+        <text x="114.5" y="38">up</text>
       </g>
-      <GsLens x={109} y={30.3} />
+      <GsLens x={105} y={30.3} />
       {/* ...and "SORT" stencilled black on a yellow steel plate for the factory, its O a hex nut */}
       {/* just around the letters, with deep cut corners and a rivet at each end */}
-      <g transform="translate(161 19)">
+      <g transform="translate(165 19)">
         <path d="M6 0H74L80 6V17L74 23H6L0 17V6Z" fill="#facc15" stroke={GS_INK} strokeWidth="1.6" />
         <rect x="2.3" y="10.2" width="2.6" height="2.6" fill={GS_INK} />
         <rect x="75.1" y="10.2" width="2.6" height="2.6" fill={GS_INK} />
       </g>
       <g fontFamily="'Black Ops One', 'Nunito Sans Variable', sans-serif" fontSize="22" fill={GS_INK}>
-        <text x="184" y="38" textAnchor="end">S</text>
-        <text x="205" y="38">RT</text>
+        <text x="188" y="38" textAnchor="end">S</text>
+        <text x="209" y="38">RT</text>
       </g>
-      <GsNut x={194.5} y={30.5} />
+      <GsNut x={198.5} y={30.5} />
     </svg>
   );
 }
