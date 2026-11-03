@@ -625,14 +625,14 @@
 }
 
 /* Ice: the rune leaves the staff 0.25 s after the hit, reaches the middle of the sky behind the balloons at
-   ICE_FREEZE (0.67 s), opens across it by 1.17 s, holds, and fades out over the last 0.6 s. */
+   ICE_FREEZE (0.67 s), opens across it by 1.17 s (fading to half so it stays behind the balloons), holds, and fades out over the last 0.6 s. */
 .mg-sigil { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; animation: mg-sigil 3.02s linear 0.25s both; }
 @keyframes mg-sigil {
   0% { opacity: 0; transform: translate(var(--x0), var(--y0)) scale(var(--s0)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
   2% { opacity: 1; }
   13.9% { transform: translate(var(--x1), var(--y1)) scale(var(--s1)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
-  30.5% { opacity: 0.9; transform: translate(var(--x1), var(--y1)) scale(1); }
-  80.1% { opacity: 0.9; }
+  30.5% { opacity: 0.5; transform: translate(var(--x1), var(--y1)) scale(1); }
+  80.1% { opacity: 0.5; }
   100% { opacity: 0; transform: translate(var(--x1), var(--y1)) scale(1); }
 }
 
@@ -675,8 +675,8 @@
 @keyframes mg-ult-rune {
   0%, 9.6% { opacity: 0; transform: scale(var(--s0)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
   10% { opacity: 1; }
-  26.9% { transform: none; }
-  80.8% { opacity: 1; }
+  26.9% { opacity: 0.55; transform: none; }
+  80.8% { opacity: 0.55; }
   100% { opacity: 0; transform: none; }
 }
 .mg-ult__charge { opacity: 0; animation: mg-ult-charge 1.2s ease-out calc(0.7s + var(--k) * 0.09s) forwards; }
