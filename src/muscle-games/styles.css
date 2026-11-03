@@ -821,6 +821,8 @@
    drain when one is lost), joined in one frame that sits right on top of the ATP storage tube with the same slant;
    the tube fills cell by cell and, once full, glows with a moving shine and a pointing hand to show it can be tapped. */
 .mg-gauge { position: absolute; left: 10px; bottom: 10px; z-index: 8; display: grid; justify-items: start; pointer-events: none; }
+/* smaller in the corner of a phone's narrow sky */
+@media (max-width: 560px) { .mg-gauge { left: 6px; bottom: 6px; transform: scale(0.72); transform-origin: left bottom; } }
 /* The cream frame shows between the vessels as thin dividers; its bottom edge overlaps the tube's top border
    (the button is 44 px tall around a 27 px tube, so it starts 8.5 px above it). */
 .mg-gauge__lives {
