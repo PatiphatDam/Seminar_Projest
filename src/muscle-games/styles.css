@@ -819,20 +819,22 @@
 @keyframes mg-ember { to { opacity: 0; translate: 0 10px; scale: 0.3; } }
 
 /* Balloon Pop gauge, in the skill orbs' style: the ATP orb in its volt rune, and two bars of dark-blue glass in a gold
-   frame that run out from behind it, the same length, one above and one below its middle line, together as tall as the
-   glass. The top one holds three blood vessels (the lives, which drain when one is lost); the bottom one is the ATP
-   storage tube, which fills cell by cell and, once full, glows with a moving shine to show it can be tapped. */
+   frame that run out from behind it, joined edge to edge and together as tall as the glass, with the old fighting-game
+   slant. The top one holds three blood vessels (the lives, which drain when one is lost) and stops a cell short of the
+   bottom one, the thicker ATP storage tube, which fills cell by cell and, once full, glows with a moving shine to show
+   it can be tapped. Both lean from the line they share, so their slanted ends follow one diagonal. */
 .mg-gauge { position: absolute; left: 10px; bottom: 10px; z-index: 8; display: grid; justify-items: start; pointer-events: none; }
 /* smaller in the corner of a phone's narrow sky */
 @media (max-width: 560px) { .mg-gauge { left: 6px; bottom: 6px; transform: scale(0.72); transform-origin: left bottom; } }
-/* both bars: 14 px tall with a 3 px gap, centred on the orb (56 px box, middle at 28 px), starting at its centre */
+/* the bars start at the orb's centre (56 px box, middle at 28 px): lives 14 px tall, tube 18 px, sharing a 2 px border */
 .mg-gauge__lives, .mg-gauge__tube {
-  position: relative; display: flex; gap: 2px; box-sizing: border-box; width: 140px; height: 14px; padding: 0 3px 0 27px;
-  border: 2px solid transparent; border-radius: 0 7px 7px 0; overflow: hidden;
+  position: relative; display: flex; gap: 3px; box-sizing: border-box; height: 14px; padding: 0 3px 0 27px;
+  border: 2px solid transparent; border-radius: 0 3px 3px 0; overflow: hidden;
   background: linear-gradient(180deg, #1e3a8a, #0b1430) padding-box, linear-gradient(180deg, #fde68a, #8a5a12) border-box;
   box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.6), 0 2px 0 rgb(0 0 0 / 0.45);
 }
-.mg-gauge__lives { position: absolute; z-index: 0; left: 30px; top: 12.5px; }
+/* a cell of the tube is 24.25 px wide; the lives use the same cells, one fewer */
+.mg-gauge__lives { position: absolute; z-index: 0; left: 30px; top: 13px; width: 113px; transform: skewX(-32deg); transform-origin: left bottom; }
 .mg-gauge__lives i {
   position: relative; flex: 1; height: 100%; overflow: hidden; border-radius: 2px;
   background: #2a0d12; box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.6);
@@ -854,8 +856,8 @@
 .mg-gauge__bolt { position: relative; z-index: 1; display: grid; place-items: center; width: 56px; height: 56px; margin-left: 2px; border-radius: 50%; }
 .mg-gauge__icon { width: 56px; height: 56px; overflow: visible; filter: saturate(0.35) brightness(0.6) drop-shadow(0 2px 0 rgb(0 0 0 / 0.5)); }
 .mg-gauge__pulse { opacity: 0; }
-.mg-gauge__slant { position: relative; display: block; margin: 29.5px 0 0 -28px; }
-.mg-gauge__tube { gap: 3px; }
+.mg-gauge__slant { position: relative; display: block; margin: 25px 0 0 -28px; transform: skewX(-32deg); transform-origin: left top; }
+.mg-gauge__tube { width: 140px; height: 18px; }
 .mg-gauge__tube i { flex: 1; height: 100%; border-radius: 2px; background: rgb(255 255 255 / 0.12); transition: background 0.3s; }
 /* the filled cells read as one bar running cyan, white, then yellow */
 .mg-gauge__tube i.mg-on { background: linear-gradient(90deg, #22d3ee, #e0fbff 50%, #facc15) no-repeat; background-size: 400% 100%; box-shadow: 0 0 6px rgb(103 232 249 / 0.7); }
@@ -865,7 +867,7 @@
 /* "TAP!" stamped over the full tube, like a fighting game's MAX */
 .mg-gauge__tap {
   position: absolute; inset: 0 0 0 24px; z-index: 1; display: grid; place-items: center; color: #0c2a4d;
-  font-size: 9.5px; line-height: 1; font-weight: 900; font-style: italic; letter-spacing: 0.1em; -webkit-text-stroke: 2.5px #fff; paint-order: stroke fill;
+  font-size: 11px; line-height: 1; font-weight: 900; font-style: italic; letter-spacing: 0.1em; -webkit-text-stroke: 2.5px #fff; paint-order: stroke fill;
   animation: mg-gauge-tap 0.8s ease-in-out infinite;
 }
 .mg-gauge__atp--ready .mg-gauge__icon { opacity: 1; filter: none; }
@@ -891,7 +893,7 @@
 .mg-gauge__atp--ready .mg-gauge__rune { opacity: 0.7; animation: mg-flyer-spin 6s linear infinite; }
 .mg-gauge__atp--ready .mg-gauge__pulse { animation: mg-flyer-pulse 1.4s ease-in-out infinite; opacity: 0.4; }
 @keyframes mg-pose { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
-@keyframes mg-gauge-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -296; } }
+@keyframes mg-gauge-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -304; } }
 @keyframes mg-gauge-surge { 0% { opacity: 1; } 24%, 100% { opacity: 0; } }
 @keyframes mg-gauge-flash { 0% { opacity: 0.45; } 22%, 100% { opacity: 0; } }
 @keyframes mg-gauge-ripple { 0% { opacity: 0.9; transform: scale(1); } 45%, 100% { opacity: 0; transform: scale(1.6); } }
