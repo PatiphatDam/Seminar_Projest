@@ -491,14 +491,79 @@
 @keyframes mg-heart-lost { 40% { transform: scale(1.5); } }
 
 /* ---------- Balloon Pop ---------- */
-/* Balloon Pop's clue, asked in Armin's speech bubble */
-.mg-mascot-bar__bubble:has(.mg-prompt__text) { flex: 1; }
+/* Balloon Pop's clue: an ancient spell scroll in Armin's speech bubble (see QuestionScroll) */
+.mg-mascot-bar__bubble:has(.mg-scroll) { flex: 1; padding: 0; background: none; border: 0; box-shadow: none; animation: none; }
+.mg-mascot-bar__bubble:has(.mg-scroll)::before { display: none; }
+/* room above and below for the rollers' caps */
+.mg-mascot-bar:has(.mg-scroll) { margin: 20px 0 22px; }
+.mg-scroll { --roll: 18px; --unroll: 0.9s; position: relative; display: block; padding: 0 calc(var(--roll) * 0.72); }
+.mg-scroll__paper {
+  position: relative; display: block; overflow: hidden; padding: 15px 26px 14px; color: #3b2410;
+  background:
+    radial-gradient(ellipse at 50% 50%, transparent 52%, rgb(70 35 8 / 0.6) 100%),
+    radial-gradient(circle at 74% 64%, rgb(139 90 30 / 0.2) 0 7%, transparent 17%),
+    radial-gradient(circle at 22% 80%, rgb(139 90 30 / 0.14) 0 5%, transparent 12%),
+    repeating-linear-gradient(90deg, rgb(120 80 30 / 0.05) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #ecd6a4, #d6b274 58%, #bb8f4e);
+  clip-path: polygon(0 4%,6% 1%,13% 3%,21% 0,30% 2.5%,40% .5%,50% 3%,60% 0,70% 2.5%,79% .5%,88% 3%,95% 0,100% 4%,100% 96%,94% 100%,86% 97.5%,76% 100%,66% 97%,56% 99.5%,46% 97%,36% 100%,26% 97.5%,16% 100%,8% 97%,0 99%);
+  animation: mg-scroll-unroll var(--unroll) cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.mg-scroll__burn { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 2px rgb(60 25 5 / 0.55), inset 0 0 10px 3px rgb(60 25 5 / 0.45); }
+/* the inner frame glows blue for a moment once the scroll is open, with a spark at each corner */
+.mg-scroll__frame {
+  position: absolute; inset: 4px 10px; pointer-events: none; border: 1px solid rgb(37 99 235 / 0.4);
+  outline: 1px solid rgb(212 165 55 / 0.55); outline-offset: -4px; animation: mg-scroll-glow 1.8s ease-out;
+}
+.mg-scroll__medal { position: absolute; width: 13px; height: 13px; }
+.mg-scroll__medal--tl { left: 6px; top: 5px; }
+.mg-scroll__medal--tr { right: 6px; top: 5px; }
+.mg-scroll__medal--bl { left: 6px; bottom: 5px; }
+.mg-scroll__medal--br { right: 6px; bottom: 5px; }
+.mg-scroll__spark {
+  position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #bfdbfe; box-shadow: 0 0 6px 2px #60a5fa;
+  opacity: 0; animation: mg-scroll-spark 1.8s ease-out;
+}
+.mg-scroll__spark--tl { left: 10px; top: 9px; }
+.mg-scroll__spark--tr { right: 10px; top: 9px; animation-delay: 0.08s; }
+.mg-scroll__spark--bl { left: 10px; bottom: 9px; animation-delay: 0.16s; }
+.mg-scroll__spark--br { right: 10px; bottom: 9px; animation-delay: 0.24s; }
+.mg-scroll__rune { position: absolute; right: 18px; top: 50%; width: 62px; height: 62px; margin-top: -31px; opacity: 0.17; pointer-events: none; }
+.mg-scroll .mg-prompt__label, .mg-scroll .mg-prompt__text { position: relative; animation: mg-scroll-ink calc(var(--unroll) + 0.35s) ease-out; }
+.mg-scroll .mg-prompt__label { font-family: 'Cinzel Decorative', Georgia, serif; font-weight: 700; letter-spacing: 0.08em; color: #1e40af; text-shadow: 0 0 6px rgb(96 165 250 / 0.5); }
+.mg-scroll .mg-prompt__text { padding-right: 40px; font-family: 'Playfair Display Variable', 'Playfair Display', Georgia, serif; font-weight: 600; color: #3b2410; }
+/* the rollers: dark wood with a gold band, and gold caps with a small blue gem; the right one travels out as it unrolls */
+.mg-scroll__roller {
+  position: absolute; z-index: 1; top: -7px; bottom: -7px; width: var(--roll); border-radius: calc(var(--roll) / 2);
+  background: linear-gradient(90deg, #3a2410, #7a5226 22%, #b98a4e 42%, #8a6030 62%, #4a2e12 88%, #2a1808); box-shadow: 2px 3px 5px rgb(0 0 0 / 0.55);
+}
+.mg-scroll__roller::before, .mg-scroll__roller::after { content: ''; position: absolute; left: 2px; right: 2px; height: 6px; border-radius: 50%; border: 1px solid rgb(240 210 150 / 0.35); }
+.mg-scroll__roller::before { top: 5px; }
+.mg-scroll__roller::after { bottom: 5px; }
+.mg-scroll__roller--left { left: 0; }
+.mg-scroll__roller--right { left: calc(100% - var(--roll)); animation: mg-scroll-roll var(--unroll) cubic-bezier(0.3, 0.7, 0.3, 1); }
+.mg-scroll__band { position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: -3px; background: linear-gradient(90deg, #6b4410, #fde68a 45%, #b8862b 70%, #5c3b10); }
+.mg-scroll__cap {
+  position: absolute; left: 50%; width: 14px; height: 10px; margin-left: -7px; border-radius: 3px 3px 6px 6px;
+  background: radial-gradient(circle at 40% 30%, #fff3c4, #d4a537 45%, #6b4410); box-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+.mg-scroll__cap--top { top: -9px; transform: scaleY(-1); }
+.mg-scroll__cap--bottom { bottom: -9px; }
+.mg-scroll__cap::after { content: ''; position: absolute; left: 4px; bottom: -5px; width: 6px; height: 6px; border-radius: 50%; background: radial-gradient(circle at 40% 30%, #bfdbfe, #2563eb 55%, #0b1430); }
+@keyframes mg-scroll-unroll { from { clip-path: polygon(0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 96%,0 100%,0 97.5%,0 100%,0 97%,0 99.5%,0 97%,0 100%,0 97.5%,0 100%,0 97%,0 99%); } }
+@keyframes mg-scroll-roll { from { left: 0; } }
+@keyframes mg-scroll-ink { 0%, 55% { opacity: 0; filter: blur(2px); } }
+@keyframes mg-scroll-glow { 0%, 45% { box-shadow: none; } 60% { border-color: #60a5fa; box-shadow: 0 0 8px 1px rgb(96 165 250 / 0.9), inset 0 0 8px rgb(96 165 250 / 0.7); } }
+@keyframes mg-scroll-spark { 0%, 50% { opacity: 0; transform: scale(0.3); } 62% { opacity: 1; transform: scale(1.4); } 100% { opacity: 0; transform: scale(0.5); } }
 .mg-prompt__label { display: block; font-size: 12px; line-height: 18px; color: var(--sea-700); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .mg-prompt__text { display: block; margin-top: 2px; font-size: 17px; font-weight: 600; line-height: 1.5; animation: mg-bubble 0.3s ease-out; }
 @media (max-width: 560px) {
   .mg-hud { gap: 6px; padding: 6px 10px; margin-bottom: 8px; }
   .mg-prompt__label { font-size: 11px; line-height: 16px; }
   .mg-prompt__text { font-size: 16px; line-height: 1.4; }
+  .mg-scroll { --roll: 14px; }
+  .mg-scroll__paper { padding: 12px 18px 11px; }
+  .mg-scroll__rune { right: 12px; width: 48px; height: 48px; margin-top: -24px; }
+  .mg-scroll .mg-prompt__text { padding-right: 26px; }
 }
 
 .mg-sky {

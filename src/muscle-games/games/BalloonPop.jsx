@@ -328,6 +328,72 @@ function BadgeBolt() {
   );
 }
 
+// Balloon Pop's clue, on an ancient spell scroll in Armin's speech bubble. Burnt, ragged parchment with fibres and
+// stains, an inner blue-and-gold frame, a rune medallion in each corner and the volt rune as a faint watermark,
+// between two dark wooden rollers with gold bands and caps. Each new clue unrolls it from left to right (the right
+// roller travels out), the words soak in like ink, and the frame glows blue for a moment with a spark at each corner.
+const SCROLL_TICKS = Array.from({ length: 36 }, (_, i) => {
+  const a = (i / 36) * Math.PI * 2;
+  const b = a + 0.06;
+  const p = (r, t) => `${(Math.cos(t) * r).toFixed(1)} ${(Math.sin(t) * r).toFixed(1)}`;
+  return `M${p(37.5, a)}L${p(41, a)}L${p(41, b)}`;
+}).join('');
+const CORNERS = ['tl', 'tr', 'bl', 'br'];
+function ScrollMedal({ corner }) {
+  return (
+    <svg className={`mg-scroll__medal mg-scroll__medal--${corner}`} viewBox="-7 -7 14 14" aria-hidden="true">
+      <circle r="6" fill="none" stroke="#b8862b" strokeWidth="1" />
+      <path d="M0-4.2L3.6 2.1H-3.6Z" fill="none" stroke="#1e40af" strokeWidth="0.8" />
+      <circle r="1" fill="#1e40af" />
+    </svg>
+  );
+}
+function ScrollRoller({ side }) {
+  return (
+    <span className={`mg-scroll__roller mg-scroll__roller--${side}`} aria-hidden="true">
+      <span className="mg-scroll__band" />
+      <i className="mg-scroll__cap mg-scroll__cap--top" />
+      <i className="mg-scroll__cap mg-scroll__cap--bottom" />
+    </span>
+  );
+}
+function QuestionScroll({ text }) {
+  return (
+    <span className="mg-scroll">
+      <span className="mg-scroll__paper">
+        <span className="mg-scroll__burn" aria-hidden="true" />
+        <span className="mg-scroll__frame" aria-hidden="true" />
+        {CORNERS.map((c) => (
+          <i key={c} className={`mg-scroll__spark mg-scroll__spark--${c}`} aria-hidden="true" />
+        ))}
+        {CORNERS.map((c) => (
+          <ScrollMedal key={c} corner={c} />
+        ))}
+        <svg className="mg-scroll__rune" viewBox="-50 -50 100 100" aria-hidden="true">
+          <g fill="none" stroke="#1e3a8a" strokeWidth="2.4">
+            <circle r="47" />
+            <circle r="43" strokeWidth="1" />
+            <path d={SCROLL_TICKS} strokeWidth="1.6" />
+            <circle r="34" />
+            <polygon points="0,-34 14.7,30.6 -26.6,-21.2 33.1,7.5 -33.1,7.5 26.6,-21.2 -14.7,30.6" />
+            <circle r="12" />
+            {VOLT_SATELLITES.map(([x, y], k) => (
+              <g key={k} transform={`translate(${(x * 0.94).toFixed(1)} ${(y * 0.94).toFixed(1)})`}>
+                <circle r="6.5" fill="#d6b274" strokeWidth="1.6" />
+                <path d="M1.2-3.8l-3 4.2h2l-1 3.8 3-4.6h-2z" fill="#1e3a8a" stroke="none" />
+              </g>
+            ))}
+          </g>
+        </svg>
+        <span className="mg-prompt__label">🪄 Tap the balloon that matches:</span>
+        <span className="mg-prompt__text">{text}</span>
+      </span>
+      <ScrollRoller side="left" />
+      <ScrollRoller side="right" />
+    </span>
+  );
+}
+
 // the middle of the balloon's envelope, as a share of the art's height (the art is 120 x 172; the envelope is centred
 // at (60, 64))
 const ENVELOPE_MID = 64 / 172;
@@ -495,15 +561,9 @@ export default function BalloonPop({ onScore, onFinish }) {
   const s = st.current;
   const q = questions[s.i];
   const duration = Math.max(7, 10.5 - s.i * 0.35);
-  // Armin asks each clue in his speech bubble (he doesn't cheer or comment in this game)
+  // Armin asks each clue in his speech bubble, on an old spell scroll (he doesn't cheer or comment in this game)
   useEffect(() => {
-    fx.say(
-      <>
-        <span className="mg-prompt__label">🪄 Tap the balloon that matches:</span>
-        <span className="mg-prompt__text">{q.text}</span>
-      </>,
-      'idle'
-    );
+    fx.say(<QuestionScroll text={q.text} />, 'idle');
   }, [fx, q.text]);
 
   const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end() });
