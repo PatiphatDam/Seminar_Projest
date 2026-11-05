@@ -2,7 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { rng, sample, shuffle } from './util.js';
 import { CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
 import { useFx } from '../fx/Fx.jsx';
-import { TimerBar, useCountdown } from '../components/Hud.jsx';
+import { useCountdown } from '../components/Hud.jsx';
 import { scoreOutOf10 } from './meta.js';
 // the raider balloon as one picture (made from AirshipShapes by scripts/airship-svg.mjs): the browser draws it once
 // and reuses it for every balloon, instead of building the drawing again for each balloon every round
@@ -328,6 +328,79 @@ function BadgeBolt() {
   );
 }
 
+// Balloon Pop's timer, on a strip of the same old parchment as the clue scroll: a gold-framed hourglass whose blue sand
+// runs down with the time, a sunken ink tube with gold end caps and inked marks every 5 s, its blue ink (bubbles,
+// glowing tip) shrinking as time runs out, and the seconds in an inked cartouche. In the last 10 s the ink turns red,
+// the number pulses and the clock ticks.
+const TIMER_MARKS = Array.from({ length: 21 }, (_, k) => k * 5);
+function ScrollTimer({ left, total }) {
+  const fx = useFx();
+  const secs = Math.max(0, Math.ceil(left));
+  const low = left > 0 && left <= Math.min(10, total * 0.25);
+  useEffect(() => {
+    if (low && secs <= 5) fx.sound('tick');
+  }, [secs, low, fx]);
+  const f = Math.max(0, Math.min(1, left / total));
+  return (
+    <div className={`mg-stimer${low ? ' mg-stimer--low' : ''}`} role="timer" aria-label={`${secs} seconds left`}>
+      <span className="mg-scroll__burn" aria-hidden="true" />
+      <span className="mg-stimer__frame" aria-hidden="true" />
+      <ScrollMedal corner="ml" />
+      <ScrollMedal corner="mr" />
+      <svg className="mg-stimer__glass" viewBox="0 0 26 34" aria-hidden="true">
+        <defs>
+          <linearGradient id="mg-hg-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#fff3c4" />
+            <stop offset=".45" stopColor="#d4a537" />
+            <stop offset="1" stopColor="#6b4410" />
+          </linearGradient>
+          <linearGradient id="mg-hg-post" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#6b4410" />
+            <stop offset=".45" stopColor="#fde68a" />
+            <stop offset="1" stopColor="#6b4410" />
+          </linearGradient>
+          <clipPath id="mg-hg-top">
+            <path d="M7 5c0 6 5 8.5 6 12 1-3.5 6-6 6-12z" />
+          </clipPath>
+          <clipPath id="mg-hg-bottom">
+            <path d="M7 29c0-6 5-8.5 6-12 1 3.5 6 6 6 12z" />
+          </clipPath>
+        </defs>
+        <rect x="2" y="1" width="22" height="4" rx="1.5" fill="url(#mg-hg-gold)" stroke="#5c3b10" strokeWidth="0.6" />
+        <rect x="2" y="29" width="22" height="4" rx="1.5" fill="url(#mg-hg-gold)" stroke="#5c3b10" strokeWidth="0.6" />
+        <path d="M4.5 5v24M21.5 5v24" stroke="url(#mg-hg-post)" strokeWidth="2" />
+        <circle cx="4.5" cy="17" r="1.4" fill="#d4a537" />
+        <circle cx="21.5" cy="17" r="1.4" fill="#d4a537" />
+        <path d="M7 5c0 6 5 8.5 6 12-1 3.5-6 6-6 12h12c0-6-5-8.5-6-12 1-3.5 6-6 6-12z" fill="rgb(219 234 254 / 0.35)" stroke="#7a4a1c" strokeWidth="0.8" />
+        <g clipPath="url(#mg-hg-top)">
+          <rect className="mg-stimer__sand" x="6" y={5 + 12 * (1 - f)} width="14" height={12 * f} />
+        </g>
+        <g clipPath="url(#mg-hg-bottom)">
+          <rect className="mg-stimer__sand" x="6" y={29 - 12 * (1 - f)} width="14" height={12 * (1 - f)} />
+        </g>
+        {f > 0 && <path className="mg-stimer__stream" d="M13 17v12" />}
+        <path d="M9 7.5c.5 3 2 4.5 3 5.5" stroke="#fff" strokeWidth="0.8" fill="none" opacity="0.6" />
+      </svg>
+      <div className="mg-stimer__track" aria-hidden="true">
+        <span className="mg-stimer__marks">
+          {TIMER_MARKS.map((m) => (
+            <b key={m} style={{ left: `${m}%` }} />
+          ))}
+        </span>
+        <span className="mg-stimer__pipe" />
+        <span className="mg-stimer__ink" style={{ width: `calc((100% - 14px) * ${f})` }}>
+          <i style={{ left: '70%', top: 3, width: 2, height: 2 }} />
+          <i style={{ left: '45%', top: 5, width: 3, height: 3, animationDelay: '-1s' }} />
+          <i style={{ left: '85%', top: 4, width: 2, height: 2, animationDelay: '-1.7s' }} />
+        </span>
+        <span className="mg-stimer__cap mg-stimer__cap--left" />
+        <span className="mg-stimer__cap mg-stimer__cap--right" />
+      </div>
+      <span className="mg-stimer__num">{secs}</span>
+    </div>
+  );
+}
+
 // Balloon Pop's clue, on an ancient spell scroll in Armin's speech bubble. Burnt, ragged parchment with fibres and
 // stains, an inner blue-and-gold frame, a rune medallion in each corner and the volt rune as a faint watermark,
 // between two dark wooden rollers with gold bands and caps. Each new clue unrolls it from left to right (the right
@@ -357,7 +430,7 @@ function ScrollRoller({ side }) {
     </span>
   );
 }
-function QuestionScroll({ text }) {
+function QuestionScroll({ text, n }) {
   return (
     <span className="mg-scroll">
       <span className="mg-scroll__paper">
@@ -387,6 +460,9 @@ function QuestionScroll({ text }) {
         </svg>
         <span className="mg-prompt__label">🪄 Tap the balloon that matches:</span>
         <span className="mg-prompt__text">{text}</span>
+      </span>
+      <span className="mg-scroll__count" aria-label={`Question ${n} of ${ROUNDS}`}>
+        {n}/{ROUNDS}
       </span>
       <ScrollRoller side="left" />
       <ScrollRoller side="right" />
@@ -563,8 +639,8 @@ export default function BalloonPop({ onScore, onFinish }) {
   const duration = Math.max(7, 10.5 - s.i * 0.35);
   // Armin asks each clue in his speech bubble, on an old spell scroll (he doesn't cheer or comment in this game)
   useEffect(() => {
-    fx.say(<QuestionScroll text={q.text} />, 'idle');
-  }, [fx, q.text]);
+    fx.say(<QuestionScroll text={q.text} n={s.i + 1} />, 'idle');
+  }, [fx, q.text, s.i]);
 
   const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end() });
 
@@ -767,14 +843,7 @@ export default function BalloonPop({ onScore, onFinish }) {
 
   return (
     <section className="mg-balloon-game">
-      <div className="mg-hud">
-        <TimerBar left={left} total={TIME} />
-        <div className="mg-hud__row">
-          <span className="mg-hud__q">
-            Q {s.i + 1}/{ROUNDS}
-          </span>
-        </div>
-      </div>
+      <ScrollTimer left={left} total={TIME} />
 
       <div ref={skyRef} className={`mg-sky${frozen ? ' mg-sky--frozen' : ''}${shake ? ' mg-shake' : ''}`}>
         <div className="mg-sky__moon" aria-hidden="true" />
