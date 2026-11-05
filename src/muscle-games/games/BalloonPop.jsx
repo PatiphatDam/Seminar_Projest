@@ -284,22 +284,29 @@ function GaugeLightning() {
   );
 }
 
-// The badge icon: a lightning bolt fading from cyan through white to yellow, with two white crackles. When the tube is
-// full it flickers like a neon sign, and its outline wobbles between two shapes.
+// The badge icon: a sharp, three-step anime lightning bolt, yellow fading pale at the top with a deep-blue edge, and two
+// sky-blue forks crackling off its sides. When the tube is full it flickers like a neon sign, and its outline wobbles
+// between two shapes.
+const BADGE_BOLTS = [
+  '16.8,0.8 7.4,10.8 11.2,11 4.4,18.4 8,18.6 3.4,23.4 15.4,13.4 11.8,13.2 19.4,5.6 15.4,5.4 20.2,0.8',
+  '17.2,0.6 7.8,10.4 11.6,10.8 4.8,18 8.4,18.4 3,23.6 15,13.8 11.4,13.4 19,5.9 15,5.6 20.4,0.6',
+];
 function BadgeBolt() {
   return (
     <svg className="mg-gauge__icon" viewBox="0 0 24 24">
       <defs>
         <linearGradient id="mg-badge-bolt" x1="0.8" y1="0" x2="0.2" y2="1">
-          <stop offset="0" stopColor="#22d3ee" />
-          <stop offset="0.5" stopColor="#f0fdff" />
-          <stop offset="1" stopColor="#facc15" />
+          <stop offset="0" stopColor="#fef9c3" />
+          <stop offset="0.45" stopColor="#facc15" />
+          <stop offset="1" stopColor="#f59e0b" />
         </linearGradient>
       </defs>
-      <g className="mg-gauge__neon">
-        <polygon className="mg-gauge__shape-a" points="15,1 4.5,13.5 11,13.5 8,23 19.5,9.5 13,9.5" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
-        <polygon className="mg-gauge__shape-b" points="15.5,1 5,13 11.5,13.8 7.5,23 19,10 13.2,9.2" fill="url(#mg-badge-bolt)" stroke="#0c2a4d" strokeWidth="1" strokeLinejoin="round" />
-        <path d="M7 9 l-2.5 -1 l-1 -2.5 M16 14 l2.5 1 l1 2.5" fill="none" stroke="#fff" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" />
+      <g className="mg-gauge__neon" transform="translate(12 12) scale(0.86) translate(-12 -12)">
+        <path d="M9.6 7.8l-3.4-0.4-1.6-2.8M8.2 8.6l-2.4 1.4M14.4 16.2l3.2 0.8 1.2 2.8M15.6 15.4l2.6-1.2" fill="none" stroke="#38bdf8" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M9.6 7.8l-3.4-0.4-1.6-2.8M14.4 16.2l3.2 0.8 1.2 2.8" fill="none" stroke="#e0f2fe" strokeWidth="0.45" strokeLinecap="round" strokeLinejoin="round" />
+        {BADGE_BOLTS.map((points, k) => (
+          <polygon key={k} className={k ? 'mg-gauge__shape-b' : 'mg-gauge__shape-a'} points={points} fill="url(#mg-badge-bolt)" stroke="#1e3a8a" strokeWidth="1.2" strokeLinejoin="miter" />
+        ))}
       </g>
     </svg>
   );

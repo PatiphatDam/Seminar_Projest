@@ -893,7 +893,7 @@
 .mg-pose { opacity: 0; animation: mg-pose 0.24s steps(1) infinite; }
 .mg-gauge__ripple { position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #67e8f9; opacity: 0; animation: mg-gauge-ripple 1.2s ease-out infinite; }
 /* neon sign: off, on, dim, on ... over 2.4 s, with the outline wobbling between two shapes */
-.mg-gauge__atp--ready .mg-gauge__icon { filter: drop-shadow(0 0 3px #22d3ee) drop-shadow(0 0 6px rgb(250 204 21 / 0.6)); }
+.mg-gauge__atp--ready .mg-gauge__icon { filter: drop-shadow(0 0 3px #38bdf8) drop-shadow(0 0 6px rgb(250 204 21 / 0.75)); }
 .mg-gauge__atp--ready .mg-gauge__neon { animation: mg-gauge-neon 2.4s steps(1) infinite; }
 .mg-gauge__shape-b { opacity: 0; }
 .mg-gauge__atp--ready .mg-gauge__shape-a { animation: mg-gauge-wobble 0.16s steps(1) infinite; }
