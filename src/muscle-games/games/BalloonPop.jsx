@@ -226,7 +226,7 @@ function Bolt({ spine, w }) {
 
 // Round the full tube: three poses of four thin bolts, cyan and yellow in turn, each with a small white fork. They sit
 // on the tube's border and the slant comes from the wrapper they share with the tube, so they follow its edges
-// exactly and never cross the TAP! label. Drawn in tube space: the tube runs x 0-125, y 0-27.
+// exactly and never cross the TAP! label. Laid out on a 125 x 27 grid, then scaled to the tube's 140 x 14.
 const EDGE_COLORS = {
   cyan: ['#0ea5e9', '#22d3ee', '#f0fdff'],
   yellow: ['#f59e0b', '#facc15', '#fffbe6'],
@@ -237,7 +237,9 @@ const EDGE_POSES = [
   [[60, 0, 86, 0, 'cyan'], [75, 27, 48, 28, 'yellow'], [118, 27, 100, 28, 'yellow'], [14, 0, 34, 0, 'cyan']],
 ].map((pose, p) =>
   pose.map(([x1, y1, x2, y2, color], k) => {
-    const spine = jagged(x1, y1, x2, y2, 5, 0.1, 11 + p * 10 + k);
+    const X = (x) => +(x * (140 / 125)).toFixed(1);
+    const Y = (y) => +(y * (14 / 27)).toFixed(1);
+    const spine = jagged(X(x1), Y(y1), X(x2), Y(y2), 5, 0.1, 11 + p * 10 + k);
     // the fork leaves from the middle kink, pointing away from the tube
     const [mx, my] = spine[2];
     const out = x1 > 120 ? 0 : y1 > 13 ? 1 : -1;
@@ -260,18 +262,18 @@ function EdgeBolt({ spine, color, fork, w = 1.8 }) {
 }
 
 // The full tube: two sparks with tails race round its border all the time, one cyan and one yellow, and every 1.2 s
-// it surges: a white flash and a burst of the edge bolts. Dashes on the border outline (perimeter 304) are the sparks.
+// it surges: a white flash and a burst of the edge bolts. Dashes on the border outline (perimeter about 296) are the sparks.
 function GaugeLightning() {
   return (
-    <svg className="mg-gauge__sparks" viewBox="-6 -6 137 39" aria-hidden="true">
+    <svg className="mg-gauge__sparks" viewBox="-6 -6 152 26" aria-hidden="true">
       <g className="mg-gauge__run" fill="none" strokeLinecap="round">
-        <rect x="0" y="0" width="125" height="27" rx="4" stroke="#67e8f9" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
-        <rect x="0" y="0" width="125" height="27" rx="4" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
-        <rect className="mg-gauge__run-b" x="0" y="0" width="125" height="27" rx="4" stroke="#fde047" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
-        <rect className="mg-gauge__run-b" x="0" y="0" width="125" height="27" rx="4" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
+        <rect x="0" y="0" width="140" height="14" rx="7" stroke="#67e8f9" strokeWidth="3" strokeDasharray="26 270" opacity="0.5" />
+        <rect x="0" y="0" width="140" height="14" rx="7" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 291" strokeDashoffset="-21" />
+        <rect className="mg-gauge__run-b" x="0" y="0" width="140" height="14" rx="7" stroke="#fde047" strokeWidth="3" strokeDasharray="26 270" opacity="0.5" />
+        <rect className="mg-gauge__run-b" x="0" y="0" width="140" height="14" rx="7" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 291" strokeDashoffset="-21" />
       </g>
       <g className="mg-gauge__surge">
-        <rect x="0" y="0" width="125" height="27" rx="4" fill="#fff" className="mg-gauge__flash" />
+        <rect x="0" y="0" width="140" height="14" rx="7" fill="#fff" className="mg-gauge__flash" />
         {EDGE_POSES.map((bolts, k) => (
           <g key={k} className="mg-pose" style={{ animationDelay: `${-0.08 * k}s` }}>
             {bolts.map((b, j) => (

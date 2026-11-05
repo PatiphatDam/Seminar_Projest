@@ -818,47 +818,45 @@
 }
 @keyframes mg-ember { to { opacity: 0; translate: 0 10px; scale: 0.3; } }
 
-/* Balloon Pop gauge, fighting-game style: slanted bars with a cream frame. Three blood vessels are the lives (they
-   drain when one is lost), joined in one frame that sits right on top of the ATP storage tube with the same slant;
-   the tube fills cell by cell and, once full, glows with a moving shine and a pointing hand to show it can be tapped. */
+/* Balloon Pop gauge, in the skill orbs' style: the ATP orb in its volt rune, and two bars of dark-blue glass in a gold
+   frame that run out from behind it, the same length, one above and one below its middle line, together as tall as the
+   glass. The top one holds three blood vessels (the lives, which drain when one is lost); the bottom one is the ATP
+   storage tube, which fills cell by cell and, once full, glows with a moving shine to show it can be tapped. */
 .mg-gauge { position: absolute; left: 10px; bottom: 10px; z-index: 8; display: grid; justify-items: start; pointer-events: none; }
 /* smaller in the corner of a phone's narrow sky */
 @media (max-width: 560px) { .mg-gauge { left: 6px; bottom: 6px; transform: scale(0.72); transform-origin: left bottom; } }
-/* The cream frame shows between the vessels as thin dividers; its bottom edge overlaps the tube's top border
-   (the button is 44 px tall around a 27 px tube, so it starts 8.5 px above it). */
-.mg-gauge__lives {
-  position: relative; z-index: 2; display: flex; gap: 2px; width: 114px; margin: 0 0 -10px 53px; padding: 2px 2px 0;
-  border-radius: 4px 4px 0 0; background: #f8e7d0; transform: skewX(-32deg); box-shadow: 0 -1px 3px rgb(0 0 0 / 0.35);
+/* both bars: 14 px tall with a 3 px gap, centred on the orb (56 px box, middle at 28 px), starting at its centre */
+.mg-gauge__lives, .mg-gauge__tube {
+  position: relative; display: flex; gap: 2px; box-sizing: border-box; width: 140px; height: 14px; padding: 0 3px 0 27px;
+  border: 2px solid transparent; border-radius: 0 7px 7px 0; overflow: hidden;
+  background: linear-gradient(180deg, #1e3a8a, #0b1430) padding-box, linear-gradient(180deg, #fde68a, #8a5a12) border-box;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.6), 0 2px 0 rgb(0 0 0 / 0.45);
 }
+.mg-gauge__lives { position: absolute; z-index: 0; left: 30px; top: 12.5px; }
 .mg-gauge__lives i {
-  position: relative; flex: 1; height: 12px; overflow: hidden; border-radius: 2px;
+  position: relative; flex: 1; height: 100%; overflow: hidden; border-radius: 2px;
   background: #2a0d12; box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.6);
 }
 /* the blood, with a few red cells floating in it */
 .mg-gauge__lives i::before {
   content: ''; position: absolute; inset: 0; transform: scaleX(0); transform-origin: left; transition: transform 0.45s ease-in;
   background:
-    radial-gradient(circle at 22% 58%, #ff9a9a 0 1.7px, transparent 2.2px),
-    radial-gradient(circle at 55% 38%, #ff9a9a 0 1.5px, transparent 2px),
-    radial-gradient(circle at 84% 62%, #ff9a9a 0 1.7px, transparent 2.2px),
+    radial-gradient(circle at 22% 58%, #ff9a9a 0 1.3px, transparent 1.8px),
+    radial-gradient(circle at 55% 38%, #ff9a9a 0 1.1px, transparent 1.6px),
+    radial-gradient(circle at 84% 62%, #ff9a9a 0 1.3px, transparent 1.8px),
     linear-gradient(180deg, #ff6676 0%, #e0102e 48%, #8f0019 100%);
 }
 .mg-gauge__lives i.mg-on::before { transform: scaleX(1); }
-.mg-gauge__lives i::after { content: ''; position: absolute; left: 3px; right: 3px; top: 1.5px; height: 2.5px; border-radius: 2px; background: rgb(255 255 255 / 0.45); }
-.mg-gauge__atp { position: relative; display: flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; pointer-events: auto; }
+.mg-gauge__lives i::after { content: ''; position: absolute; left: 3px; right: 3px; top: 1px; height: 2px; border-radius: 2px; background: rgb(255 255 255 / 0.45); }
+.mg-gauge__atp { position: relative; display: flex; align-items: flex-start; height: 56px; padding: 0; border: 0; background: none; color: inherit; cursor: pointer; pointer-events: auto; }
 .mg-gauge__atp:disabled { cursor: default; }
-/* the ATP skill orb in its volt rune; dimmed until the tube is full */
-.mg-gauge__bolt { position: relative; z-index: 1; display: grid; place-items: center; width: 40px; height: 40px; margin-left: 2px; border-radius: 50%; }
-.mg-gauge__icon { width: 50px; height: 50px; overflow: visible; filter: saturate(0.35) brightness(0.6) drop-shadow(0 2px 0 rgb(0 0 0 / 0.5)); }
+/* the ATP skill orb in its volt rune, over the bars' left ends; dimmed until the tube is full */
+.mg-gauge__bolt { position: relative; z-index: 1; display: grid; place-items: center; width: 56px; height: 56px; margin-left: 2px; border-radius: 50%; }
+.mg-gauge__icon { width: 56px; height: 56px; overflow: visible; filter: saturate(0.35) brightness(0.6) drop-shadow(0 2px 0 rgb(0 0 0 / 0.5)); }
 .mg-gauge__pulse { opacity: 0; }
-/* the tube and its lightning share one steep slant, so the bolts follow the tube's edges */
-.mg-gauge__slant { position: relative; display: block; margin-left: -3px; transform: skewX(-32deg); }
-.mg-gauge__tube {
-  position: relative; display: flex; gap: 3px; padding: 4px 8px 4px 16px; overflow: hidden;
-  border-radius: 4px; background: #120b24; border: 2px solid #f8e7d0;
-  box-shadow: inset 0 2px 4px #000, 0 2px 0 rgb(0 0 0 / 0.5);
-}
-.mg-gauge__tube i { width: 22px; height: 15px; border-radius: 2px; background: rgb(255 255 255 / 0.12); transition: background 0.3s; }
+.mg-gauge__slant { position: relative; display: block; margin: 29.5px 0 0 -28px; }
+.mg-gauge__tube { gap: 3px; }
+.mg-gauge__tube i { flex: 1; height: 100%; border-radius: 2px; background: rgb(255 255 255 / 0.12); transition: background 0.3s; }
 /* the filled cells read as one bar running cyan, white, then yellow */
 .mg-gauge__tube i.mg-on { background: linear-gradient(90deg, #22d3ee, #e0fbff 50%, #facc15) no-repeat; background-size: 400% 100%; box-shadow: 0 0 6px rgb(103 232 249 / 0.7); }
 .mg-gauge__tube i.mg-on:nth-child(2) { background-position: 33.3% 0; }
@@ -866,12 +864,12 @@
 .mg-gauge__tube i.mg-on:nth-child(4) { background-position: 100% 0; box-shadow: 0 0 6px rgb(250 204 21 / 0.7); }
 /* "TAP!" stamped over the full tube, like a fighting game's MAX */
 .mg-gauge__tap {
-  position: absolute; inset: 0 0 0 8px; z-index: 1; display: grid; place-items: center; color: #0c2a4d;
-  font-size: 13px; font-weight: 900; font-style: italic; letter-spacing: 0.1em; -webkit-text-stroke: 3px #fff; paint-order: stroke fill;
+  position: absolute; inset: 0 0 0 24px; z-index: 1; display: grid; place-items: center; color: #0c2a4d;
+  font-size: 9.5px; line-height: 1; font-weight: 900; font-style: italic; letter-spacing: 0.1em; -webkit-text-stroke: 2.5px #fff; paint-order: stroke fill;
   animation: mg-gauge-tap 0.8s ease-in-out infinite;
 }
 .mg-gauge__atp--ready .mg-gauge__icon { opacity: 1; filter: none; }
-.mg-gauge__atp--ready .mg-gauge__tube { border-color: #a5f3fc; animation: mg-gauge-glow 1s ease-in-out infinite; }
+.mg-gauge__atp--ready .mg-gauge__tube { animation: mg-gauge-glow 1s ease-in-out infinite; }
 .mg-gauge__atp--ready .mg-gauge__tube::after {
   content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 18px;
   background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.8), transparent); animation: mg-gauge-shine 1.2s linear infinite;
@@ -887,19 +885,19 @@
 .mg-gauge__surge { animation: mg-gauge-surge 1.2s steps(1) infinite; }
 .mg-gauge__flash { opacity: 0; animation: mg-gauge-flash 1.2s ease-out infinite; }
 .mg-pose { opacity: 0; animation: mg-pose 0.24s steps(1) infinite; }
-.mg-gauge__ripple { position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #67e8f9; opacity: 0; animation: mg-gauge-ripple 1.2s ease-out infinite; }
+.mg-gauge__ripple { position: absolute; inset: 12.5px; border-radius: 50%; border: 2px solid #67e8f9; opacity: 0; animation: mg-gauge-ripple 1.2s ease-out infinite; }
 /* full: the orb glows, its rune turns and a ring pulses out */
-.mg-gauge__atp--ready .mg-gauge__icon { filter: drop-shadow(0 0 3px #38bdf8) drop-shadow(0 0 6px rgb(250 204 21 / 0.75)); }
-.mg-gauge__atp--ready .mg-gauge__rune { animation: mg-flyer-spin 6s linear infinite; }
-.mg-gauge__atp--ready .mg-gauge__pulse { animation: mg-flyer-pulse 1s ease-in-out infinite; opacity: 0.7; }
+.mg-gauge__atp--ready .mg-gauge__icon { filter: drop-shadow(0 0 2px rgb(56 189 248 / 0.5)); }
+.mg-gauge__atp--ready .mg-gauge__rune { opacity: 0.7; animation: mg-flyer-spin 6s linear infinite; }
+.mg-gauge__atp--ready .mg-gauge__pulse { animation: mg-flyer-pulse 1.4s ease-in-out infinite; opacity: 0.4; }
 @keyframes mg-pose { 0% { opacity: 1; } 33.34%, 100% { opacity: 0; } }
-@keyframes mg-gauge-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -304; } }
+@keyframes mg-gauge-run { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -296; } }
 @keyframes mg-gauge-surge { 0% { opacity: 1; } 24%, 100% { opacity: 0; } }
 @keyframes mg-gauge-flash { 0% { opacity: 0.45; } 22%, 100% { opacity: 0; } }
 @keyframes mg-gauge-ripple { 0% { opacity: 0.9; transform: scale(1); } 45%, 100% { opacity: 0; transform: scale(1.6); } }
 @keyframes mg-gauge-burst { from { opacity: 0; } to { opacity: 1; } }
 @keyframes mg-gauge-glow { 0%, 100% { box-shadow: inset 0 2px 4px #000, 0 0 10px 2px rgb(34 211 238 / 0.6); } 50% { box-shadow: inset 0 2px 4px #000, 0 0 14px 3px rgb(250 204 21 / 0.7); } }
-@keyframes mg-gauge-shine { from { transform: translateX(-20px); } to { transform: translateX(130px); } }
+@keyframes mg-gauge-shine { from { transform: translateX(-20px); } to { transform: translateX(150px); } }
 @keyframes mg-gauge-tap { 50% { transform: scale(1.15); } }
 @keyframes mg-pulse-gold { 50% { box-shadow: 0 0 0 8px rgba(250, 204, 21, 0.3); transform: scale(1.05); } }
 
