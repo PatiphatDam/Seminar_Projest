@@ -588,14 +588,22 @@
 .mg-flyer::after { content: ''; position: absolute; inset: calc((var(--size) - var(--tap)) / 2); border-radius: 50%; }
 .mg-flyer__icon { display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .mg-flyer--rev { animation-direction: reverse; animation-fill-mode: both; }
-/* the skill orbs' magic circle spins (the bomb's the other way), a ring pulses round it and the fuse twinkles */
+/* the skill orbs' magic circle spins (the fire one the other way) and a ring pulses round it; inside, the ice chips
+   circle slowly, the fire swirl turns and its flame tongues sway, each at its own pace */
+.mg-orb__chips { animation: mg-flyer-spin 14s linear infinite; }
+.mg-orb__swirl { animation: mg-flyer-spin 4s linear infinite reverse; }
+.mg-orb__tongue { transform-box: fill-box; transform-origin: 50% 100%; animation: mg-orb-sway 0.8s ease-in-out infinite; }
+@keyframes mg-orb-sway {
+  0%, 100% { transform: skewX(-8deg) scaleY(0.9); }
+  25% { transform: skewX(3deg) scaleY(1.07); }
+  50% { transform: skewX(9deg) scaleY(0.95); }
+  75% { transform: skewX(-2deg) scaleY(1.1); }
+}
 .mg-flyer__rune { animation: mg-flyer-spin 4s linear infinite; }
 .mg-flyer__rune--back { animation-duration: 6s; animation-direction: reverse; }
 .mg-flyer__pulse { animation: mg-flyer-pulse 1s ease-in-out infinite; }
-.mg-flyer__spark { transform-box: fill-box; transform-origin: center; animation: mg-flyer-spark 1.2s ease-in-out infinite; }
 @keyframes mg-flyer-spin { to { transform: rotate(360deg); } }
 @keyframes mg-flyer-pulse { 50% { transform: scale(1.12); opacity: 0.3; } }
-@keyframes mg-flyer-spark { 0%, 100% { transform: scale(0.5); opacity: 0.5; } 50% { transform: scale(1.1); opacity: 1; } }
 @keyframes mg-fly { 0% { left: -80px; transform: translateY(0); } 25% { transform: translateY(-14px); } 50% { transform: translateY(8px); } 75% { transform: translateY(-10px); } 100% { left: calc(100% + 20px); transform: translateY(0); } }
 
 /* ---------- Balloon Pop: rune skills (BalloonSkills.jsx) ---------- */

@@ -45,56 +45,44 @@ const FIRE_FLIGHT = 200;
 const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
 const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];
 
-// Ice and bomb flyers are skill orbs: the same glossy pearl as the wizard's staff orb (dark at the top, pale at the
-// bottom, a white shine), tinted for the skill and set in its spinning rune circle, the one the wizard casts with it.
-// Ice: the ice rune round a frost-blue pearl with a white snowflake inside, and a ring that pulses out. Bomb: the fire
-// rune, spinning the other way, round a red pearl with a little lit bomb inside, and a slow red warning pulse. Drawn
-// around (0, 0) in a 48 x 48 box.
-const ORB_R = 11;
-const ORB_COLORS = {
-  ice: ['#0b3a8a', '#38a8f5', '#bfe6ff', '#ffffff'],
-  bomb: ['#7a1010', '#e0322b', '#ff9a6b', '#ffe0b0'],
-};
+// Ice and fire flyers are skill orbs: a dark glass ball in a metal rim, set in the spinning rune circle the wizard
+// casts with that skill. Ice: deep-blue glass with ice chips circling inside round a soft white snowflake, and a ring
+// that pulses out. Fire: a red flame swirl turning inside a brass rim, with flame tongues swaying up through it, and a
+// slow red pulse. Drawn around (0, 0) in a 48 x 48 box; the ball itself has radius 11.
 const SIXTHS = [0, 60, 120, 180, 240, 300];
+const ICE_CHIPS = [[20, 8.6], [95, 7.4], [170, 8.8], [250, 6.8], [320, 8.6]];
+// one flame tongue standing on (0, 0), 31 tall
+const TONGUE = 'M0 0C-6 0-9-5-8-11C-7-15-3-17-2-22C-1-25 0-28 1-31C2-25 4-21 6-17C8-13 9-10 8-6C7-2 4 0 0 0Z';
+// [x, scale, colour, delay, length] of each tongue, back (dark red) to front (orange)
+const FIRE_TONGUES = [
+  [-6, 0.3, '#7f1d1d', -0.1, 0.8], [6, 0.32, '#7f1d1d', -0.55, 0.9], [0, 0.4, '#991b1b', -0.3, 0.75],
+  [-3.5, 0.28, '#dc2626', -0.7, 0.7], [3.5, 0.27, '#dc2626', -0.2, 0.85], [0, 0.2, '#f97316', -0.45, 0.65],
+];
+// half of the swirl: a big half-disc with a small bite out and a small bulge in, the yin-yang way
+const SWIRL = 'M0-11A11 11 0 0 1 0 11A5.5 5.5 0 0 1 0 0A5.5 5.5 0 0 0 0-11Z';
 
-// a star with `n` points, as polygon points
-function star(x, y, outer, inner, n) {
-  return Array.from({ length: n * 2 }, (_, k) => {
-    const r = k % 2 ? inner : outer;
-    const a = (Math.PI * k) / n - Math.PI / 2;
-    return `${(x + Math.cos(a) * r).toFixed(2)},${(y + Math.sin(a) * r).toFixed(2)}`;
-  }).join(' ');
-}
-const FUSE_SPARK = star(7, -6.5, 2.5, 0.85, 5);
-
-function SkillPearl({ kind }) {
-  const id = `mg-skill-${kind}`;
+// the glass: darker towards the edge, a thin curved shine at the top left, then the metal rim
+function OrbGlass({ id, rim }) {
   return (
     <>
+      <circle r="11" fill={`url(#${id}-shade)`} />
+      <path d="M-7.5-4.6A8.7 8.7 0 0 1 1.2-9.3" stroke="#fff" strokeWidth="1.1" fill="none" opacity="0.5" strokeLinecap="round" />
+      <circle cx="5.2" cy="-5.8" r="0.75" fill="#fff" opacity="0.75" />
+      <circle r="11.8" fill="none" stroke={`url(#${id}-rim)`} strokeWidth="1.4" />
+      <circle r="11.05" fill="none" stroke="#000" strokeOpacity="0.35" strokeWidth="0.45" />
       <defs>
-        <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          {ORB_COLORS[kind].map((c, k) => (
-            <stop key={k} offset={[0, 0.5, 0.85, 1][k]} stopColor={c} />
-          ))}
-        </linearGradient>
-        <radialGradient id={`${id}-shade`} cx=".42" cy=".38" r=".64">
-          <stop offset=".55" stopColor="#2e3358" stopOpacity="0" />
-          <stop offset="1" stopColor="#2e3358" stopOpacity=".45" />
+        <radialGradient id={`${id}-shade`} cx=".45" cy=".4" r=".62">
+          <stop offset=".55" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity=".55" />
         </radialGradient>
+        <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={rim[0]} />
+          <stop offset="1" stopColor={rim[1]} />
+        </linearGradient>
+        <clipPath id={`${id}-clip`}>
+          <circle r="11" />
+        </clipPath>
       </defs>
-      <circle r={ORB_R} fill={`url(#${id})`} />
-      <circle r={ORB_R} fill={`url(#${id}-shade)`} />
-    </>
-  );
-}
-
-// the pearl's shine, over whatever sits inside it: a bounce light at the bottom, a small highlight at the top left
-function PearlShine() {
-  return (
-    <>
-      <ellipse cy="6.9" rx="6.4" ry="2.2" fill="#fff" opacity="0.45" />
-      <ellipse cx="-4.8" cy="-5.6" rx="2.8" ry="1.8" transform="rotate(-35 -4.8 -5.6)" fill="#fff" opacity="0.95" />
-      <circle cx="4.6" cy="-4.6" r="1.1" fill="#fff" />
     </>
   );
 }
@@ -108,14 +96,28 @@ function IceIcon() {
           <RuneLines kind="ice" />
         </g>
       </g>
-      <SkillPearl kind="ice" />
-      <Snowflake r={6} width={1.4} color="#fff" />
-      <PearlShine />
+      <defs>
+        <radialGradient id="mg-orb-ice" cx=".5" cy=".6" r=".65">
+          <stop offset="0" stopColor="#7dd3fc" />
+          <stop offset=".55" stopColor="#1e40af" />
+          <stop offset="1" stopColor="#0b1a3a" />
+        </radialGradient>
+      </defs>
+      <circle r="11" fill="url(#mg-orb-ice)" />
+      <g clipPath="url(#mg-orb-ice-clip)">
+        <g className="mg-orb__chips">
+          {ICE_CHIPS.map(([a, r]) => (
+            <polygon key={a} points="0,-2.2 1.1,0 0,2.2 -1.1,0" fill="#e0f2fe" opacity="0.65" transform={`rotate(${a}) translate(0 ${-r})`} />
+          ))}
+        </g>
+      </g>
+      <Snowflake r={6} width={1.1} color="#dbe7f3" opacity={0.85} />
+      <OrbGlass id="mg-orb-ice" rim={['#cbd5e1', '#334155']} />
     </svg>
   );
 }
 
-function BombIcon() {
+function FireIcon() {
   return (
     <svg className="mg-flyer__icon" viewBox="-24 -24 48 48" aria-hidden="true">
       <circle className="mg-flyer__pulse" r="18" fill="#ef4444" opacity="0.25" />
@@ -124,21 +126,30 @@ function BombIcon() {
           <RuneLines kind="fire" />
         </g>
       </g>
-      <SkillPearl kind="bomb" />
-      <path d="M2.5 -4q1.5 -2.7 4 -2.1" stroke="#1f1f23" strokeWidth="1.05" fill="none" strokeLinecap="round" />
-      <circle r="4.75" fill="#1f1f23" />
-      <path d="M-2.7 -1.5a2.9 2.9 0 0 1 1.9 -1.9" stroke="#fff" strokeWidth="0.75" fill="none" strokeLinecap="round" opacity="0.7" />
-      <polygon className="mg-flyer__spark" points={FUSE_SPARK} fill="#fde047" />
-      <PearlShine />
+      <circle r="11" fill="#1f0505" />
+      <g className="mg-orb__swirl">
+        <path d={SWIRL} fill="#7f1d1d" />
+        <path d={SWIRL} fill="#dc2626" transform="rotate(180)" />
+        <path d={SWIRL} fill="#f97316" transform="rotate(180) scale(.6)" />
+        <circle cy="-5.5" r="2" fill="#fdba74" />
+      </g>
+      <g clipPath="url(#mg-orb-fire-clip)">
+        {FIRE_TONGUES.map(([x, k, fill, delay, length], i) => (
+          <g key={i} transform={`translate(${x} 11.5) scale(${i % 2 ? -k : k} ${k})`}>
+            <path className="mg-orb__tongue" d={TONGUE} fill={fill} style={{ animationDelay: `${delay}s`, animationDuration: `${length}s` }} />
+          </g>
+        ))}
+      </g>
+      <OrbGlass id="mg-orb-fire" rim={['#d6b27a', '#5c3b1a']} />
     </svg>
   );
 }
 
 // a snow crystal of radius r round (0, 0): three crossing arms with a small V near each tip
-function Snowflake({ r, width, color }) {
+function Snowflake({ r, width, color, opacity = 1 }) {
   const v = `M${(-r * 0.32).toFixed(2)} ${(-r * 0.78).toFixed(2)}L0 ${(-r * 0.48).toFixed(2)}L${(r * 0.32).toFixed(2)} ${(-r * 0.78).toFixed(2)}`;
   return (
-    <g stroke={color} strokeLinecap="round" fill="none">
+    <g stroke={color} strokeLinecap="round" fill="none" opacity={opacity}>
       {[0, 60, 120].map((a) => (
         <path key={a} d={`M0 ${-r}V${r}`} strokeWidth={width} transform={`rotate(${a})`} />
       ))}
@@ -439,9 +450,9 @@ function Round({ q, duration, ult, fire, staffAt, onHit, onWrong, onMiss, onSpec
               }
             });
           }}
-          aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Bomb balloon: blows away one wrong balloon'}
+          aria-label={q.special === 'ice' ? 'Ice balloon: slows every balloon' : 'Fire balloon: burns away one wrong balloon'}
         >
-          {q.special === 'ice' ? <IceIcon /> : <BombIcon />}
+          {q.special === 'ice' ? <IceIcon /> : <FireIcon />}
         </button>
       )}
     </div>
@@ -641,12 +652,12 @@ export default function BalloonPop({ onScore, onFinish }) {
       }, ICE_FREEZE * 1000);
     } else {
       castSkill('fire');
-      fx.say('Boom! The bomb blew away a wrong balloon 💥', 'wow');
+      fx.say('Fire! A wrong balloon burned away 🔥', 'wow');
       // the blast lands when the fire pillar hits the balloon (see FirePortal)
       later(() => {
         fx.sound('boom');
         fx.vibrate([80, 40, 80]);
-        fx.burst(x, y, 26, ['#1f2937', '#f97316', '#fbbf24', '#ef4444']);
+        fx.burst(x, y, 26, ['#7f1d1d', '#f97316', '#fbbf24', '#ef4444']);
         setShake(true);
         later(() => setShake(false), 500);
       }, BOMB_FUSE * 1000);
@@ -766,7 +777,7 @@ export default function BalloonPop({ onScore, onFinish }) {
         </div>
       </div>
       <p className="mg-legend">
-        🧙 Tap a balloon and the wizard zaps it · ✅ Each right answer = 1 point · ❄️ Ice = slow motion · 💣 Bomb = removes 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
+        🧙 Tap a balloon and the wizard zaps it · ✅ Each right answer = 1 point · ❄️ Ice = slow motion · 🔥 Fire = burns 1 wrong balloon · ⚡ ATP removes 2 wrong balloons
       </p>
     </section>
   );
