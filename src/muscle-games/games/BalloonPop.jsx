@@ -329,8 +329,8 @@ function BadgeBolt() {
 }
 
 // Balloon Pop's timer, on a strip of the same old parchment as the clue scroll: a gold-framed hourglass whose blue sand
-// runs down with the time, a sunken ink tube with gold end caps and inked marks every 5 s, its blue ink (bubbles,
-// glowing tip) shrinking as time runs out, and the seconds in an inked cartouche. In the last 10 s the ink turns red,
+// runs down with the time, a sunken ink tube with gold end caps and inked marks every 5 s, its glowing blue ink
+// shrinking as time runs out (scaled, not resized, and nothing in it loops, so it stays cheap to draw), and the seconds in an inked cartouche. In the last 10 s the ink turns red,
 // the number pulses and the clock ticks.
 const TIMER_MARKS = Array.from({ length: 21 }, (_, k) => k * 5);
 function ScrollTimer({ left, total }) {
@@ -341,6 +341,8 @@ function ScrollTimer({ left, total }) {
     if (low && secs <= 5) fx.sound('tick');
   }, [secs, low, fx]);
   const f = Math.max(0, Math.min(1, left / total));
+  // the sand moves a step a second, so the hourglass is redrawn once a second, not on every 0.1 s tick
+  const sand = Math.max(0, Math.min(1, secs / total));
   return (
     <div className={`mg-stimer${low ? ' mg-stimer--low' : ''}`} role="timer" aria-label={`${secs} seconds left`}>
       <span className="mg-scroll__burn" aria-hidden="true" />
@@ -373,12 +375,12 @@ function ScrollTimer({ left, total }) {
         <circle cx="21.5" cy="17" r="1.4" fill="#d4a537" />
         <path d="M7 5c0 6 5 8.5 6 12-1 3.5-6 6-6 12h12c0-6-5-8.5-6-12 1-3.5 6-6 6-12z" fill="rgb(219 234 254 / 0.35)" stroke="#7a4a1c" strokeWidth="0.8" />
         <g clipPath="url(#mg-hg-top)">
-          <rect className="mg-stimer__sand" x="6" y={5 + 12 * (1 - f)} width="14" height={12 * f} />
+          <rect className="mg-stimer__sand" x="6" y={5 + 12 * (1 - sand)} width="14" height={12 * sand} />
         </g>
         <g clipPath="url(#mg-hg-bottom)">
-          <rect className="mg-stimer__sand" x="6" y={29 - 12 * (1 - f)} width="14" height={12 * (1 - f)} />
+          <rect className="mg-stimer__sand" x="6" y={29 - 12 * (1 - sand)} width="14" height={12 * (1 - sand)} />
         </g>
-        {f > 0 && <path className="mg-stimer__stream" d="M13 17v12" />}
+        {sand > 0 && <path className="mg-stimer__stream" d="M13 17v12" />}
         <path d="M9 7.5c.5 3 2 4.5 3 5.5" stroke="#fff" strokeWidth="0.8" fill="none" opacity="0.6" />
       </svg>
       <div className="mg-stimer__track" aria-hidden="true">
@@ -388,11 +390,7 @@ function ScrollTimer({ left, total }) {
           ))}
         </span>
         <span className="mg-stimer__pipe" />
-        <span className="mg-stimer__ink" style={{ width: `calc((100% - 14px) * ${f})` }}>
-          <i style={{ left: '70%', top: 3, width: 2, height: 2 }} />
-          <i style={{ left: '45%', top: 5, width: 3, height: 3, animationDelay: '-1s' }} />
-          <i style={{ left: '85%', top: 4, width: 2, height: 2, animationDelay: '-1.7s' }} />
-        </span>
+        <span className="mg-stimer__ink" style={{ transform: `scaleX(${f})` }} />
         <span className="mg-stimer__cap mg-stimer__cap--left" />
         <span className="mg-stimer__cap mg-stimer__cap--right" />
       </div>

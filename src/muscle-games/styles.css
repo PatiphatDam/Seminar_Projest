@@ -505,19 +505,17 @@
 .mg-stimer__frame { position: absolute; inset: 4px 10px; pointer-events: none; border: 1px solid rgb(37 99 235 / 0.4); outline: 1px solid rgb(212 165 55 / 0.55); outline-offset: -4px; }
 .mg-stimer__glass { position: relative; flex: none; width: 26px; height: 34px; margin: -6px 0; }
 .mg-stimer__sand { fill: #2563eb; }
-.mg-stimer__stream { stroke: #3b82f6; stroke-width: 0.9; stroke-dasharray: 1.2 1.2; animation: mg-stimer-stream 0.3s linear infinite; }
+.mg-stimer__stream { stroke: #3b82f6; stroke-width: 0.9; stroke-dasharray: 1.2 1.2; }
 .mg-stimer__track { position: relative; flex: 1; height: 14px; }
 .mg-stimer__marks { position: absolute; left: 10px; right: 10px; top: -5px; height: 4px; }
 .mg-stimer__marks b { position: absolute; top: 0; width: 1px; height: 3px; background: rgb(122 74 28 / 0.8); }
 .mg-stimer__marks b:nth-child(odd) { height: 4px; }
 .mg-stimer__pipe { position: absolute; inset: 0 6px; border-radius: 7px; background: rgb(80 45 10 / 0.22); border: 1px solid rgb(122 74 28 / 0.7); box-shadow: inset 0 2px 3px rgb(60 25 5 / 0.65); }
 .mg-stimer__ink {
-  position: absolute; left: 7px; top: 2px; bottom: 2px; overflow: hidden; border-radius: 5px; transition: width 0.1s linear;
+  position: absolute; left: 7px; right: 7px; top: 2px; bottom: 2px; border-radius: 5px; transform-origin: left;
   background: linear-gradient(180deg, #93c5fd, #2563eb 45%, #1e3a8a); box-shadow: 0 0 6px rgb(96 165 250 / 0.75);
 }
 .mg-stimer__ink::before { content: ''; position: absolute; left: 3px; right: 6px; top: 1.5px; height: 2px; border-radius: 2px; background: rgb(255 255 255 / 0.45); }
-.mg-stimer__ink::after { content: ''; position: absolute; right: 0; top: -1px; bottom: -1px; width: 5px; border-radius: 50%; background: radial-gradient(circle at 60% 50%, #fff, #93c5fd 60%, transparent); animation: mg-stimer-tip 1.2s ease-in-out infinite; }
-.mg-stimer__ink i { position: absolute; border-radius: 50%; background: rgb(219 234 254 / 0.7); animation: mg-stimer-bubble 2.4s linear infinite; }
 .mg-stimer__cap { position: absolute; top: -2px; width: 9px; height: 18px; border-radius: 3px; background: linear-gradient(90deg, #6b4410, #fde68a 45%, #b8862b 70%, #5c3b10); box-shadow: 0 1px 2px rgb(0 0 0 / 0.4); }
 .mg-stimer__cap--left { left: 0; }
 .mg-stimer__cap--right { right: 0; }
@@ -533,9 +531,6 @@
 .mg-stimer--low .mg-stimer__ink { background: linear-gradient(180deg, #fca5a5, #dc2626 45%, #7f1d1d); box-shadow: 0 0 6px rgb(248 113 113 / 0.85); }
 .mg-stimer--low .mg-stimer__sand { fill: #dc2626; }
 .mg-stimer--low .mg-stimer__num { color: #b91c1c; animation: mg-stimer-pulse 0.6s ease-in-out infinite; }
-@keyframes mg-stimer-stream { to { stroke-dashoffset: -2.4; } }
-@keyframes mg-stimer-tip { 50% { opacity: 0.5; } }
-@keyframes mg-stimer-bubble { to { transform: translateX(-60px); opacity: 0; } }
 @keyframes mg-stimer-pulse { 50% { transform: scale(1.08); } }
 /* the clue number: a small parchment tag under Armin (58 px wide, 10 px from the scroll; 38 and 8 px on a phone) */
 .mg-scroll__count {
