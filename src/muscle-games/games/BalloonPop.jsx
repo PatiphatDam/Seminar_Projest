@@ -224,11 +224,11 @@ function Bolt({ spine, w }) {
   );
 }
 
-// Round the full tube: three poses of four thin bolts, cyan and yellow in turn, each with a small white fork. They sit
+// Round the full tube: three poses of four thin bolts, blue and yellow in turn, each with a small white fork. They sit
 // on the tube's border and the slant comes from the wrapper they share with the tube, so they follow its edges
 // exactly and never cross the TAP! label. Laid out on a 125 x 27 grid, then scaled to the tube's 140 x 18.
 const EDGE_COLORS = {
-  cyan: ['#0ea5e9', '#22d3ee', '#f0fdff'],
+  cyan: ['#1d4ed8', '#60a5fa', '#eff6ff'],
   yellow: ['#f59e0b', '#facc15', '#fffbe6'],
 };
 const EDGE_POSES = [
@@ -267,7 +267,7 @@ function GaugeLightning() {
   return (
     <svg className="mg-gauge__sparks" viewBox="-6 -6 152 30" aria-hidden="true">
       <g className="mg-gauge__run" fill="none" strokeLinecap="round">
-        <rect x="0" y="0" width="140" height="18" rx="3" stroke="#67e8f9" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
+        <rect x="0" y="0" width="140" height="18" rx="3" stroke="#60a5fa" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
         <rect x="0" y="0" width="140" height="18" rx="3" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
         <rect className="mg-gauge__run-b" x="0" y="0" width="140" height="18" rx="3" stroke="#fde047" strokeWidth="3" strokeDasharray="26 278" opacity="0.5" />
         <rect className="mg-gauge__run-b" x="0" y="0" width="140" height="18" rx="3" stroke="#fff" strokeWidth="2.2" strokeDasharray="5 299" strokeDashoffset="-21" />
@@ -288,7 +288,7 @@ function GaugeLightning() {
 
 // The badge icon is the ATP skill orb, matching the ice and fire orbs: deep-blue glass in a gold rim, set in the
 // spinning volt rune, with light-blue chips circling inside round a sharp yellow anime bolt (deep-blue edge, two
-// sky-blue forks). Dimmed until the tube is full; then it glows, the rune turns and a ring pulses out.
+// sky-blue forks). Dimmed until the tube is full; then it glows and a ring pulses out (the rune stays still).
 const BADGE_BOLT = '16.8,0.8 7.4,10.8 11.2,11 4.4,18.4 8,18.6 3.4,23.4 15.4,13.4 11.8,13.2 19.4,5.6 15.4,5.4 20.2,0.8';
 const ATP_CHIPS = [[30, 9], [150, 8.4], [270, 9.2]];
 function BadgeBolt() {
