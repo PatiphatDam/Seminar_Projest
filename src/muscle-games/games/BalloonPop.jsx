@@ -47,17 +47,9 @@ const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon ðŸ˜
 
 // Ice and fire flyers are skill orbs: a dark glass ball in a metal rim, set in the spinning rune circle the wizard
 // casts with that skill. Ice: deep-blue glass with ice chips circling inside round a soft white snowflake, and a ring
-// that pulses out. Fire: a red flame swirl turning inside a brass rim, with flame tongues swaying up through it, and a
-// slow red pulse. Drawn around (0, 0) in a 48 x 48 box; the ball itself has radius 11.
+// that pulses out. Fire: a red flame swirl turning inside a brass rim, and a slow red pulse. Drawn around (0, 0) in a 48 x 48 box; the ball itself has radius 11.
 const SIXTHS = [0, 60, 120, 180, 240, 300];
 const ICE_CHIPS = [[20, 8.6], [95, 7.4], [170, 8.8], [250, 6.8], [320, 8.6]];
-// one flame tongue standing on (0, 0), 31 tall
-const TONGUE = 'M0 0C-6 0-9-5-8-11C-7-15-3-17-2-22C-1-25 0-28 1-31C2-25 4-21 6-17C8-13 9-10 8-6C7-2 4 0 0 0Z';
-// [x, scale, colour, delay, length] of each tongue, back (dark red) to front (orange)
-const FIRE_TONGUES = [
-  [-6, 0.3, '#7f1d1d', -0.1, 0.8], [6, 0.32, '#7f1d1d', -0.55, 0.9], [0, 0.4, '#991b1b', -0.3, 0.75],
-  [-3.5, 0.28, '#dc2626', -0.7, 0.7], [3.5, 0.27, '#dc2626', -0.2, 0.85], [0, 0.2, '#f97316', -0.45, 0.65],
-];
 // half of the swirl: a big half-disc with a small bite out and a small bulge in, the yin-yang way
 const SWIRL = 'M0-11A11 11 0 0 1 0 11A5.5 5.5 0 0 1 0 0A5.5 5.5 0 0 0 0-11Z';
 
@@ -132,13 +124,6 @@ function FireIcon() {
         <path d={SWIRL} fill="#dc2626" transform="rotate(180)" />
         <path d={SWIRL} fill="#f97316" transform="rotate(180) scale(.6)" />
         <circle cy="-5.5" r="2" fill="#fdba74" />
-      </g>
-      <g clipPath="url(#mg-orb-fire-clip)">
-        {FIRE_TONGUES.map(([x, k, fill, delay, length], i) => (
-          <g key={i} transform={`translate(${x} 11.5) scale(${i % 2 ? -k : k} ${k})`}>
-            <path className="mg-orb__tongue" d={TONGUE} fill={fill} style={{ animationDelay: `${delay}s`, animationDuration: `${length}s` }} />
-          </g>
-        ))}
       </g>
       <OrbGlass id="mg-orb-fire" rim={['#d6b27a', '#5c3b1a']} />
     </svg>
