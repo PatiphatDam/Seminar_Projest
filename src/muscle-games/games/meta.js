@@ -7,6 +7,8 @@ export const GAMES = [
     loText: 'Explain the major functions and physiological properties of muscular tissue',
     minutes: '2–3 min',
     keys: ['balloon-pop'],
+    // Armin only asks the clues here: no cheering during or after the game
+    mascotAsks: true,
     intro: 'Tap the balloon that matches the clue and the wizard zaps it! Each right answer = 1 point. Pop a fire orb 🔥 to burn away a wrong balloon!',
   },
   {

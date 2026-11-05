@@ -146,11 +146,11 @@ export default function GamePage({ game, Game }) {
       const { key, isNewBest, mistakes, runId, saving } = record(final, info, true);
       fx.sound('win');
       if (final >= 8) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
-      fx.say(...cheer(final));
+      if (!game.mascotAsks) fx.say(...cheer(final));
       setResult({ score: final, key, isNewBest, summary: info.summary, mistakes, runId, save: 'saving' });
       saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
-    [fx, record]
+    [fx, game, record]
   );
 
   // A queued run turns into "saved" once the outbox manages to send it.

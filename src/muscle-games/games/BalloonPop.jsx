@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { rng, sample, shuffle } from './util.js';
 import { CastleArt, SkyClouds, TownArt, WizardArt } from '../art.jsx';
-import { pick, useFx } from '../fx/Fx.jsx';
+import { useFx } from '../fx/Fx.jsx';
 import { TimerBar, useCountdown } from '../components/Hud.jsx';
 import { scoreOutOf10 } from './meta.js';
 // the raider balloon as one picture (made from AirshipShapes by scripts/airship-svg.mjs): the browser draws it once
@@ -42,8 +42,6 @@ const ATP_MAX = 4;
 // Stripe colour and its shade for each lane's balloon.
 const SWING_AT = 280; // ms into the cast animation when the staff swings forward
 const FIRE_FLIGHT = 200;
-const PRAISE = ['Great spell! ✨', 'Bullseye!', 'Correct! 💪', 'Nice one!', 'Magic! 🪄'];
-const OOPS = ['Oops! Not that one', 'So close, try another!', 'Wrong balloon 😅'];
 
 // Ice and fire flyers are skill orbs: a dark glass ball in a metal rim, set in the spinning rune circle the wizard
 // casts with that skill. Ice: deep-blue glass with ice chips circling inside round a soft white snowflake, and a ring
@@ -494,16 +492,25 @@ export default function BalloonPop({ onScore, onFinish }) {
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
   const s = st.current;
   const q = questions[s.i];
   const duration = Math.max(7, 10.5 - s.i * 0.35);
-  const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end('Time’s up! ⏰') });
+  // Armin asks each clue in his speech bubble (he doesn't cheer or comment in this game)
+  useEffect(() => {
+    fx.say(
+      <>
+        <span className="mg-prompt__label">🪄 Tap the balloon that matches:</span>
+        <span className="mg-prompt__text">{q.text}</span>
+      </>,
+      'idle'
+    );
+  }, [fx, q.text]);
 
-  function end(line) {
+  const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end() });
+
+  function end() {
     if (s.over) return;
     s.over = true;
-    if (line) fx.say(line, 'sad');
     rerender();
     later(() => {
       onFinish(scoreOutOf10(s.right, ROUNDS), {
@@ -552,7 +559,7 @@ export default function BalloonPop({ onScore, onFinish }) {
   const loseLife = () => {
     s.lives -= 1;
     rerender();
-    if (s.lives <= 0) end('Out of hearts 💔');
+    if (s.lives <= 0) end();
   };
 
   // The wizard raises the staff and swings it; at the swing a tiny fireball flies from the orb
@@ -605,7 +612,6 @@ export default function BalloonPop({ onScore, onFinish }) {
     fx.sound('good');
     fx.burst(x, y, 16);
     fx.float(x, y - 24, '+1', 'good');
-    fx.say(s.atp === ATP_MAX ? 'ATP is full! Tap to use your power ⚡' : pick(PRAISE), 'happy');
     rerender();
     nextRound();
   };
@@ -616,7 +622,6 @@ export default function BalloonPop({ onScore, onFinish }) {
     fx.sound('bad');
     fx.vibrate(120);
     fx.float(x, y, '✗', 'bad');
-    fx.say(pick(OOPS), 'sad');
     loseLife();
   };
 
@@ -624,7 +629,6 @@ export default function BalloonPop({ onScore, onFinish }) {
     s.mistakes.push({ prompt: q.text, yours: 'Let it reach the castle', answer: q.answer });
     fx.sound('bad');
     fx.vibrate(120);
-    fx.say(`It reached the castle! The answer was ${q.answer}`, 'sad');
     setShake(true);
     later(() => setShake(false), 500);
     loseLife();
@@ -647,7 +651,6 @@ export default function BalloonPop({ onScore, onFinish }) {
         later(() => setSigil(null), (ICE_FREEZE + 2.6) * 1000);
       }
       castSkill('ice');
-      fx.say('Ice spell! Everything falls slower ❄️', 'wow');
       const setRate = (rate) =>
         skyRef.current?.getAnimations({ subtree: true }).forEach((a) => {
           if (a.animationName === 'mg-fall') a.playbackRate = rate;
@@ -662,7 +665,6 @@ export default function BalloonPop({ onScore, onFinish }) {
       }, ICE_FREEZE * 1000);
     } else {
       castSkill('fire');
-      fx.say('Fire! A wrong balloon burned away 🔥', 'wow');
       // the blast lands when the fire pillar hits the balloon (see FirePortal)
       later(() => {
         fx.sound('boom');
@@ -690,7 +692,6 @@ export default function BalloonPop({ onScore, onFinish }) {
     setUlt({ n: Date.now(), round: s.i, from: [sx - box.left, sy - box.top], at, d: r * 2, sats: [sat(3), sat(2)], mid: box.left + at[0], top: box.top });
     later(() => setUlt(null), ULT_LENGTH * 1000);
     fx.sound('power');
-    fx.say('ATP power! Two wrong balloons removed ⚡', 'wow');
     fx.vibrate(40);
     later(() => {
       fx.sound('boom');
@@ -713,13 +714,6 @@ export default function BalloonPop({ onScore, onFinish }) {
             Q {s.i + 1}/{ROUNDS}
           </span>
         </div>
-      </div>
-
-      <div className="mg-prompt">
-        <p className="mg-prompt__label">🪄 Tap the balloon that matches:</p>
-        <p className="mg-prompt__text" key={s.i}>
-          {q.text}
-        </p>
       </div>
 
       <div ref={skyRef} className={`mg-sky${frozen ? ' mg-sky--frozen' : ''}${shake ? ' mg-shake' : ''}`}>
