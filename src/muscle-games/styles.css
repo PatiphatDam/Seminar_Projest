@@ -1335,8 +1335,13 @@
 }
 .mg-zp__clear-title { margin: 0; color: var(--card-text); font-family: var(--font-serif); font-size: 21px; font-weight: 700; line-height: 1.3; }
 .mg-zp__clear-stats { margin: 0; color: var(--muted); font-size: 14px; font-weight: 600; }
-.mg-zp__clear-zoom { color: var(--muted); font-size: 13px; }
-.mg-zp__go { min-height: 48px; font-size: 16px; }
+.mg-zp__auto { margin: 0; color: var(--card-text); font-size: 14.5px; font-weight: 700; }
+.mg-zp__bar { display: block; width: min(240px, 80%); height: 6px; border-radius: 999px; background: var(--sea-600); transform-origin: left; animation: mg-zp-bar linear forwards; }
+.mg-zp__tapnote {
+  position: absolute; top: 10px; left: 50%; z-index: 2; translate: -50% 0; padding: 5px 12px; border-radius: 999px; pointer-events: none;
+  background: hsl(165 52% 28% / 0.9); color: #fff; font-size: 13px; font-weight: 700; white-space: nowrap; animation: mg-zp-nudge 1.2s ease-in-out infinite;
+}
+@keyframes mg-zp-bar { from { transform: scaleX(0); } }
 .mg-zp__steps li.mg-open { padding: 0; background: none; }
 .mg-zp__steps li.mg-open button {
   padding: 4px 11px; border: 1px solid var(--sea-600); border-radius: 999px; background: var(--surface); color: var(--sea-600); font: inherit; font-weight: 800; cursor: pointer;

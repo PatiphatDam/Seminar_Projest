@@ -242,11 +242,19 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   useEffect(() => {
     if (taskIdx >= 0) clueRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }, [taskIdx]);
+  // No button to press: once a task is answered the game moves on by itself (to the next task, or zooms into the next
+  // stage), after a pause long enough to read the explanation. "Go now" skips the wait.
+  const advance = useRef(null);
   useEffect(() => {
     if (!taskDone) return undefined;
-    const id = setTimeout(() => endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
-    return () => clearTimeout(id);
-  }, [taskDone]);
+    const show = setTimeout(() => endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
+    const go = setTimeout(() => advance.current?.(), task?.type === 'tap' ? 2600 : 3800);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(go);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskDone, taskIdx]);
 
   const at = (clientX, clientY) => {
     const r = stageRef.current.getBoundingClientRect();
@@ -331,6 +339,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       setMsg('');
     } else goNext();
   };
+  advance.current = nextTask;
 
   // tap on the picture: drop the picked piece, or answer a tap task
   const tapStage = (e) => {
@@ -397,6 +406,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     onFinish(score(), report(timeUp));
   }
   const goNext = () => {
+    if (zooming) return; // "Go now" and the automatic move can both fire
     if (stepIdx + 1 >= STEPS.length) {
       finish();
       return;
@@ -522,6 +532,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
             {q.text}
           </span>
         ))}
+        {task?.type === 'tap' && !taskDone && <span className="mg-zp__tapnote">👆 Tap on the picture</span>}
         {!ready && <span className="mg-zp__loading">Loading the model…</span>}
       </div>
 
@@ -577,9 +588,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
 
       {task && taskDone && taskIdx + 1 < step.tasks.length && (
         <div ref={endRef} className="mg-zp__next">
-          <button type="button" className="mg-btn mg-btn--primary" onClick={nextTask} autoFocus>
-            Next ▶
-          </button>
+          <span className="mg-zp__auto">Next question coming up…</span>
         </div>
       )}
       {task && taskDone && taskIdx + 1 >= step.tasks.length && (
@@ -588,13 +597,11 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
           <p className="mg-zp__clear-stats">
             {s.right - s.stepRight} of {s.answered - s.stepAnswered} right first time in this stage
           </p>
-          <button type="button" className="mg-btn mg-btn--primary mg-zp__go" onClick={nextTask} autoFocus>
-            {stepIdx + 1 < STEPS.length ? `Next stage ▶ ${STEPS[stepIdx + 1].title}` : '🏁 See final score'}
-          </button>
-          {stepIdx + 1 < STEPS.length && <span className="mg-zp__clear-zoom">🔍 {step.zoom}</span>}
+          <p className="mg-zp__auto">{stepIdx + 1 < STEPS.length ? `🔍 Zooming in to Stage ${stepIdx + 2}: ${STEPS[stepIdx + 1].title}…` : '🏁 Your final score is coming up…'}</p>
+          <i className="mg-zp__bar" style={{ animationDuration: `${task.type === 'tap' ? 2.6 : 3.8}s` }} aria-hidden="true" />
         </div>
       )}
-      <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>
+      {taskIdx < 0 && <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>}
     </section>
   );
 }
