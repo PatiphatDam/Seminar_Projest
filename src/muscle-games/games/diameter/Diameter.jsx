@@ -101,50 +101,69 @@ function onPart(mask, fx, fy, reach = 7) {
   return false;
 }
 
-// A piece in the tray: drag it onto the picture, or tap it to pick it up.
+// The picture under the finger while a piece is dragged. Only one can exist: it lives on <body>, so anything that
+// ends a drag without a pointerup on the piece (released outside the window, a second finger, the stage changing,
+// leaving the game) must still remove it, or it stays stuck on the screen.
+function clearGhosts() {
+  document.querySelectorAll('.mg-zp__ghost').forEach((g) => g.remove());
+}
+
+// A piece in the tray: drag it onto the picture, or tap it to pick it up. The move and release are followed on the
+// window, so the drag always ends wherever the finger or mouse is let go.
 function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
-  const drag = useRef(null);
+  const end = useRef(null); // stops the drag in progress, if any
+  const latest = useRef({});
+  latest.current = { piece, onPick, onDrop };
+  useEffect(() => () => end.current?.(), []);
+
   const down = (e) => {
-    if (done) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    drag.current = { x: e.clientX, y: e.clientY, ghost: null };
-  };
-  const move = (e) => {
-    const d = drag.current;
-    if (!d) return;
-    if (!d.ghost && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) {
-      d.ghost = document.createElement('img');
-      d.ghost.className = 'mg-zp__ghost';
-      d.ghost.src = piece.thumb;
-      d.ghost.alt = '';
-      document.body.appendChild(d.ghost);
-    }
-    if (d.ghost) {
-      d.ghost.style.left = `${e.clientX}px`;
-      d.ghost.style.top = `${e.clientY}px`;
-    }
-  };
-  const up = (e) => {
-    const d = drag.current;
-    drag.current = null;
-    if (!d) return;
-    if (d.ghost) {
-      d.ghost.remove();
-      onDrop(piece, e.clientX, e.clientY);
-    } else onPick(piece);
-  };
-  const cancel = () => {
-    drag.current?.ghost?.remove();
-    drag.current = null;
+    if (done || !e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    end.current?.();
+    clearGhosts();
+    const start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    let ghost = null;
+    const move = (ev) => {
+      if (ev.pointerId !== start.id) return;
+      if (!ghost && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 8) {
+        ghost = document.createElement('img');
+        ghost.className = 'mg-zp__ghost';
+        ghost.src = latest.current.piece.thumb;
+        ghost.alt = '';
+        document.body.appendChild(ghost);
+      }
+      if (ghost) {
+        ghost.style.left = `${ev.clientX}px`;
+        ghost.style.top = `${ev.clientY}px`;
+      }
+    };
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', stop);
+      window.removeEventListener('blur', stop);
+      ghost?.remove();
+      end.current = null;
+    };
+    const up = (ev) => {
+      if (ev.pointerId !== start.id) return;
+      const dragged = !!ghost;
+      stop();
+      const { piece: pc, onPick: pick, onDrop: drop } = latest.current;
+      if (dragged) drop(pc, ev.clientX, ev.clientY);
+      else pick(pc);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', stop);
+    window.addEventListener('blur', stop);
+    end.current = stop;
   };
   return (
     <button
       type="button"
       className={`mg-zp__piece${picked ? ' mg-zp__piece--picked' : ''}${done ? ' mg-zp__piece--done' : ''}${wrong ? ' mg-zp__piece--wrong' : ''}`}
       onPointerDown={down}
-      onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={cancel}
+      onDragStart={(e) => e.preventDefault()}
       disabled={done}
       aria-label={`Piece ${piece.n}`}
       data-piece={piece.id}
@@ -198,13 +217,17 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         finish(true);
       }
     }, 250);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      clearGhosts();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // a new step: load the masks of its parts and decoys, then deal the tray
   useEffect(() => {
     let live = true;
+    clearGhosts();
     setReady(false);
     fx.say(step.say, 'happy');
     const list = [
