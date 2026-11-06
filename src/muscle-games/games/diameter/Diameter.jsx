@@ -180,6 +180,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [clock, setClock] = useState(0);
   const firstTry = useRef(true);
   const stageRef = useRef(null);
+  const clueRef = useRef(null);
+  const endRef = useRef(null); // the Next / Stage cleared card
   const maskOf = useRef({});
   const task = taskIdx >= 0 ? step.tasks[taskIdx] : null;
 
@@ -223,6 +225,17 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       live = false;
     };
   }, [step, fx]);
+
+  // On a phone the tray vanishes when the last piece snaps in and the cards appear under the picture, out of view:
+  // bring the mission into view when it starts, and the Next / Stage cleared card when a task is done.
+  useEffect(() => {
+    if (taskIdx >= 0) clueRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [taskIdx]);
+  useEffect(() => {
+    if (!taskDone) return undefined;
+    const id = setTimeout(() => endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
+    return () => clearTimeout(id);
+  }, [taskDone]);
 
   const at = (clientX, clientY) => {
     const r = stageRef.current.getBoundingClientRect();
@@ -442,7 +455,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         })}
       </ol>
 
-      <div className="mg-zp__clue" role="status" aria-live="polite">
+      <div ref={clueRef} className="mg-zp__clue" role="status" aria-live="polite">
         {taskIdx < 0 ? (
           <>
             <b>
@@ -452,7 +465,10 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
           </>
         ) : (
           <>
-            <b>{task.type === 'tap' ? 'Mission' : task.type === 'choice' ? 'Question' : 'Predict'}</b>
+            <b>
+              {task.type === 'tap' ? 'Mission' : task.type === 'choice' ? 'Question' : 'Predict'} {taskIdx + 1} of {step.tasks.length}{' '}
+              <span>· {taskIdx + 1 < step.tasks.length ? 'then one more' : stepIdx + 1 < STEPS.length ? `then Stage ${stepIdx + 2}` : 'then your score'}</span>
+            </b>
             {taskDone ? task.done : task.text}
           </>
         )}
@@ -564,14 +580,14 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       )}
 
       {task && taskDone && taskIdx + 1 < step.tasks.length && (
-        <div className="mg-zp__next">
+        <div ref={endRef} className="mg-zp__next">
           <button type="button" className="mg-btn mg-btn--primary" onClick={nextTask} autoFocus>
             Next ▶
           </button>
         </div>
       )}
       {task && taskDone && taskIdx + 1 >= step.tasks.length && (
-        <div className="mg-zp__clear">
+        <div ref={endRef} className="mg-zp__clear">
           <p className="mg-zp__clear-title">✅ Stage {stepIdx + 1} cleared: {step.title}</p>
           <p className="mg-zp__clear-stats">
             {s.right - s.stepRight} of {s.answered - s.stepAnswered} right first time in this stage
