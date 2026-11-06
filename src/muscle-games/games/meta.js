@@ -25,12 +25,12 @@ export const GAMES = [
   {
     id: 'diameter',
     title: 'Diameter',
-    goal: 'Zoom into a muscle layer by layer across 6 stages.',
+    goal: 'Build a muscle from its 3D parts and zoom in, from the whole muscle to the sarcomere.',
     lo: 'OL3',
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
-    minutes: '6–8 min',
+    minutes: '5–7 min',
     keys: ['diameter'],
-    intro: 'Let’s explore a muscle! Tap the first stage on the map 🗺️',
+    intro: 'Read each clue, find the right piece and fit it onto the 3D model, then zoom in! 🔬',
   },
 ];
 
