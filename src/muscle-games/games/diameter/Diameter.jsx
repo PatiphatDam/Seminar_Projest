@@ -63,43 +63,45 @@ function loadMask(name) {
   masks.set(name, p);
   return p;
 }
-// Where each part's number sits on the picture: on a solid bit of the part near its middle, and at least 76 px of the
-// render from the numbers already placed (wrapping layers share their middle with what they wrap), so two numbers
-// never overlap even on a phone. In %.
-function markerSpots(list) {
-  const placed = [];
-  return list.map((mask) => {
-    if (!mask) return null;
-    const { a, box } = mask;
-    const solid = (x, y) => a[y * MW + x] > 120 && a[y * MW + x - 3] > 120 && a[y * MW + x + 3] > 120 && a[(y - 3) * MW + x] > 120 && a[(y + 3) * MW + x] > 120;
-    const cx = (box.x0 + box.x1) / 4;
-    const cy = (box.y0 + box.y1) / 4;
-    const spots = [];
-    const collect = (ok) => {
-      for (let y = 14; y < MH - 14; y += 2) for (let x = 14; x < MW - 14; x += 2) if (ok(x, y)) spots.push([x, y, (x - cx) ** 2 + (y - cy) ** 2]);
-    };
-    collect(solid);
-    if (!spots.length) collect((x, y) => a[y * MW + x] > 60); // thin parts (titin) have no solid bit
-    spots.sort((p, q) => p[2] - q[2]);
-    const free = spots.find(([x, y]) => placed.every(([px, py]) => (x - px) ** 2 + (y - py) ** 2 >= 38 ** 2)) ?? spots[0];
-    if (!free) return null;
-    placed.push(free);
-    return { x: free[0] / MW, y: free[1] / MH, left: `${(free[0] / MW) * 100}%`, top: `${(free[1] / MH) * 100}%` };
-  });
+// The places a part's number could sit: solid bits of the part (thin parts like titin have none, so any bit of it),
+// nearest its middle first, at least 40 px of the render apart. d = how far from the middle. In 0-1.
+function spotOptions(mask) {
+  if (!mask) return [];
+  const { a, box } = mask;
+  const solid = (x, y) => a[y * MW + x] > 120 && a[y * MW + x - 3] > 120 && a[y * MW + x + 3] > 120 && a[(y - 3) * MW + x] > 120 && a[(y + 3) * MW + x] > 120;
+  const cx = (box.x0 + box.x1) / 4;
+  const cy = (box.y0 + box.y1) / 4;
+  const spots = [];
+  const collect = (ok) => {
+    for (let y = 14; y < MH - 14; y += 2) for (let x = 14; x < MW - 14; x += 2) if (ok(x, y)) spots.push([x, y, (x - cx) ** 2 + (y - cy) ** 2]);
+  };
+  collect(solid);
+  if (!spots.length) collect((x, y) => a[y * MW + x] > 60);
+  spots.sort((p, q) => p[2] - q[2]);
+  const out = [];
+  for (const sp of spots) {
+    if (out.length >= 16) break;
+    if (out.every(([x, y]) => (sp[0] - x) ** 2 + (sp[1] - y) ** 2 >= 20 ** 2)) out.push(sp);
+  }
+  return out.map(([x, y, d]) => ({ x: x / MW, y: y / MH, d: Math.sqrt(d) / MW }));
 }
 // How big a part is on the picture: its bounding box, so a wrapping layer counts as big as what it wraps.
 const sizeOf = (m) => (m ? (m.box.x1 - m.box.x0) * (m.box.y1 - m.box.y0) : 0);
-// Where each name label sits: in the clear space of the picture (off the model and off the other labels and numbers),
-// as close to its number as it can be, so the line from the number to the name is short. Labels are placed biggest part
-// first. base = the alpha of the whole model; w, h = the picture's size on screen, to know how big a label is. In 0-1.
-function labelSpots(items, base, w, h) {
+// Where each number and its name label go. The label sits in the clear space of the picture, close to its number; the
+// number sits on its part, near the part's middle. Together they are picked so that no two lines cross, no line runs
+// through a label or a number, and no two labels or numbers touch: a search that tries the best places first and steps
+// back when it gets stuck. items are in number order, each with its spot options; base = the alpha of the whole model;
+// w, h = the picture's size on screen, to know how big a label is. In 0-1.
+function layout(items, base, w, h) {
   const small = w < 520;
-  const charW = small ? 5.8 : 7; // .mg-zp__name is 10 px on phones, 12 px elsewhere
-  const pad = small ? 16 : 22;
+  // .mg-zp__name: bold 10 px on phones (6 px padding), 12 px elsewhere (8 px padding)
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `700 ${small ? 10 : 12}px "Nunito Sans Variable", "Inter Variable", system-ui, sans-serif`;
+  const pad = small ? 18 : 22;
   const lh = (small ? 18 : 22) / h;
   const box = (x, y, bw, bh) => ({ x0: x - bw / 2, x1: x + bw / 2, y0: y - bh / 2, y1: y + bh / 2 });
   const hit = (r, q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0;
-  const busy = items.map((p) => box(p.x, p.y, 30 / w, 30 / h)); // the numbers
+  const grow = (r, m) => ({ x0: r.x0 - m / w, x1: r.x1 + m / w, y0: r.y0 - m / h, y1: r.y1 + m / h });
   // how much of a box is on the model: a summed-area table of the model's pixels, so each test is four reads
   const sum = new Uint32Array((MW + 1) * (MH + 1));
   if (base)
@@ -117,23 +119,101 @@ function labelSpots(items, base, w, h) {
     const n = sum[y1 * (MW + 1) + x1] - sum[y0 * (MW + 1) + x1] - sum[y1 * (MW + 1) + x0] + sum[y0 * (MW + 1) + x0];
     return n / Math.max(1, (x1 - x0) * (y1 - y0));
   };
-  const out = {};
-  for (const p of items) {
-    const lw = (p.text.length * charW + pad) / w;
-    let best = null;
+  const options = items.map((p) => {
+    const lw = (ctx.measureText(p.text).width + pad) / w;
+    const labels = [];
     for (let y = lh / 2 + 0.015; y <= 1 - lh / 2 - 0.015; y += 0.025)
       for (let x = lw / 2 + 0.012; x <= 1 - lw / 2 - 0.012; x += 0.02) {
         const r = box(x, y, lw, lh);
-        if (busy.some((q) => hit(r, q))) continue;
-        const cost = Math.hypot((x - p.x) * 1.5, y - p.y) + onModel(r) * 3; // the picture is 3:2
-        if (!best || cost < best.cost) best = { cost, x, y, r };
+        labels.push({ x, y, r, model: onModel(r) });
       }
-    if (best) {
-      busy.push(best.r);
-      out[p.id] = { lx: best.x, ly: best.y };
+    const list = [];
+    for (const sp of p.spots) {
+      const n = box(sp.x, sp.y, 30 / w, 30 / h);
+      const mine = [];
+      for (const L of labels) {
+        if (hit(L.r, n)) continue;
+        // short line (the picture is 3:2), label off the model, number near the part's middle
+        mine.push({ cost: Math.hypot((L.x - sp.x) * 1.5, L.y - sp.y) + L.model * 3 + sp.d * 1.5, sp, n, x: L.x, y: L.y, r: L.r });
+      }
+      list.push(...mine.sort((u, v) => u.cost - v.cost).slice(0, 40));
     }
+    return list.sort((u, v) => u.cost - v.cost).map((c) => ({ ...c, a: [c.sp.x, c.sp.y], b: edge([c.sp.x, c.sp.y], [c.x, c.y], c.r) }));
+  });
+  const apart = (c, d) => ((c.sp.x - d.sp.x) * w) ** 2 + ((c.sp.y - d.sp.y) * h) ** 2 >= (small ? 26 : 32) ** 2; // numbers
+  const loose = (c, d) => apart(c, d) && !hit(grow(c.r, 3), d.r) && !hit(c.r, d.n) && !hit(d.r, c.n);
+  const fits = (c, d) =>
+    loose(c, d) &&
+    !crosses(c.a, c.b, d.a, d.b) &&
+    !segBox(c.a, c.b, grow(d.r, 2)) &&
+    !segBox(d.a, d.b, grow(c.r, 2)) &&
+    !segBox(c.a, c.b, grow(d.n, -3)) &&
+    !segBox(d.a, d.b, grow(c.n, -3));
+  // The search: take the label with the fewest places left, try its places best first, and after each try strike out
+  // every place of the other labels that no longer fits; step back as soon as one has no place left.
+  let budget = 1500000; // fit tests, about 60 ms on a laptop
+  const solve = (doms, chosen) => {
+    let i = -1;
+    doms.forEach((d, j) => {
+      if (!chosen[j] && (i < 0 || d.length < doms[i].length)) i = j;
+    });
+    if (i < 0) return chosen;
+    for (const c of doms[i]) {
+      if (budget < 0) return null;
+      let dead = false;
+      const next = doms.map((d, j) => {
+        if (dead || j === i || chosen[j]) return d;
+        budget -= d.length;
+        const kept = d.filter((e) => fits(c, e));
+        if (!kept.length) dead = true;
+        return kept;
+      });
+      if (dead) continue;
+      const got = solve(next, chosen.map((x, j) => (j === i ? c : x)));
+      if (got) return got;
+    }
+    return null;
+  };
+  const chosen = solve(options, options.map(() => null)) ?? [];
+  const found = chosen.length > 0;
+  if (!found) {
+    if (import.meta.env?.DEV) {
+      console.warn('Diameter: no clean label layout', items.map((p) => p.id));
+    }
+    // no clean layout (very crowded): place one at a time, as clean as it can be
+    items.forEach((p, i) => chosen.push(options[i].find((c) => chosen.every((d) => fits(c, d))) ?? options[i].find((c) => chosen.every((d) => loose(c, d))) ?? options[i][0]));
   }
+  const out = {};
+  items.forEach((p, i) => {
+    const c = chosen[i];
+    if (c) out[p.id] = { x: c.sp.x, y: c.sp.y, left: `${c.sp.x * 100}%`, top: `${c.sp.y * 100}%`, lx: c.x, ly: c.y, ex: c.b[0], ey: c.b[1] };
+  });
   return out;
+}
+// Where the line from a (the number) to c (the middle of a label) meets the label's box r.
+function edge(a, c, r) {
+  const dx = c[0] - a[0];
+  const dy = c[1] - a[1];
+  let t = 0;
+  if (dx) t = Math.max(t, ((dx > 0 ? r.x0 : r.x1) - a[0]) / dx);
+  if (dy) t = Math.max(t, ((dy > 0 ? r.y0 : r.y1) - a[1]) / dy);
+  t = Math.min(1, t);
+  return [a[0] + dx * t, a[1] + dy * t];
+}
+const turn = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+// do segments ab and cd cross?
+const crosses = (a, b, c, d) => turn(a, b, c) * turn(a, b, d) < 0 && turn(c, d, a) * turn(c, d, b) < 0;
+// does segment ab touch box r?
+function segBox(a, b, r) {
+  const inside = (p) => p[0] > r.x0 && p[0] < r.x1 && p[1] > r.y0 && p[1] < r.y1;
+  if (inside(a) || inside(b)) return true;
+  const c = [
+    [r.x0, r.y0],
+    [r.x1, r.y0],
+    [r.x1, r.y1],
+    [r.x0, r.y1],
+  ];
+  return c.some((p, k) => crosses(a, b, p, c[(k + 1) % 4]));
 }
 
 // The picture under the finger while a piece is dragged. Only one can exist: it lives on <body>, so anything that
@@ -277,11 +357,10 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       // numbered from the biggest part to the smallest (the clues keep their own order), each with its name
       const mask = (id) => maskOf.current[`${step.id}-${id}`];
       const order = step.parts.map((p) => p.id).sort((a, b) => sizeOf(mask(b)) - sizeOf(mask(a)));
-      const spots = markerSpots(order.map(mask));
       const r = stageRef.current?.getBoundingClientRect();
-      const named = order.map((id, k) => spots[k] && { id, ...spots[k], text: `${k + 1} ${step.parts.find((x) => x.id === id).name}` });
-      const labels = labelSpots(named.filter(Boolean), base, r?.width || 600, r?.height || 400);
-      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k], ...labels[id] }])));
+      const named = order.map((id, k) => ({ id, text: `${k + 1} ${step.parts.find((x) => x.id === id).name}`, spots: spotOptions(mask(id)) }));
+      const lay = layout(named.filter((p) => p.spots.length), base, r?.width || 600, r?.height || 400);
+      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...lay[id] }])));
       setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
       if (s.t0 == null) s.t0 = performance.now();
@@ -452,7 +531,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         <svg className="mg-zp__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {step.parts.map((p) => {
             const m = marks[p.id];
-            return m?.lx != null ? <line key={p.id} x1={m.x * 100} y1={m.y * 100} x2={m.lx * 100} y2={m.ly * 100} vectorEffect="non-scaling-stroke" /> : null;
+            return m?.lx != null ? <line key={p.id} x1={m.x * 100} y1={m.y * 100} x2={m.ex * 100} y2={m.ey * 100} vectorEffect="non-scaling-stroke" /> : null;
           })}
         </svg>
         {step.parts.map((p) => {
