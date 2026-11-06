@@ -8,13 +8,15 @@ import { DECOYS, PREDICT_CHOICES, STEPS, TOTAL_ANSWERS, art } from './levels.js'
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
 // place) onto the model, where it snaps in and takes its colour. Then a task on the finished picture: tap structures
 // in order, answer a question, or predict a contraction. Out of 10 = answers right first time over all answers of
-// all five steps; a wrong answer costs 5 s on the clock (shown, not scored) but never points already won.
+// all five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The clock counts
+// down from 6 minutes; when it runs out the game ends and answers not given count as not right.
 const W = 900; // every render is 900 x 600
 const H = 600;
 // shapes are tested on a half-size copy: a quarter of the pixels to read when a step loads (a 1-px slip is 2 px)
 const MW = W / 2;
 const MH = H / 2;
-const HINTS = 3;
+const TIME = 360; // seconds
+const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
 
 // The alpha of a piece's render (where it is opaque, it is that part) and its bounding box.
@@ -154,7 +156,7 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
 
 export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const fx = useFx();
-  const st = useRef({ runId, right: 0, answered: 0, penalty: 0, streak: 0, mistakes: [], done: false, t0: performance.now() });
+  const st = useRef({ runId, right: 0, answered: 0, mistakes: [], done: false, t0: null }); // t0: when the first model is on screen
   const s = st.current;
   const [stepIdx, setStepIdx] = useState(0);
   const step = STEPS[stepIdx];
@@ -169,15 +171,14 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [picked, setPicked] = useState(null);
   const [wrong, setWrong] = useState(null);
   const [msg, setMsg] = useState('');
-  const [hints, setHints] = useState(HINTS);
-  const [flash, setFlash] = useState(null);
   const [taskDone, setTaskDone] = useState(false);
   const [choice, setChoice] = useState(null);
   const [predict, setPredict] = useState({});
   const [contracted, setContracted] = useState(false);
   const [pops, setPops] = useState([]);
   const [zooming, setZooming] = useState(false);
-  const [clock, setClock] = useState(0);
+  const [left, setLeft] = useState(TIME); // seconds left
+  const stepNow = useRef(0); // stepIdx for the clock's interval, which keeps its first render's closure
   const firstTry = useRef(true);
   const stageRef = useRef(null);
   const clueRef = useRef(null);
@@ -186,16 +187,25 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const task = taskIdx >= 0 ? step.tasks[taskIdx] : null;
 
   const score = () => scoreOutOf10(s.right, TOTAL_ANSWERS);
-  const report = () => ({
+  stepNow.current = stepIdx;
+  const report = (timeUp) => ({
     runId: s.runId,
-    summary: `${s.right}/${TOTAL_ANSWERS} right first time · ${Math.min(stepIdx + 1, STEPS.length)}/${STEPS.length} steps`,
+    summary: `${s.right}/${TOTAL_ANSWERS} right first time · ${Math.min(stepNow.current + 1, STEPS.length)}/${STEPS.length} steps${timeUp ? " · time's up" : ''}`,
     mistakes: s.mistakes,
   });
 
   useEffect(() => {
     // Leaving after at least one answer still saves the run.
     setExitReport?.(() => (!s.done && s.answered > 0 ? { score: score(), info: report() } : null));
-    const id = setInterval(() => setClock(Math.round((performance.now() - s.t0) / 1000) + s.penalty), 500);
+    const id = setInterval(() => {
+      if (s.t0 == null) return;
+      const t = Math.max(0, TIME - Math.floor((performance.now() - s.t0) / 1000));
+      setLeft(t);
+      if (t === 0) {
+        clearInterval(id);
+        finish(true);
+      }
+    }, 250);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -220,6 +230,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       s.stepAnswered = s.answered;
       setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
+      if (s.t0 == null) s.t0 = performance.now();
     });
     return () => {
       live = false;
@@ -249,26 +260,22 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   };
 
   // One answer per clue, tap of a sequence, question or prediction row: it is right only if right at the first try.
-  // Every wrong try costs 5 s; only the first is listed for review.
+  // A wrong try is just wrong: no point lost, no time added; only the first is listed for review.
   const answer = (ok, p, mistake) => {
     const first = firstTry.current;
     if (first) s.answered += 1;
-    if (ok && first) {
-      s.right += 1;
-      s.streak += 1;
-    } else s.streak = 0;
+    if (ok && first) s.right += 1;
     if (!ok) {
-      s.penalty += 5;
       firstTry.current = false;
       if (mistake && first) s.mistakes.push(mistake);
       fx.sound('bad');
       fx.vibrate(100);
-      if (p) pop('+5s', p, true);
+      if (p) pop('✗ Wrong', p, true);
     } else {
       fx.sound('snap');
       if (p) {
         fx.burst(p.x, p.y, 14);
-        pop(s.streak >= 2 ? `Combo ×${s.streak}!` : 'Nice!', p);
+        pop(first ? '✓ Right' : '✓', p);
       }
     }
     onScore(score());
@@ -384,22 +391,10 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     if (b) setCalciumAt(b);
   };
 
-  const hint = () => {
-    if (taskIdx >= 0 || hints <= 0) return;
-    const want = step.parts[partIdx];
-    setHints(hints - 1);
-    s.penalty += 5;
-    firstTry.current = false;
-    setPicked(pieces.find((x) => x.id === want.id));
-    setFlash(want.id);
-    setTimeout(() => setFlash(null), 1900);
-    setMsg('💡 The right piece is picked up and its place is flashing (+5 s)');
-  };
-
-  function finish() {
+  function finish(timeUp) {
     if (s.done) return;
     s.done = true;
-    onFinish(score(), report());
+    onFinish(score(), report(timeUp));
   }
   const goNext = () => {
     if (stepIdx + 1 >= STEPS.length) {
@@ -432,11 +427,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   return (
     <section className="mg-zp">
       <div className="mg-zp__top">
-        <span className="mg-zp__pill">⏱ {clock}s</span>
-        <span className="mg-zp__pill">⭐ {s.right}</span>
-        <button type="button" className="mg-zp__pill mg-zp__pill--btn" onClick={hint} disabled={taskIdx >= 0 || hints <= 0}>
-          💡 Hint ({hints})
-        </button>
+        <span className={`mg-zp__pill${left <= 30 ? ' mg-zp__pill--low' : ''}`} role="timer" aria-label={`${mmss(left)} left`}>
+          ⏱ {mmss(left)}
+        </span>
+        <span className="mg-zp__pill">
+          ✓ {s.right}/{TOTAL_ANSWERS}
+        </span>
       </div>
       <ol className="mg-zp__steps" aria-label="Zoom steps">
         {STEPS.map((x, k) => {
@@ -480,7 +476,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         <img className={`mg-zp__full${taskIdx >= 0 && !contracted ? ' mg-on' : ''}`} src={art(`${step.id}-full`)} alt="" draggable="false" />
         {step.parts.map((p) => {
           const on = placed.includes(p.id);
-          const cls = `mg-zp__part${on ? ' mg-on' : ''}${flash === p.id ? ' mg-zp__part--flash' : ''}${lit.includes(p.id) ? ' mg-zp__part--lit' : ''}`;
+          const cls = `mg-zp__part${on ? ' mg-on' : ''}${lit.includes(p.id) ? ' mg-zp__part--lit' : ''}`;
           if (contracted && sliding.has(p.id))
             return [-1, 1].map((side) => (
               <img

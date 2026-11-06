@@ -28,7 +28,7 @@ export const GAMES = [
     goal: 'Build a muscle from its 3D parts and zoom in, from the whole muscle to the sarcomere.',
     lo: 'OL3',
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
-    minutes: '5–7 min',
+    minutes: '6 min',
     keys: ['diameter'],
     intro: 'Read each clue, find the right piece and fit it onto the 3D model, then zoom in! 🔬',
   },
