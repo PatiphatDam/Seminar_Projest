@@ -7,7 +7,8 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
 // place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
-// the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed over all 25 pieces of the
+// the game moves on to the next step by itself, like Group Sort. Each part's place is numbered from the biggest part to
+// the smallest, with a line from the number out to its name. Out of 10 = pieces placed over all 25 pieces of the
 // five steps. A wrong answer is just wrong: it takes no point away and adds no time; try again (it is listed for
 // review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
@@ -16,7 +17,7 @@ const H = 600;
 const MW = W / 2;
 const MH = H / 2;
 const TIME = 360; // seconds
-const CLEARED_MS = 1400; // how long the finished model shows before the zoom
+const CLEARED_MS = 1400; // how long the finished model shows before the next stage
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
 
@@ -83,8 +84,56 @@ function markerSpots(list) {
     const free = spots.find(([x, y]) => placed.every(([px, py]) => (x - px) ** 2 + (y - py) ** 2 >= 38 ** 2)) ?? spots[0];
     if (!free) return null;
     placed.push(free);
-    return { left: `${(free[0] / MW) * 100}%`, top: `${(free[1] / MH) * 100}%` };
+    return { x: free[0] / MW, y: free[1] / MH, left: `${(free[0] / MW) * 100}%`, top: `${(free[1] / MH) * 100}%` };
   });
+}
+// How big a part is on the picture: its bounding box, so a wrapping layer counts as big as what it wraps.
+const sizeOf = (m) => (m ? (m.box.x1 - m.box.x0) * (m.box.y1 - m.box.y0) : 0);
+// Where each name label sits: in the clear space of the picture (off the model and off the other labels and numbers),
+// as close to its number as it can be, so the line from the number to the name is short. Labels are placed biggest part
+// first. base = the alpha of the whole model; w, h = the picture's size on screen, to know how big a label is. In 0-1.
+function labelSpots(items, base, w, h) {
+  const small = w < 520;
+  const charW = small ? 5.8 : 7; // .mg-zp__name is 10 px on phones, 12 px elsewhere
+  const pad = small ? 16 : 22;
+  const lh = (small ? 18 : 22) / h;
+  const box = (x, y, bw, bh) => ({ x0: x - bw / 2, x1: x + bw / 2, y0: y - bh / 2, y1: y + bh / 2 });
+  const hit = (r, q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0;
+  const busy = items.map((p) => box(p.x, p.y, 30 / w, 30 / h)); // the numbers
+  // how much of a box is on the model: a summed-area table of the model's pixels, so each test is four reads
+  const sum = new Uint32Array((MW + 1) * (MH + 1));
+  if (base)
+    for (let y = 0; y < MH; y++)
+      for (let x = 0, row = 0; x < MW; x++) {
+        row += base.a[y * MW + x] > 40 ? 1 : 0;
+        sum[(y + 1) * (MW + 1) + x + 1] = sum[y * (MW + 1) + x + 1] + row;
+      }
+  const onModel = (r) => {
+    if (!base) return 0;
+    const x0 = Math.round(r.x0 * MW);
+    const x1 = Math.round(r.x1 * MW);
+    const y0 = Math.round(r.y0 * MH);
+    const y1 = Math.round(r.y1 * MH);
+    const n = sum[y1 * (MW + 1) + x1] - sum[y0 * (MW + 1) + x1] - sum[y1 * (MW + 1) + x0] + sum[y0 * (MW + 1) + x0];
+    return n / Math.max(1, (x1 - x0) * (y1 - y0));
+  };
+  const out = {};
+  for (const p of items) {
+    const lw = (p.text.length * charW + pad) / w;
+    let best = null;
+    for (let y = lh / 2 + 0.015; y <= 1 - lh / 2 - 0.015; y += 0.025)
+      for (let x = lw / 2 + 0.012; x <= 1 - lw / 2 - 0.012; x += 0.02) {
+        const r = box(x, y, lw, lh);
+        if (busy.some((q) => hit(r, q))) continue;
+        const cost = Math.hypot((x - p.x) * 1.5, y - p.y) + onModel(r) * 3; // the picture is 3:2
+        if (!best || cost < best.cost) best = { cost, x, y, r };
+      }
+    if (best) {
+      busy.push(best.r);
+      out[p.id] = { lx: best.x, ly: best.y };
+    }
+  }
+  return out;
 }
 
 // The picture under the finger while a piece is dragged. Only one can exist: it lives on <body>, so anything that
@@ -176,7 +225,6 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [wrong, setWrong] = useState(null);
   const [msg, setMsg] = useState('');
   const [pops, setPops] = useState([]);
-  const [zooming, setZooming] = useState(false);
   const [left, setLeft] = useState(TIME); // seconds left
   const stepNow = useRef(0); // stepIdx for the clock's interval, which keeps its first render's closure
   const firstTry = useRef(true);
@@ -215,28 +263,42 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     let live = true;
     clearGhosts();
     setReady(false);
+    setMarks({});
+    setPieces([]);
     fx.say(step.say, 'happy');
     const list = [
       ...step.parts.map((p) => ({ id: p.id, art: `${step.id}-${p.id}` })),
       ...step.decoys.map((d) => ({ id: `decoy:${d}`, art: DECOYS[d].art, decoy: d })),
     ];
-    Promise.all(list.map((p) => loadMask(p.art))).then((ms) => {
+    Promise.all([...list.map((p) => loadMask(p.art)), loadMask(`${step.id}-grey`)]).then((ms) => {
       if (!live) return;
+      const base = ms.pop();
       maskOf.current = Object.fromEntries(list.map((p, k) => [p.art, ms[k]]));
-      // numbered spots in a shuffled order, so a number never tells which clue comes next
-      const order = shuffle(step.parts.map((p) => p.id));
-      const spots = markerSpots(order.map((id) => maskOf.current[`${step.id}-${id}`]));
-      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k] }])));
+      // numbered from the biggest part to the smallest (the clues keep their own order), each with its name
+      const mask = (id) => maskOf.current[`${step.id}-${id}`];
+      const order = step.parts.map((p) => p.id).sort((a, b) => sizeOf(mask(b)) - sizeOf(mask(a)));
+      const spots = markerSpots(order.map(mask));
+      const r = stageRef.current?.getBoundingClientRect();
+      const named = order.map((id, k) => spots[k] && { id, ...spots[k], text: `${k + 1} ${step.parts.find((x) => x.id === id).name}` });
+      const labels = labelSpots(named.filter(Boolean), base, r?.width || 600, r?.height || 400);
+      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k], ...labels[id] }])));
       setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
       if (s.t0 == null) s.t0 = performance.now();
+      // load the next stage while this one is played, one picture at a time, so it shows at once and play stays smooth
+      const next = STEPS[STEPS.indexOf(step) + 1];
+      const todo = next ? [...next.parts.map((x) => `${next.id}-${x.id}`), ...next.decoys.map((d) => DECOYS[d].art), `${next.id}-grey`, `${next.id}-full`] : [];
+      const more = () => {
+        if (live && todo.length) loadMask(todo.shift()).then(() => setTimeout(more, 80));
+      };
+      setTimeout(more, 1000);
     });
     return () => {
       live = false;
     };
   }, [step, fx]);
 
-  // Like Group Sort: when the last piece snaps in, the model shows in full colour for a moment and the game zooms into
+  // Like Group Sort: when the last piece snaps in, the model shows in full colour for a moment and the game moves on to
   // the next stage by itself (or ends after the last). No card, no button, nothing else to tap.
   const advance = useRef(null);
   useEffect(() => {
@@ -327,17 +389,13 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       finish();
       return;
     }
-    setZooming(true);
-    fx.sound('whoosh');
-    setTimeout(() => {
-      setZooming(false);
-      setStepIdx(stepIdx + 1);
-      setPlaced([]);
-      setPartIdx(0);
-      setCleared(false);
-      setPicked(null);
-      setMsg('');
-    }, 650);
+    // no zoom: the next stage simply takes the place of this one
+    setStepIdx(stepIdx + 1);
+    setPlaced([]);
+    setPartIdx(0);
+    setCleared(false);
+    setPicked(null);
+    setMsg('');
   };
   advance.current = goNext;
 
@@ -363,7 +421,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         {cleared ? (
           <>
             <b>✓ Stage {stepIdx + 1} built: {step.title}</b>
-            {step.zoom ? `🔍 ${step.zoom}…` : 'Every part is in place.'}
+            {step.zoom ? `Next: ${step.zoom}…` : 'Every part is in place.'}
           </>
         ) : (
           <>
@@ -375,7 +433,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         )}
       </div>
 
-      <div ref={stageRef} className={`mg-zp__stage${zooming ? ' mg-zp__stage--zoom' : ''}`} onClick={tapStage}>
+      <div key={step.id} ref={stageRef} className="mg-zp__stage" onClick={tapStage}>
         <img className="mg-zp__base" src={art(`${step.id}-grey`)} alt={`${step.title}, rendered from the 3D model`} draggable="false" />
         {/* built: the whole model appears in colour, including the parts that were only context */}
         <img className={`mg-zp__full${cleared ? ' mg-on' : ''}`} src={art(`${step.id}-full`)} alt="" draggable="false" />
@@ -390,13 +448,30 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
             const url = `url("${art(`${step.id}-${p.id}`)}")`;
             return <span key={`slot-${p.id}`} className="mg-zp__slot" style={{ maskImage: url, WebkitMaskImage: url }} />;
           })}
-        {step.parts.map((p) =>
-          marks[p.id]?.left ? (
-            <span key={`n-${p.id}`} className={`mg-zp__num${placed.includes(p.id) ? ' mg-on' : ''}`} style={{ left: marks[p.id].left, top: marks[p.id].top }} aria-hidden="true">
-              {placed.includes(p.id) ? '✓' : marks[p.id].n}
+        {/* a line from each number out to its name at the edge */}
+        <svg className="mg-zp__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          {step.parts.map((p) => {
+            const m = marks[p.id];
+            return m?.lx != null ? <line key={p.id} x1={m.x * 100} y1={m.y * 100} x2={m.lx * 100} y2={m.ly * 100} vectorEffect="non-scaling-stroke" /> : null;
+          })}
+        </svg>
+        {step.parts.map((p) => {
+          const m = marks[p.id];
+          if (!m?.left) return null;
+          const on = placed.includes(p.id) ? ' mg-on' : '';
+          return (
+            <span key={`n-${p.id}`}>
+              <span className={`mg-zp__num${on}`} style={{ left: m.left, top: m.top }} aria-hidden="true">
+                {m.n}
+              </span>
+              {m.lx != null && (
+                <span className={`mg-zp__name${on}`} style={{ left: `${m.lx * 100}%`, top: `${m.ly * 100}%` }}>
+                  <b>{m.n}</b> {p.name}
+                </span>
+              )}
             </span>
-          ) : null
-        )}
+          );
+        })}
         {pops.map((q) => (
           <span key={q.id} className={`mg-zp__pop${q.bad ? ' mg-zp__pop--bad' : ''}`} style={{ left: q.x, top: q.y }}>
             {q.text}
