@@ -28,14 +28,6 @@ export const STEPS = [
       { id: 'bone', name: 'Humerus, radius and ulna', clue: 'Skeletal muscles produce movement by exerting force on these, across the joints.' },
     ],
     decoys: ['idisc', 'perimysium'],
-    tasks: [
-      {
-        type: 'tap',
-        text: 'The elbow extends. Tap the muscle that contracts, then the muscle that must lengthen to let it happen.',
-        seq: ['triceps', 'biceps'],
-        done: 'The triceps contracts while the biceps lengthens — extensibility lets a muscle stretch without damage.',
-      },
-    ],
     zoom: 'Zoom into the biceps: a bundle of fibers',
   },
   {
@@ -50,16 +42,6 @@ export const STEPS = [
       { id: 'vessel', name: 'Blood vessel', clue: 'Brings blood to the fascicle, running along the pathways the perimysium provides.' },
     ],
     decoys: ['dense', 'ttubule'],
-    tasks: [
-      { type: 'tap', text: 'Tap the connective tissue in this bundle from the outside in.', seq: ['perimysium', 'endomysium'], done: 'Perimysium wraps the fascicle; endomysium wraps each fiber inside it (epimysium wrapped the whole muscle).' },
-      {
-        type: 'choice',
-        text: 'Which motor units let you make fine, precise movements?',
-        options: ['Small motor units (few fibers per neuron)', 'Large motor units (many fibers per neuron)', 'Motor units with two neurons per fiber'],
-        answer: 0,
-        done: 'Small motor units allow fine, precise movements; large ones produce greater force. Each fiber receives input from only one motor neuron.',
-      },
-    ],
     zoom: 'Zoom into one muscle fiber',
   },
   {
@@ -76,15 +58,6 @@ export const STEPS = [
       { id: 'nuclei', name: 'Nuclei', clue: 'There are many in one fiber, and they usually lie close to the sarcolemma.' },
     ],
     decoys: ['idisc', 'perimysium'],
-    tasks: [
-      {
-        type: 'tap',
-        text: 'An action potential reaches the axon terminal. Tap the structures in the order the signal travels until Ca²⁺ is released.',
-        seq: ['nmj', 'sarcolemma', 'ttubule', 'cisternae'],
-        calcium: 'cisternae',
-        done: 'ACh → the sarcolemma depolarises → the T-tubule carries it inward → at the triad (one T-tubule between two terminal cisternae) Ca²⁺ is released.',
-      },
-    ],
     zoom: 'Zoom into a myofibril',
   },
   {
@@ -98,20 +71,6 @@ export const STEPS = [
       { id: 'mline', name: 'M lines', clue: 'Sit at the centre of each sarcomere; their proteins organise and stabilise the thick filaments.' },
     ],
     decoys: ['dense', 'sr'],
-    tasks: [
-      {
-        type: 'choice',
-        text: 'Why do skeletal and cardiac muscle look striated?',
-        options: [
-          'Thick and thin filaments repeat in regular sarcomeres, so dark A bands alternate with light I bands',
-          'Rows of nuclei line up along the fiber',
-          'The sarcolemma folds into stripes',
-          'Each fiber is wrapped in perimysium',
-        ],
-        answer: 0,
-        done: 'The regular arrangement of thick and thin filaments gives the striated appearance. One sarcomere runs from one Z disc to the next.',
-      },
-    ],
     zoom: 'Zoom into one sarcomere',
   },
   {
@@ -126,29 +85,8 @@ export const STEPS = [
       { id: 'titin', name: 'Titin', clue: 'A large elastic protein that keeps the thick filaments in place and resists over-stretching.' },
     ],
     decoys: ['idisc', 'sr'],
-    tasks: [
-      {
-        type: 'predict',
-        text: 'The sarcomere contracts fully. How does each part change?',
-        rows: [
-          ['A band', 'same'],
-          ['I band', 'shorter'],
-          ['H zone', 'gone'],
-          ['Z disc to Z disc', 'shorter'],
-        ],
-        done: 'Thin filaments slid toward the M line: the I band and H zone shrank and the Z discs came closer, while the A band kept its length.',
-      },
-    ],
   },
 ];
 
-export const PREDICT_CHOICES = [
-  ['shorter', 'Gets shorter'],
-  ['same', 'No change'],
-  ['gone', 'Disappears'],
-  ['longer', 'Gets longer'],
-];
-
-// Every answer the student gives: each piece placed, each tap of a sequence, each question, each prediction.
-const answersIn = (step) => step.parts.length + step.tasks.reduce((n, t) => n + (t.type === 'tap' ? t.seq.length : t.type === 'predict' ? t.rows.length : 1), 0);
-export const TOTAL_ANSWERS = STEPS.reduce((n, s) => n + answersIn(s), 0);
+// Every answer the student gives: one per piece to place.
+export const TOTAL_ANSWERS = STEPS.reduce((n, s) => n + s.parts.length, 0);

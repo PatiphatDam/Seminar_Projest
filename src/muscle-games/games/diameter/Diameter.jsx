@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFx } from '../../fx/Fx.jsx';
 import { scoreOutOf10 } from '../meta.js';
-import { DECOYS, PREDICT_CHOICES, STEPS, TOTAL_ANSWERS, art } from './levels.js';
+import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 
 // Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
 // sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
-// place) onto the model, where it snaps in and takes its colour. Then a task on the finished picture: tap structures
-// in order, answer a question, or predict a contraction. Out of 10 = answers right first time over all answers of
-// all five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The clock counts
-// down from 6 minutes; when it runs out the game ends and answers not given count as not right.
+// place) onto the model, where it snaps in and takes its colour. When the last piece is in, "Stage cleared" shows and
+// the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed right at the first try over
+// all pieces of the five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The
+// clock counts down from 6 minutes; when it runs out the game ends and pieces not placed count as not right.
 const W = 900; // every render is 900 x 600
 const H = 600;
 // shapes are tested on a half-size copy: a quarter of the pixels to read when a step loads (a 1-px slip is 2 px)
 const MW = W / 2;
 const MH = H / 2;
 const TIME = 360; // seconds
+const CLEARED_MS = 2200; // how long "Stage cleared" shows before the zoom
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
 
@@ -165,26 +166,18 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [ready, setReady] = useState(false);
   const [placed, setPlaced] = useState([]); // part ids in the picture
   const [partIdx, setPartIdx] = useState(0); // which clue
-  const [taskIdx, setTaskIdx] = useState(-1); // -1 while building
-  const [seqI, setSeqI] = useState(0);
-  const [lit, setLit] = useState([]); // parts tapped right in a sequence
+  const [cleared, setCleared] = useState(false); // every piece of this stage is in place
   const [picked, setPicked] = useState(null);
   const [wrong, setWrong] = useState(null);
   const [msg, setMsg] = useState('');
-  const [taskDone, setTaskDone] = useState(false);
-  const [choice, setChoice] = useState(null);
-  const [predict, setPredict] = useState({});
-  const [contracted, setContracted] = useState(false);
   const [pops, setPops] = useState([]);
   const [zooming, setZooming] = useState(false);
   const [left, setLeft] = useState(TIME); // seconds left
   const stepNow = useRef(0); // stepIdx for the clock's interval, which keeps its first render's closure
   const firstTry = useRef(true);
   const stageRef = useRef(null);
-  const clueRef = useRef(null);
-  const endRef = useRef(null); // the Next / Stage cleared card
+  const endRef = useRef(null); // the Stage cleared card
   const maskOf = useRef({});
-  const task = taskIdx >= 0 ? step.tasks[taskIdx] : null;
 
   const score = () => scoreOutOf10(s.right, TOTAL_ANSWERS);
   stepNow.current = stepIdx;
@@ -237,24 +230,18 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     };
   }, [step, fx]);
 
-  // On a phone the tray vanishes when the last piece snaps in and the cards appear under the picture, out of view:
-  // bring the mission into view when it starts, and the Next / Stage cleared card when a task is done.
-  useEffect(() => {
-    if (taskIdx >= 0) clueRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [taskIdx]);
-  // No button to press: once a task is answered the game moves on by itself (to the next task, or zooms into the next
-  // stage), after a pause long enough to read the explanation. "Go now" skips the wait.
+  // Like Group Sort: when the last piece snaps in, "Stage cleared" shows and the game zooms into the next stage by
+  // itself (or ends after the last). No button, nothing else to tap.
   const advance = useRef(null);
   useEffect(() => {
-    if (!taskDone) return undefined;
+    if (!cleared) return undefined;
     const show = setTimeout(() => endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
-    const go = setTimeout(() => advance.current?.(), task?.type === 'tap' ? 2600 : 3800);
+    const go = setTimeout(() => advance.current?.(), CLEARED_MS);
     return () => {
       clearTimeout(show);
       clearTimeout(go);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskDone, taskIdx]);
+  }, [cleared]);
 
   const at = (clientX, clientY) => {
     const r = stageRef.current.getBoundingClientRect();
@@ -267,8 +254,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     setTimeout(() => setPops((ps) => ps.filter((q) => q.id !== id)), 1000);
   };
 
-  // One answer per clue, tap of a sequence, question or prediction row: it is right only if right at the first try.
-  // A wrong try is just wrong: no point lost, no time added; only the first is listed for review.
+  // One answer per clue: it is right only if right at the first try. A wrong try is just wrong: no point lost, no time
+  // added; only the first is listed for review.
   const answer = (ok, p, mistake) => {
     const first = firstTry.current;
     if (first) s.answered += 1;
@@ -278,18 +265,17 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       if (mistake && first) s.mistakes.push(mistake);
       fx.sound('bad');
       fx.vibrate(100);
-      if (p) pop('✗ Wrong', p, true);
+      pop('✗ Wrong', p, true);
     } else {
       fx.sound('snap');
-      if (p) {
-        fx.burst(p.x, p.y, 14);
-        pop(first ? '✓ Right' : '✓', p);
-      }
+      fx.burst(p.x, p.y, 14);
+      pop(first ? '✓ Right' : '✓', p);
     }
     onScore(score());
   };
 
   const tryPiece = (piece, p) => {
+    if (cleared) return;
     const want = step.parts[partIdx];
     const ok = piece.id === want.id && onPart(maskOf.current[`${step.id}-${want.id}`], p.fx, p.fy);
     if (ok) {
@@ -299,7 +285,10 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       setMsg(`✓ ${want.name}`);
       firstTry.current = true;
       if (partIdx + 1 < step.parts.length) setPartIdx(partIdx + 1);
-      else startTasks();
+      else {
+        setCleared(true);
+        fx.sound('win');
+      }
       return;
     }
     const d = piece.decoy && DECOYS[piece.decoy];
@@ -310,94 +299,18 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   };
 
   const dropPiece = (piece, clientX, clientY) => {
-    if (taskIdx >= 0) return;
     const p = at(clientX, clientY);
     if (p) tryPiece(piece, p);
   };
   const pickPiece = (piece) => {
-    if (taskIdx >= 0) return;
+    if (cleared) return;
     setPicked(piece);
     setMsg('Now tap where it goes on the model');
   };
-
-  const startTasks = () => {
-    setTaskIdx(0);
-    setSeqI(0);
-    setLit([]);
-    setTaskDone(false);
-    setChoice(null);
-    setMsg('');
-  };
-  const nextTask = () => {
-    firstTry.current = true;
-    if (taskIdx + 1 < step.tasks.length) {
-      setTaskIdx(taskIdx + 1);
-      setSeqI(0);
-      setLit([]);
-      setTaskDone(false);
-      setChoice(null);
-      setMsg('');
-    } else goNext();
-  };
-  advance.current = nextTask;
-
-  // tap on the picture: drop the picked piece, or answer a tap task
+  // tap on the picture: drop the picked piece there
   const tapStage = (e) => {
     const p = at(e.clientX, e.clientY);
-    if (!p) return;
-    if (taskIdx < 0) {
-      if (picked) tryPiece(picked, p);
-      return;
-    }
-    if (task?.type !== 'tap' || taskDone) return;
-    // Parts overlap and some are thin (T-tubules on a phone are a few pixels wide), so the part asked for wins if the
-    // finger is on it or within a few pixels of it; otherwise the part right under the finger, then the nearest.
-    const want = task.seq[seqI];
-    const ids = step.parts.map((x) => x.id);
-    const mask = (id) => maskOf.current[`${step.id}-${id}`];
-    const hit = onPart(mask(want), p.fx, p.fy) ? want : ids.find((id) => onPart(mask(id), p.fx, p.fy, 0)) ?? ids.find((id) => onPart(mask(id), p.fx, p.fy));
-    if (!hit) return;
-    const name = (id) => step.parts.find((x) => x.id === id).name;
-    if (hit === want) {
-      answer(true, p);
-      firstTry.current = true;
-      setLit((l) => [...l, hit]);
-      setMsg(`✓ ${seqI + 1}. ${name(hit)}`);
-      if (seqI + 1 >= task.seq.length) {
-        setTaskDone(true);
-        fx.sound('win');
-        if (task.calcium) calcium(task.calcium);
-      } else setSeqI(seqI + 1);
-    } else {
-      answer(false, p, { prompt: task.text, yours: name(hit), answer: name(want) });
-      setMsg('✗ Not that one yet — where does it go next?');
-    }
-  };
-
-  const pickChoice = (k) => {
-    if (taskDone) return;
-    const ok = k === task.answer;
-    answer(ok, null, ok ? null : { prompt: task.text, yours: task.options[k], answer: task.options[task.answer] });
-    setChoice(k);
-    setTaskDone(true);
-  };
-
-  const submitPredict = () => {
-    task.rows.forEach(([row, want]) => {
-      firstTry.current = true;
-      const ok = predict[row] === want;
-      answer(ok, null, ok ? null : { prompt: `${task.text} — ${row}`, yours: PREDICT_CHOICES.find((c) => c[0] === predict[row])?.[1] ?? 'No answer', answer: PREDICT_CHOICES.find((c) => c[0] === want)[1] });
-      firstTry.current = true;
-    });
-    setTaskDone(true);
-    setContracted(true);
-    fx.sound('win');
-  };
-
-  const [calciumAt, setCalciumAt] = useState(null);
-  const calcium = (id) => {
-    const b = maskOf.current[`${step.id}-${id}`]?.box;
-    if (b) setCalciumAt(b);
+    if (p && picked) tryPiece(picked, p);
   };
 
   function finish(timeUp) {
@@ -406,7 +319,6 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     onFinish(score(), report(timeUp));
   }
   const goNext = () => {
-    if (zooming) return; // "Go now" and the automatic move can both fire
     if (stepIdx + 1 >= STEPS.length) {
       finish();
       return;
@@ -418,21 +330,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       setStepIdx(stepIdx + 1);
       setPlaced([]);
       setPartIdx(0);
-      setTaskIdx(-1);
-      setTaskDone(false);
-      setChoice(null);
-      setLit([]);
+      setCleared(false);
       setPicked(null);
-      setCalciumAt(null);
-      setContracted(false);
-      setPredict({});
       setMsg('');
     }, 650);
   };
-
-  const mid = maskOf.current['sarcomere-mline']?.box;
-  const midPct = mid ? ((mid.x0 + mid.x1) / 2 / W) * 100 : 50;
-  const sliding = new Set(['thin', 'zdisc', 'titin']);
+  advance.current = goNext;
 
   return (
     <section className="mg-zp">
@@ -445,69 +348,44 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         </span>
       </div>
       <ol className="mg-zp__steps" aria-label="Zoom steps">
-        {STEPS.map((x, k) => {
-          const open = k === stepIdx + 1 && task && taskDone && taskIdx + 1 >= step.tasks.length;
-          return (
-            <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx ? 'mg-done' : open ? 'mg-open' : undefined}>
-              {open ? (
-                <button type="button" onClick={nextTask}>
-                  {k + 1} {x.title} ▶
-                </button>
-              ) : (
-                `${k + 1} ${x.title}`
-              )}
-            </li>
-          );
-        })}
+        {STEPS.map((x, k) => (
+          <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx || (k === stepIdx && cleared) ? 'mg-done' : undefined}>
+            {k + 1} {x.title}
+          </li>
+        ))}
       </ol>
 
-      <div ref={clueRef} className="mg-zp__clue" role="status" aria-live="polite">
-        {taskIdx < 0 ? (
+      <div className="mg-zp__clue" role="status" aria-live="polite">
+        {cleared ? (
+          <>
+            <b>Stage {stepIdx + 1} built</b>
+            {step.title}: every part is in place.
+          </>
+        ) : (
           <>
             <b>
               Clue {partIdx + 1} of {step.parts.length} · find the piece and put it in place
             </b>
             {step.parts[partIdx].clue}
           </>
-        ) : (
-          <>
-            <b>
-              {task.type === 'tap' ? 'Mission' : task.type === 'choice' ? 'Question' : 'Predict'} {taskIdx + 1} of {step.tasks.length}{' '}
-              <span>· {taskIdx + 1 < step.tasks.length ? 'then one more' : stepIdx + 1 < STEPS.length ? `then Stage ${stepIdx + 2}` : 'then your score'}</span>
-            </b>
-            {taskDone ? task.done : task.text}
-          </>
         )}
       </div>
 
       <div ref={stageRef} className={`mg-zp__stage${zooming ? ' mg-zp__stage--zoom' : ''}`} onClick={tapStage}>
-        <img className="mg-zp__base" src={art(`${step.id}-grey`)} alt={`${step.title}, rendered from the 3D model`} draggable="false" style={contracted ? { opacity: 0 } : undefined} />
+        <img className="mg-zp__base" src={art(`${step.id}-grey`)} alt={`${step.title}, rendered from the 3D model`} draggable="false" />
         {/* built: the whole model appears in colour, including the parts that were only context */}
-        <img className={`mg-zp__full${taskIdx >= 0 && !contracted ? ' mg-on' : ''}`} src={art(`${step.id}-full`)} alt="" draggable="false" />
+        <img className={`mg-zp__full${cleared ? ' mg-on' : ''}`} src={art(`${step.id}-full`)} alt="" draggable="false" />
         {step.parts.map((p) => {
           const on = placed.includes(p.id);
-          const cls = `mg-zp__part${on ? ' mg-on' : ''}${lit.includes(p.id) ? ' mg-zp__part--lit' : ''}`;
-          if (contracted && sliding.has(p.id))
-            return [-1, 1].map((side) => (
-              <img
-                key={`${p.id}${side}`}
-                className={`${cls} mg-zp__part--slide`}
-                src={art(`${step.id}-${p.id}`)}
-                alt=""
-                draggable="false"
-                style={{ clipPath: side < 0 ? `inset(0 ${100 - midPct}% 0 0)` : `inset(0 0 0 ${midPct}%)`, '--slide': `${-side * 4.5}%` }}
-              />
-            ));
-          return <img key={p.id} className={cls} src={art(`${step.id}-${p.id}`)} alt="" draggable="false" style={on && p.see ? { opacity: p.see } : undefined} />;
+          return <img key={p.id} className={`mg-zp__part${on ? ' mg-on' : ''}`} src={art(`${step.id}-${p.id}`)} alt="" draggable="false" style={on && p.see ? { opacity: p.see } : undefined} />;
         })}
         {/* the empty spots: a faint tint in the shape of each part still to place */}
-        {taskIdx < 0 &&
-          step.parts
-            .filter((p) => !placed.includes(p.id))
-            .map((p) => {
-              const url = `url("${art(`${step.id}-${p.id}`)}")`;
-              return <span key={`slot-${p.id}`} className="mg-zp__slot" style={{ maskImage: url, WebkitMaskImage: url }} />;
-            })}
+        {step.parts
+          .filter((p) => !placed.includes(p.id))
+          .map((p) => {
+            const url = `url("${art(`${step.id}-${p.id}`)}")`;
+            return <span key={`slot-${p.id}`} className="mg-zp__slot" style={{ maskImage: url, WebkitMaskImage: url }} />;
+          })}
         {step.parts.map((p) =>
           marks[p.id]?.left ? (
             <span key={`n-${p.id}`} className={`mg-zp__num${placed.includes(p.id) ? ' mg-on' : ''}`} style={{ left: marks[p.id].left, top: marks[p.id].top }} aria-hidden="true">
@@ -515,93 +393,35 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
             </span>
           ) : null
         )}
-        {calciumAt &&
-          Array.from({ length: 36 }, (_, k) => (
-            <i
-              key={k}
-              className="mg-zp__ca"
-              style={{
-                left: `${((calciumAt.x0 + ((k * 37) % 100) / 100 * (calciumAt.x1 - calciumAt.x0)) / W) * 100}%`,
-                top: `${((calciumAt.y0 + ((k * 53) % 100) / 100 * (calciumAt.y1 - calciumAt.y0)) / H) * 100}%`,
-                animationDelay: `${k * 0.035}s`,
-              }}
-            />
-          ))}
         {pops.map((q) => (
           <span key={q.id} className={`mg-zp__pop${q.bad ? ' mg-zp__pop--bad' : ''}`} style={{ left: q.x, top: q.y }}>
             {q.text}
           </span>
         ))}
-        {task?.type === 'tap' && !taskDone && <span className="mg-zp__tapnote">👆 Tap on the picture</span>}
         {!ready && <span className="mg-zp__loading">Loading the model…</span>}
       </div>
 
       <p className="mg-zp__msg">{msg}</p>
 
-      {taskIdx < 0 && (
-        <div className="mg-zp__tray">
-          {pieces.map((p) => (
-            <Piece key={p.id} piece={p} picked={picked?.id === p.id} done={placed.includes(p.id)} wrong={wrong === p.id} onPick={pickPiece} onDrop={dropPiece} />
-          ))}
-        </div>
-      )}
-
-      {task?.type === 'choice' && (
-        <div className="mg-zp__choices">
-          {task.options.map((o, k) => (
-            <button
-              key={o}
-              type="button"
-              className={`mg-zp__choice${taskDone && k === task.answer ? ' mg-zp__choice--right' : ''}${taskDone && k === choice && k !== task.answer ? ' mg-zp__choice--wrong' : ''}`}
-              onClick={() => pickChoice(k)}
-              disabled={taskDone}
-            >
-              {o}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {task?.type === 'predict' && (
-        <div className="mg-zp__predict">
-          {task.rows.map(([row, want]) => (
-            <label key={row} className="mg-zp__row">
-              <span>{row}</span>
-              <select value={predict[row] ?? ''} onChange={(e) => setPredict({ ...predict, [row]: e.target.value })} disabled={taskDone}>
-                <option value="">—</option>
-                {PREDICT_CHOICES.map(([v, t]) => (
-                  <option key={v} value={v}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              {taskDone && <em className={predict[row] === want ? 'mg-zp__ok' : 'mg-zp__no'}>{predict[row] === want ? '✓' : `✗ ${PREDICT_CHOICES.find((c) => c[0] === want)[1]}`}</em>}
-            </label>
-          ))}
-          {!taskDone && (
-            <button type="button" className="mg-btn mg-btn--primary" onClick={submitPredict}>
-              Contract! ▶
-            </button>
-          )}
-        </div>
-      )}
-
-      {task && taskDone && taskIdx + 1 < step.tasks.length && (
-        <div ref={endRef} className="mg-zp__next">
-          <span className="mg-zp__auto">Next question coming up…</span>
-        </div>
-      )}
-      {task && taskDone && taskIdx + 1 >= step.tasks.length && (
+      {cleared ? (
         <div ref={endRef} className="mg-zp__clear">
           <p className="mg-zp__clear-title">✅ Stage {stepIdx + 1} cleared: {step.title}</p>
           <p className="mg-zp__clear-stats">
             {s.right - s.stepRight} of {s.answered - s.stepAnswered} right first time in this stage
           </p>
-          <p className="mg-zp__auto">{stepIdx + 1 < STEPS.length ? `🔍 Zooming in to Stage ${stepIdx + 2}: ${STEPS[stepIdx + 1].title}…` : '🏁 Your final score is coming up…'}</p>
-          <i className="mg-zp__bar" style={{ animationDuration: `${task.type === 'tap' ? 2.6 : 3.8}s` }} aria-hidden="true" />
+          <p className="mg-zp__auto">{stepIdx + 1 < STEPS.length ? `🔍 ${step.zoom}…` : '🏁 Your final score is coming up…'}</p>
+          <i className="mg-zp__bar" style={{ animationDuration: `${CLEARED_MS}ms` }} aria-hidden="true" />
         </div>
+      ) : (
+        <>
+          <div className="mg-zp__tray">
+            {pieces.map((p) => (
+              <Piece key={p.id} piece={p} picked={picked?.id === p.id} done={placed.includes(p.id)} wrong={wrong === p.id} onPick={pickPiece} onDrop={dropPiece} />
+            ))}
+          </div>
+          <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>
+        </>
       )}
-      {taskIdx < 0 && <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>}
     </section>
   );
 }
