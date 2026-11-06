@@ -7,9 +7,9 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
 // place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
-// the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed right at the first try over
-// all pieces of the five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The
-// clock counts down from 6 minutes; when it runs out the game ends and pieces not placed count as not right.
+// the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed over all 25 pieces of the
+// five steps. A wrong answer is just wrong: it takes no point away and adds no time; try again (it is listed for
+// review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
 const H = 600;
 // shapes are tested on a half-size copy: a quarter of the pixels to read when a step loads (a 1-px slip is 2 px)
@@ -187,7 +187,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   stepNow.current = stepIdx;
   const report = (timeUp) => ({
     runId: s.runId,
-    summary: `${s.right}/${TOTAL_ANSWERS} right first time · ${Math.min(stepNow.current + 1, STEPS.length)}/${STEPS.length} steps${timeUp ? " · time's up" : ''}`,
+    summary: `${s.right}/${TOTAL_ANSWERS} pieces placed · ${Math.min(stepNow.current + 1, STEPS.length)}/${STEPS.length} steps${timeUp ? " · time's up" : ''}`,
     mistakes: s.mistakes,
   });
 
@@ -227,8 +227,6 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       const order = shuffle(step.parts.map((p) => p.id));
       const spots = markerSpots(order.map((id) => maskOf.current[`${step.id}-${id}`]));
       setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k] }])));
-      s.stepRight = s.right;
-      s.stepAnswered = s.answered;
       setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
       if (s.t0 == null) s.t0 = performance.now();
@@ -258,12 +256,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     setTimeout(() => setPops((ps) => ps.filter((q) => q.id !== id)), 1000);
   };
 
-  // One answer per clue: it is right only if right at the first try. A wrong try is just wrong: no point lost, no time
-  // added; only the first is listed for review.
+  // One point per piece placed (the user's rule, as in Balloon Pop: a wrong try first never takes the point away).
+  // A wrong try is just wrong: no point lost, no time added; the first per clue is listed for review.
   const answer = (ok, p, mistake) => {
     const first = firstTry.current;
     if (first) s.answered += 1;
-    if (ok && first) s.right += 1;
+    if (ok) s.right += 1;
     if (!ok) {
       firstTry.current = false;
       if (mistake && first) s.mistakes.push(mistake);
@@ -351,9 +349,6 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         </span>
         <span className="mg-zp__pill">
           Stage {stepIdx + 1}/{STEPS.length}
-        </span>
-        <span className="mg-zp__pill">
-          ✓ {s.right}/{TOTAL_ANSWERS}
         </span>
       </div>
       <ol className="mg-zp__steps" aria-label="Zoom steps">

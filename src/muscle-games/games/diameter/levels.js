@@ -88,5 +88,5 @@ export const STEPS = [
   },
 ];
 
-// Every answer the student gives: one per piece to place.
+// One point per piece to place (25 in all); the score out of 10 is pieces placed / TOTAL_ANSWERS.
 export const TOTAL_ANSWERS = STEPS.reduce((n, s) => n + s.parts.length, 0);
