@@ -59,6 +59,30 @@ function loadMask(name) {
   masks.set(name, p);
   return p;
 }
+// Where each part's number sits on the picture: on a solid bit of the part near its middle, and at least 76 px of the
+// render from the numbers already placed (wrapping layers share their middle with what they wrap), so two numbers
+// never overlap even on a phone. In %.
+function markerSpots(list) {
+  const placed = [];
+  return list.map((mask) => {
+    if (!mask) return null;
+    const { a, box } = mask;
+    const solid = (x, y) => a[y * MW + x] > 120 && a[y * MW + x - 3] > 120 && a[y * MW + x + 3] > 120 && a[(y - 3) * MW + x] > 120 && a[(y + 3) * MW + x] > 120;
+    const cx = (box.x0 + box.x1) / 4;
+    const cy = (box.y0 + box.y1) / 4;
+    const spots = [];
+    const collect = (ok) => {
+      for (let y = 14; y < MH - 14; y += 2) for (let x = 14; x < MW - 14; x += 2) if (ok(x, y)) spots.push([x, y, (x - cx) ** 2 + (y - cy) ** 2]);
+    };
+    collect(solid);
+    if (!spots.length) collect((x, y) => a[y * MW + x] > 60); // thin parts (titin) have no solid bit
+    spots.sort((p, q) => p[2] - q[2]);
+    const free = spots.find(([x, y]) => placed.every(([px, py]) => (x - px) ** 2 + (y - py) ** 2 >= 38 ** 2)) ?? spots[0];
+    if (!free) return null;
+    placed.push(free);
+    return { left: `${(free[0] / MW) * 100}%`, top: `${(free[1] / MH) * 100}%` };
+  });
+}
 // Is the point (fractions of the picture) on the part — within `reach` mask px (7 = 14 px of the render), so a finger
 // need not be pixel-perfect?
 function onPart(mask, fx, fy, reach = 7) {
@@ -135,6 +159,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [stepIdx, setStepIdx] = useState(0);
   const step = STEPS[stepIdx];
   const [pieces, setPieces] = useState([]); // the tray, shuffled
+  const [marks, setMarks] = useState({}); // part id -> { n, left, top }: the numbers on the picture
   const [ready, setReady] = useState(false);
   const [placed, setPlaced] = useState([]); // part ids in the picture
   const [partIdx, setPartIdx] = useState(0); // which clue
@@ -185,6 +210,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     Promise.all(list.map((p) => loadMask(p.art))).then((ms) => {
       if (!live) return;
       maskOf.current = Object.fromEntries(list.map((p, k) => [p.art, ms[k]]));
+      // numbered spots in a shuffled order, so a number never tells which clue comes next
+      const order = shuffle(step.parts.map((p) => p.id));
+      const spots = markerSpots(order.map((id) => maskOf.current[`${step.id}-${id}`]));
+      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k] }])));
+      s.stepRight = s.right;
+      s.stepAnswered = s.answered;
       setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
     });
@@ -370,6 +401,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       setPlaced([]);
       setPartIdx(0);
       setTaskIdx(-1);
+      setTaskDone(false);
+      setChoice(null);
       setLit([]);
       setPicked(null);
       setCalciumAt(null);
@@ -393,11 +426,20 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         </button>
       </div>
       <ol className="mg-zp__steps" aria-label="Zoom steps">
-        {STEPS.map((x, k) => (
-          <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx ? 'mg-done' : undefined}>
-            {k + 1} {x.title}
-          </li>
-        ))}
+        {STEPS.map((x, k) => {
+          const open = k === stepIdx + 1 && task && taskDone && taskIdx + 1 >= step.tasks.length;
+          return (
+            <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx ? 'mg-done' : open ? 'mg-open' : undefined}>
+              {open ? (
+                <button type="button" onClick={nextTask}>
+                  {k + 1} {x.title} ▶
+                </button>
+              ) : (
+                `${k + 1} ${x.title}`
+              )}
+            </li>
+          );
+        })}
       </ol>
 
       <div className="mg-zp__clue" role="status" aria-live="polite">
@@ -436,6 +478,21 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
             ));
           return <img key={p.id} className={cls} src={art(`${step.id}-${p.id}`)} alt="" draggable="false" style={on && p.see ? { opacity: p.see } : undefined} />;
         })}
+        {/* the empty spots: a faint tint in the shape of each part still to place */}
+        {taskIdx < 0 &&
+          step.parts
+            .filter((p) => !placed.includes(p.id))
+            .map((p) => {
+              const url = `url("${art(`${step.id}-${p.id}`)}")`;
+              return <span key={`slot-${p.id}`} className="mg-zp__slot" style={{ maskImage: url, WebkitMaskImage: url }} />;
+            })}
+        {step.parts.map((p) =>
+          marks[p.id]?.left ? (
+            <span key={`n-${p.id}`} className={`mg-zp__num${placed.includes(p.id) ? ' mg-on' : ''}`} style={{ left: marks[p.id].left, top: marks[p.id].top }} aria-hidden="true">
+              {placed.includes(p.id) ? '✓' : marks[p.id].n}
+            </span>
+          ) : null
+        )}
         {calciumAt &&
           Array.from({ length: 36 }, (_, k) => (
             <i
@@ -506,11 +563,23 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         </div>
       )}
 
-      {taskDone && (
+      {task && taskDone && taskIdx + 1 < step.tasks.length && (
         <div className="mg-zp__next">
           <button type="button" className="mg-btn mg-btn--primary" onClick={nextTask} autoFocus>
-            {taskIdx + 1 < step.tasks.length ? 'Next ▶' : stepIdx + 1 < STEPS.length ? `🔍 ${step.zoom}` : '🏁 See final score'}
+            Next ▶
           </button>
+        </div>
+      )}
+      {task && taskDone && taskIdx + 1 >= step.tasks.length && (
+        <div className="mg-zp__clear">
+          <p className="mg-zp__clear-title">✅ Stage {stepIdx + 1} cleared: {step.title}</p>
+          <p className="mg-zp__clear-stats">
+            {s.right - s.stepRight} of {s.answered - s.stepAnswered} right first time in this stage
+          </p>
+          <button type="button" className="mg-btn mg-btn--primary mg-zp__go" onClick={nextTask} autoFocus>
+            {stepIdx + 1 < STEPS.length ? `Next stage ▶ ${STEPS[stepIdx + 1].title}` : '🏁 See final score'}
+          </button>
+          {stepIdx + 1 < STEPS.length && <span className="mg-zp__clear-zoom">🔍 {step.zoom}</span>}
         </div>
       )}
       <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>
