@@ -6,7 +6,7 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
 // sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
-// place) onto the model, where it snaps in and takes its colour. When the last piece is in, "Stage cleared" shows and
+// place) onto the model, where it snaps in and takes its colour. When the last piece is in, the full model shows a moment and
 // the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed right at the first try over
 // all pieces of the five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The
 // clock counts down from 6 minutes; when it runs out the game ends and pieces not placed count as not right.
@@ -16,7 +16,7 @@ const H = 600;
 const MW = W / 2;
 const MH = H / 2;
 const TIME = 360; // seconds
-const CLEARED_MS = 2200; // how long "Stage cleared" shows before the zoom
+const CLEARED_MS = 1400; // how long the finished model shows before the zoom
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
 
@@ -176,7 +176,6 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const stepNow = useRef(0); // stepIdx for the clock's interval, which keeps its first render's closure
   const firstTry = useRef(true);
   const stageRef = useRef(null);
-  const endRef = useRef(null); // the Stage cleared card
   const maskOf = useRef({});
 
   const score = () => scoreOutOf10(s.right, TOTAL_ANSWERS);
@@ -230,17 +229,13 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     };
   }, [step, fx]);
 
-  // Like Group Sort: when the last piece snaps in, "Stage cleared" shows and the game zooms into the next stage by
-  // itself (or ends after the last). No button, nothing else to tap.
+  // Like Group Sort: when the last piece snaps in, the model shows in full colour for a moment and the game zooms into
+  // the next stage by itself (or ends after the last). No card, no button, nothing else to tap.
   const advance = useRef(null);
   useEffect(() => {
     if (!cleared) return undefined;
-    const show = setTimeout(() => endRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120);
     const go = setTimeout(() => advance.current?.(), CLEARED_MS);
-    return () => {
-      clearTimeout(show);
-      clearTimeout(go);
-    };
+    return () => clearTimeout(go);
   }, [cleared]);
 
   const at = (clientX, clientY) => {
@@ -344,6 +339,9 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
           ⏱ {mmss(left)}
         </span>
         <span className="mg-zp__pill">
+          Stage {stepIdx + 1}/{STEPS.length}
+        </span>
+        <span className="mg-zp__pill">
           ✓ {s.right}/{TOTAL_ANSWERS}
         </span>
       </div>
@@ -358,8 +356,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       <div className="mg-zp__clue" role="status" aria-live="polite">
         {cleared ? (
           <>
-            <b>Stage {stepIdx + 1} built</b>
-            {step.title}: every part is in place.
+            <b>✓ Stage {stepIdx + 1} built: {step.title}</b>
+            {step.zoom ? `🔍 ${step.zoom}…` : 'Every part is in place.'}
           </>
         ) : (
           <>
@@ -403,25 +401,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
 
       <p className="mg-zp__msg">{msg}</p>
 
-      {cleared ? (
-        <div ref={endRef} className="mg-zp__clear">
-          <p className="mg-zp__clear-title">✅ Stage {stepIdx + 1} cleared: {step.title}</p>
-          <p className="mg-zp__clear-stats">
-            {s.right - s.stepRight} of {s.answered - s.stepAnswered} right first time in this stage
-          </p>
-          <p className="mg-zp__auto">{stepIdx + 1 < STEPS.length ? `🔍 ${step.zoom}…` : '🏁 Your final score is coming up…'}</p>
-          <i className="mg-zp__bar" style={{ animationDuration: `${CLEARED_MS}ms` }} aria-hidden="true" />
-        </div>
-      ) : (
-        <>
-          <div className="mg-zp__tray">
-            {pieces.map((p) => (
-              <Piece key={p.id} piece={p} picked={picked?.id === p.id} done={placed.includes(p.id)} wrong={wrong === p.id} onPick={pickPiece} onDrop={dropPiece} />
-            ))}
-          </div>
-          <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>
-        </>
-      )}
+      <div className="mg-zp__tray">
+        {pieces.map((p) => (
+          <Piece key={p.id} piece={p} picked={picked?.id === p.id} done={placed.includes(p.id)} wrong={wrong === p.id} onPick={pickPiece} onDrop={dropPiece} />
+        ))}
+      </div>
+      <p className="mg-zp__tip">Drag a piece onto the model, or tap a piece and then tap where it goes.</p>
     </section>
   );
 }

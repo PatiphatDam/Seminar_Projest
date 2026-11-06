@@ -1326,16 +1326,6 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 .mg-zp__num.mg-on { background: #16a34a; }
-.mg-zp__clear {
-  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 16px; border: 2px solid var(--sea-500); border-radius: 18px;
-  background: var(--surface); color: var(--text); text-align: center; box-shadow: var(--shadow); animation: mg-pop-in 0.35s ease-out;
-  scroll-margin: 16px 16px calc(16px + var(--mg-bottom-inset, 0px));
-}
-.mg-zp__clear-title { margin: 0; color: var(--card-text); font-family: var(--font-serif); font-size: 21px; font-weight: 700; line-height: 1.3; }
-.mg-zp__clear-stats { margin: 0; color: var(--muted); font-size: 14px; font-weight: 600; }
-.mg-zp__auto { margin: 0; color: var(--card-text); font-size: 14.5px; font-weight: 700; }
-.mg-zp__bar { display: block; width: min(240px, 80%); height: 6px; border-radius: 999px; background: var(--sea-600); transform-origin: left; animation: mg-zp-bar linear forwards; }
-@keyframes mg-zp-bar { from { transform: scaleX(0); } }
 .mg-zp__pop {
   position: absolute; z-index: 2; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap;
   color: #fff; font-size: 19px; font-weight: 800; text-shadow: 0 1px 0 hsl(165 52% 22%), 0 0 8px hsl(165 52% 28%); animation: mg-zp-up 1s ease-out forwards;
@@ -1363,8 +1353,7 @@
   .mg-zp__piece { height: 64px; }
   .mg-zp__thumb { max-height: 52px; }
   .mg-zp__num { width: 20px; height: 20px; margin: -10px 0 0 -10px; font-size: 11px; }
-  .mg-zp__clear-title { font-size: 19px; }
-}
+  }
 
 /* ---------- Shared bits ---------- */
 .mg-shake { animation: mg-shake 0.4s; }
