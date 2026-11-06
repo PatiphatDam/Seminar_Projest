@@ -6,7 +6,7 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
 // sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
-// place) onto the model, where it snaps in and takes its colour. When the last piece is in, the full model shows a moment and
+// place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
 // the game zooms into the next step by itself, like Group Sort. Out of 10 = pieces placed right at the first try over
 // all pieces of the five steps. A wrong answer is just wrong: try again, no point lost, no time added, no hints. The
 // clock counts down from 6 minutes; when it runs out the game ends and pieces not placed count as not right.
@@ -85,20 +85,6 @@ function markerSpots(list) {
     placed.push(free);
     return { left: `${(free[0] / MW) * 100}%`, top: `${(free[1] / MH) * 100}%` };
   });
-}
-// Is the point (fractions of the picture) on the part — within `reach` mask px (7 = 14 px of the render), so a finger
-// need not be pixel-perfect?
-function onPart(mask, fx, fy, reach = 7) {
-  if (!mask) return false;
-  const cx = Math.round(fx * MW);
-  const cy = Math.round(fy * MH);
-  for (let dy = -reach; dy <= reach; dy += 3.5)
-    for (let dx = -reach; dx <= reach; dx += 3.5) {
-      const x = Math.round(cx + dx);
-      const y = Math.round(cy + dy);
-      if (x >= 0 && y >= 0 && x < MW && y < MH && mask.a[y * MW + x] > 30) return true;
-    }
-  return false;
 }
 
 // The picture under the finger while a piece is dragged. Only one can exist: it lives on <body>, so anything that
@@ -295,7 +281,9 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const tryPiece = (piece, p) => {
     if (cleared) return;
     const want = step.parts[partIdx];
-    const ok = piece.id === want.id && onPart(maskOf.current[`${step.id}-${want.id}`], p.fx, p.fy);
+    // The question is which piece fits the clue: the right piece let go anywhere on the picture snaps into its place
+    // and counts as right (thin parts are hard to hit exactly with a finger). Only a wrong piece or a decoy is wrong.
+    const ok = piece.id === want.id;
     if (ok) {
       answer(true, p);
       setPlaced((pl) => [...pl, want.id]);
@@ -310,10 +298,10 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       return;
     }
     const d = piece.decoy && DECOYS[piece.decoy];
-    answer(false, p, { prompt: want.clue, yours: d ? d.name : piece.id === want.id ? `${want.name}, in the wrong place` : step.parts.find((x) => x.id === piece.id)?.name, answer: want.name });
+    answer(false, p, { prompt: want.clue, yours: d ? d.name : step.parts.find((x) => x.id === piece.id)?.name, answer: want.name });
     setWrong(piece.id);
     setTimeout(() => setWrong(null), 400);
-    setMsg(d ? `✗ That is the ${d.name} — ${d.why}.` : piece.id === want.id ? '✗ Right piece, wrong place — match its shape on the model.' : '✗ Not this piece — read the clue again.');
+    setMsg(d ? `✗ That is the ${d.name} — ${d.why}.` : '✗ Not this piece — read the clue again.');
   };
 
   const dropPiece = (piece, clientX, clientY) => {
