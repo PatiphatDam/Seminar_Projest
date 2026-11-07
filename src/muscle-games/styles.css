@@ -535,7 +535,7 @@
 /* the clue number: written on the scroll at the top right of the label line, as far right as it can go without
    reaching the faint rune circle (62 px, 18 px from the paper's edge; 48 and 12 px on a phone) */
 .mg-scroll .mg-prompt__label { display: flex; align-items: baseline; gap: 14px; padding-right: 60px; }
-.mg-scroll__count { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mg-scroll__count { margin-left: auto; white-space: pre; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
 
 /* Balloon Pop's clue: an ancient spell scroll in Armin's speech bubble (see QuestionScroll) */
 .mg-mascot-bar__bubble:has(.mg-scroll) { flex: 1; padding: 0; background: none; border: 0; box-shadow: none; animation: none; }
