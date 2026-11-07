@@ -457,7 +457,7 @@ function QuestionScroll({ text, n }) {
           </g>
         </svg>
         <span className="mg-prompt__label">
-          🪄 Tap the balloon that matches:{' '}
+          <span>🪄 Tap the balloon that matches:</span>
           <span className="mg-scroll__count" aria-label={`Question ${n} of ${ROUNDS}`}>
             {n}/{ROUNDS}
           </span>

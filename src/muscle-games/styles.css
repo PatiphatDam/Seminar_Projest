@@ -532,8 +532,10 @@
 .mg-stimer--low .mg-stimer__sand { fill: #dc2626; }
 .mg-stimer--low .mg-stimer__num { color: #b91c1c; animation: mg-stimer-pulse 0.6s ease-in-out infinite; }
 @keyframes mg-stimer-pulse { 50% { transform: scale(1.08); } }
-/* the clue number: written on the scroll right after the label, in the same ink */
-.mg-scroll__count { white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* the clue number: written on the scroll at the top right of the label line, as far right as it can go without
+   reaching the faint rune circle (62 px, 18 px from the paper's edge; 48 and 12 px on a phone) */
+.mg-scroll .mg-prompt__label { display: flex; align-items: baseline; gap: 14px; padding-right: 60px; }
+.mg-scroll__count { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Balloon Pop's clue: an ancient spell scroll in Armin's speech bubble (see QuestionScroll) */
 .mg-mascot-bar__bubble:has(.mg-scroll) { flex: 1; padding: 0; background: none; border: 0; box-shadow: none; animation: none; }
@@ -610,6 +612,7 @@
   .mg-stimer__glass { width: 22px; height: 29px; }
   .mg-stimer__num { min-width: 34px; font-size: 14px; }
   .mg-scroll__paper { padding: 12px 18px 11px; }
+  .mg-scroll .mg-prompt__label { gap: 10px; padding-right: 48px; }
   .mg-scroll__rune { right: 12px; width: 48px; height: 48px; margin-top: -24px; }
   .mg-scroll .mg-prompt__text { padding-right: 26px; }
 }
