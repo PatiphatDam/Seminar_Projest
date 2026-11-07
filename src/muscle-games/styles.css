@@ -532,12 +532,8 @@
 .mg-stimer--low .mg-stimer__sand { fill: #dc2626; }
 .mg-stimer--low .mg-stimer__num { color: #b91c1c; animation: mg-stimer-pulse 0.6s ease-in-out infinite; }
 @keyframes mg-stimer-pulse { 50% { transform: scale(1.08); } }
-/* the clue number: a small parchment tag in the top-right corner of the scroll, just inside the paper */
-.mg-scroll__count {
-  position: absolute; right: calc(var(--roll) * 0.72 + 22px); top: 6px; z-index: 2; padding: 1px 7px; text-align: center;
-  font-family: "Nunito Sans Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
-  color: #1e3a8a; background: linear-gradient(180deg, #ecd6a4, #c9a464); border: 1px solid #8a5a12; border-radius: 4px; box-shadow: 0 2px 3px rgb(0 0 0 / 0.45);
-}
+/* the clue number: written on the scroll right after the label, in the same ink */
+.mg-scroll__count { white-space: nowrap; font-variant-numeric: tabular-nums; }
 
 /* Balloon Pop's clue: an ancient spell scroll in Armin's speech bubble (see QuestionScroll) */
 .mg-mascot-bar__bubble:has(.mg-scroll) { flex: 1; padding: 0; background: none; border: 0; box-shadow: none; animation: none; }
@@ -610,7 +606,6 @@
   .mg-prompt__label { font-size: 11px; line-height: 16px; }
   .mg-prompt__text { font-size: 16px; line-height: 1.4; }
   .mg-scroll { --roll: 11px; }
-  .mg-scroll__count { right: calc(var(--roll) * 0.72 + 18px); top: 5px; padding: 0 5px; font-size: 10.5px; }
   .mg-stimer { gap: 8px; margin-bottom: 8px; padding: 8px 18px; }
   .mg-stimer__glass { width: 22px; height: 29px; }
   .mg-stimer__num { min-width: 34px; font-size: 14px; }
