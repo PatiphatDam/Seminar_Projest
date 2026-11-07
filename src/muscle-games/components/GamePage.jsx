@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScores } from '../scores.jsx';
-import { MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
+import { Armin, MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
 import { GAMES, MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
 import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
 
 const cheer = (score) =>
-  score >= 9
+  score >= MAX_SCORE
+    ? ['Perfect score! 10/10 🎉', 'wow']
+    : score >= 9
     ? ['Excellent! Almost perfect 🌟', 'wow']
     : score >= 7
       ? ['Great job! Play again to push it higher.', 'happy']
@@ -81,9 +83,9 @@ export default function GamePage({ game, Game }) {
     keyRef.current = key;
   }, []);
 
-  // Runs before the game's own effects so the game can set its intro line.
+  // Runs before the game's own effects so the game can set its intro line; Armin points at the opening line.
   useLayoutEffect(() => {
-    fx.say('', 'idle');
+    fx.say('', 'idle', 'point');
   }, [run, fx]);
 
   // Saves a run (score out of 10): session best and the host's onGameFinish hook (GAME-7 database).
@@ -146,7 +148,9 @@ export default function GamePage({ game, Game }) {
       const { key, isNewBest, mistakes, runId, saving } = record(final, info, true);
       fx.sound('win');
       if (final >= 8) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
-      if (!game.mascotAsks) fx.say(...cheer(final));
+      // a full score: Armin jumps and cheers (in every game, Balloon Pop too); otherwise a line for the score
+      if (final >= MAX_SCORE) fx.say(...cheer(final), 'jump');
+      else if (!game.mascotAsks) fx.say(...cheer(final));
       setResult({ score: final, key, isNewBest, summary: info.summary, mistakes, runId, save: 'saving' });
       saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
@@ -225,6 +229,13 @@ export default function GamePage({ game, Game }) {
       {result && (
         <div className="mg-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
           <div className="mg-result__card">
+            {/* a full score: Armin jumps and cheers on the result card (the bar behind it is covered) */}
+            {result.score >= MAX_SCORE && (
+              <div className="mg-result__cheer">
+                <Armin mood="wow" act="jump" className="mg-result__mascot" />
+                <p>Perfect score! 🎉</p>
+              </div>
+            )}
             {result.isNewBest && <span className="mg-badge">🏆 New best!</span>}
             <h2 id="result-title">
               {game.title}

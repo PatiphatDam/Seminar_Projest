@@ -345,7 +345,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
     setReady(false);
     setMarks({});
     setPieces([]);
-    fx.say(step.say, 'happy');
+    fx.say(step.say, 'happy', step === STEPS[0] ? 'point' : null); // Armin points at the first clue only
     const list = [
       ...step.parts.map((p) => ({ id: p.id, art: `${step.id}-${p.id}` })),
       ...step.decoys.map((d) => ({ id: `decoy:${d}`, art: DECOYS[d].art, decoy: d })),

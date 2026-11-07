@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { pick, useFx } from '../../fx/Fx.jsx';
+import { useFx } from '../../fx/Fx.jsx';
 import { Lives, useCountdown } from '../../components/Hud.jsx';
 import { GearTimer } from '../../components/SortTimers.jsx';
 import { scoreOutOf10 } from '../meta.js';
@@ -145,7 +145,7 @@ export default function Conveyor({ onScore, onFinish }) {
   const [left] = useCountdown(TIME, { running: !over, onExpire: () => end('Time’s up! ⏰') });
 
   useEffect(() => {
-    fx.say('Press a picture button — the robot arm packs the glowing crate!', 'happy');
+    fx.say('Press a picture button — the robot arm packs the glowing crate!', 'happy', 'point');
     let t;
     const spawn = () => {
       if (overRef.current) return;
@@ -198,7 +198,6 @@ export default function Conveyor({ onScore, onFinish }) {
       fx.sound('good');
       fx.burst(x, y - 20, 14);
       fx.float(x, y - 30, '✓');
-      if (s.sorted % 4 === 0) fx.say(pick(['Great packing!', 'The belt is speeding up!', 'Keep going! 💪']), 'happy');
       flashBin(bin, 'good');
       rerender();
       return 'good';
@@ -208,7 +207,6 @@ export default function Conveyor({ onScore, onFinish }) {
     fx.sound('bad');
     fx.vibrate(120);
     fx.float(x, y - 30, '✗', 'bad');
-    fx.say(`Not ${groupLabel(bin)}, it’s ${groupLabel(item.card.answer)}`, 'sad');
     flashBin(bin, 'bad');
     loseLife();
     return 'bad';
@@ -223,7 +221,6 @@ export default function Conveyor({ onScore, onFinish }) {
     s.mistakes.push({ prompt: item.card.text, yours: 'Fell off the belt', answer: groupLabel(item.card.answer), why: item.card.why });
     fx.sound('bad');
     fx.vibrate(100);
-    fx.say('A crate fell off! 😱', 'sad');
     loseLife();
   };
 

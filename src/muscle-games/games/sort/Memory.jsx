@@ -51,7 +51,7 @@ export default function Memory({ onScore, onFinish }) {
   const [left] = useCountdown(TIME, { running: !between && !over, onExpire: () => end(false) });
 
   useEffect(() => {
-    fx.say(`Case 1: ${ROUNDS[0].hint}. Tap a photo, then the note that goes with it!`, 'happy');
+    fx.say(`Case 1: ${ROUNDS[0].hint}. Tap a photo, then the note that goes with it!`, 'happy', 'point');
     const list = timers.current;
     return () => list.forEach(clearTimeout);
   }, [fx]);
@@ -136,7 +136,6 @@ export default function Memory({ onScore, onFinish }) {
       fx.sound('good');
       fx.burst(x, y, 20);
       fx.float(x, y - 20, '✓');
-      fx.say(`${pick(['A match!', 'Great!', 'Sharp eyes!'])} ${pic.p.name}`, 'happy');
       const nextMatched = { ...matched, [pic.pair]: true };
       setMatched(nextMatched);
       if (Object.keys(nextMatched).length === deck.pics.length) roundCleared();
@@ -146,7 +145,6 @@ export default function Memory({ onScore, onFinish }) {
       s.mistakes.push({ prompt: `What is this picture? (${ROUNDS[round].title})`, yours: text.text, answer: `${pic.p.name} — ${pic.p.clue}`, why: pic.p.why });
       fx.sound('bad');
       fx.vibrate(100);
-      fx.say(pick(['Not a pair. Look at the picture again', 'Oops, those don’t match!', 'So close! 😅']), 'sad');
       setWrongPair([pic.uid, text.uid]);
       later(() => setWrongPair([]), 700);
     }

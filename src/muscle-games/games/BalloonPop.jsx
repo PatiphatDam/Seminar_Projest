@@ -639,7 +639,7 @@ export default function BalloonPop({ onScore, onFinish }) {
   const duration = Math.max(7, 10.5 - s.i * 0.35);
   // Armin asks each clue in his speech bubble, on an old spell scroll (he doesn't cheer or comment in this game)
   useEffect(() => {
-    fx.say(<QuestionScroll text={q.text} n={s.i + 1} />, 'idle');
+    fx.say(<QuestionScroll text={q.text} n={s.i + 1} />, 'idle', s.i === 0 ? 'point' : null); // points at the first clue
   }, [fx, q.text, s.i]);
 
   const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end() });

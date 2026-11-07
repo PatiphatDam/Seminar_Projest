@@ -11,7 +11,7 @@ export const ICE = ['#7dd3fc', '#bae6fd', '#e0f2fe', '#a5b4fc'];
 
 export function FxProvider({ children }) {
   const [items, setItems] = useState([]);
-  const [speech, setSpeech] = useState({ text: '', mood: 'idle', id: 0 });
+  const [speech, setSpeech] = useState({ text: '', mood: 'idle', act: null, id: 0 });
   const [muted, setMutedState] = useState(isMuted);
   const seq = useRef(0);
 
@@ -41,8 +41,9 @@ export function FxProvider({ children }) {
         const r = el.getBoundingClientRect();
         return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
       },
-      say(text, mood = 'happy') {
-        setSpeech((s) => ({ text, mood, id: s.id + 1 }));
+      // act: a move Armin plays once, then he stands still again ('point' at his first line, 'jump' to cheer)
+      say(text, mood = 'happy', act = null) {
+        setSpeech((s) => ({ text, mood, act, id: s.id + 1 }));
       },
       sound: play,
       vibrate,
@@ -148,17 +149,19 @@ function Eye({ x, y, mood }) {
     <>
       <circle cx={x} cy={y} r={white + 4} fill={MUSCLE} />
       <ellipse cx={x} cy={y} rx={white} ry={sad ? white - 1 : white} fill="#fff" stroke={MUSCLE_DARK} strokeWidth="1" />
-      <circle cx={x} cy={py} r={pupil} fill="#141414" />
-      <circle cx={x + pupil * 0.35} cy={py - pupil * 0.38} r={glint} fill="#fff" />
-      <circle cx={x - pupil * 0.35} cy={py + pupil * 0.4} r={glint * 0.45} fill="#fff" opacity=".85" />
+      <g className="mg-armin__pupil">
+        <circle cx={x} cy={py} r={pupil} fill="#141414" />
+        <circle cx={x + pupil * 0.35} cy={py - pupil * 0.38} r={glint} fill="#fff" />
+        <circle cx={x - pupil * 0.35} cy={py + pupil * 0.4} r={glint * 0.45} fill="#fff" opacity=".85" />
+      </g>
     </>
   );
 }
 
-export function Armin({ mood = 'idle', className = '', ...svgProps }) {
+export function Armin({ mood = 'idle', act = null, className = '', ...svgProps }) {
   const eyeY = mood === 'sad' ? 50 : 48;
   return (
-    <svg viewBox="-6 0 132 150" className={`mg-armin mg-armin--${mood} ${className}`} aria-hidden="true" {...svgProps}>
+    <svg viewBox="-6 0 132 150" className={`mg-armin mg-armin--${mood}${act ? ` mg-armin--act-${act}` : ''} ${className}`} aria-hidden="true" {...svgProps}>
       <g className="mg-armin__body">
         <Limb part="leg" side="l" joint={HIP.l} length={15} width={13} />
         <Limb part="leg" side="r" joint={HIP.r} length={15} width={13} />
@@ -209,8 +212,8 @@ export function MascotBar({ fallback }) {
   const { speech } = useFxState();
   return (
     <div className="mg-mascot-bar">
-      <Armin key={`m${speech.id}`} mood={speech.mood} className="mg-mascot-bar__mascot" />
-      <p key={`b${speech.id}`} className="mg-mascot-bar__bubble" role="status" aria-live="polite">
+      <Armin key={`m${speech.id}`} mood={speech.mood} act={speech.act} className="mg-mascot-bar__mascot" />
+      <p key={`b${speech.id}`} className={`mg-mascot-bar__bubble${speech.act === 'point' ? ' mg-mascot-bar__bubble--nudge' : ''}`} role="status" aria-live="polite">
         {speech.text || fallback}
       </p>
     </div>
