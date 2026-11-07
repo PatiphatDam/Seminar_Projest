@@ -209,40 +209,13 @@
 .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg { transform-box: view-box; transition: transform 0.35s ease; }
 .mg-armin__body { transform-origin: 60px 140px; }
 .mg-armin__head { transform-origin: 60px 80px; }
-.mg-armin__arm--l { transform: rotate(35deg); animation: mg-am-idle-l 2.6s ease-in-out infinite; }
-.mg-armin__arm--r { transform: rotate(-35deg); animation: mg-am-idle-r 2.6s ease-in-out infinite; }
-/* happy: wave four times, then keep the arms up */
-.mg-armin--happy .mg-armin__body { animation: mg-am-hop 0.45s ease-out 2 alternate; }
-.mg-armin--happy .mg-armin__arm--l { transform: rotate(132deg); animation: mg-am-wave-l 0.4s ease-in-out 8 alternate; }
-.mg-armin--happy .mg-armin__arm--r { transform: rotate(-132deg); animation: mg-am-wave-r 0.4s ease-in-out -0.4s 8 alternate; }
-.mg-armin--happy .mg-armin__leg--l { animation: mg-am-kick-l 0.4s ease-in-out 8 alternate; }
-.mg-armin--happy .mg-armin__leg--r { animation: mg-am-kick-r 0.4s ease-in-out -0.4s 8 alternate; }
-/* wow: jump with arms up and out */
-.mg-armin--wow .mg-armin__body { animation: mg-am-hop 0.4s ease-out 4 alternate; }
-.mg-armin--wow .mg-armin__arm--l { transform: rotate(132deg); animation: mg-am-up-l 0.18s linear 10 alternate; }
-.mg-armin--wow .mg-armin__arm--r { transform: rotate(-132deg); animation: mg-am-up-r 0.18s linear -0.18s 10 alternate; }
-.mg-armin--wow .mg-armin__leg--l { transform: rotate(14deg); }
-.mg-armin--wow .mg-armin__leg--r { transform: rotate(-14deg); }
-/* sad: arms hang down, head droops and sways */
-.mg-armin--sad .mg-armin__arm--l { transform: rotate(6deg); animation: none; }
-.mg-armin--sad .mg-armin__arm--r { transform: rotate(-6deg); animation: none; }
-.mg-armin--sad .mg-armin__head { transform: rotate(-7deg); animation: mg-am-sway 2.4s ease-in-out infinite; }
-.mg-armin--sad .mg-armin__leg--l { transform: rotate(-5deg); }
-.mg-armin--sad .mg-armin__leg--r { transform: rotate(5deg); }
-@keyframes mg-am-idle-l { 50% { transform: rotate(28deg); } }
-@keyframes mg-am-idle-r { 50% { transform: rotate(-28deg); } }
-@keyframes mg-am-hop { to { transform: translateY(-7px); } }
-@keyframes mg-am-wave-l { from { transform: rotate(115deg); } to { transform: rotate(150deg); } }
-@keyframes mg-am-wave-r { from { transform: rotate(-115deg); } to { transform: rotate(-150deg); } }
-@keyframes mg-am-kick-l { from { transform: rotate(0); } to { transform: rotate(12deg); } }
-@keyframes mg-am-kick-r { from { transform: rotate(0); } to { transform: rotate(-12deg); } }
-@keyframes mg-am-up-l { from { transform: rotate(124deg); } to { transform: rotate(140deg); } }
-@keyframes mg-am-up-r { from { transform: rotate(-124deg); } to { transform: rotate(-140deg); } }
-@keyframes mg-am-sway { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(-3deg) translateY(1px); } }
+.mg-armin__arm--l { transform: rotate(8deg); }
+.mg-armin__arm--r { transform: rotate(-8deg); }
+/* Every mood stands still in the same pose, arms down; only the face (eyes, mouth, brows) changes with the mood. */
 
 /* ---------- Hub ---------- */
 .mg-hub-hero { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
-.mg-hub-hero__mascot { width: 84px; flex: none; animation: mg-float 3s ease-in-out infinite; }
+.mg-hub-hero__mascot { width: 84px; flex: none; }
 .mg-eyebrow { color: var(--sea-600); font-weight: 700; font-size: 14px; letter-spacing: 0.04em; }
 .mg-hub-hero h1 { font-size: clamp(30px, 5vw, 40px); margin: 0 0 4px; line-height: 1.1; }
 .mg-lede { color: var(--muted); max-width: 62ch; font-size: 15px; line-height: 1.5; }
