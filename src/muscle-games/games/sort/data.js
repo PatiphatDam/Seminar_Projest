@@ -1,5 +1,11 @@
 import { createElement } from 'react';
-import { CardiacArt, HierarchyArt, SkeletalArt, SmoothArt } from '../../art.jsx';
+
+// The pictures are 2D renders of the main site's 3D models (scripts/diameter-art: sort.json + sort-cards.py).
+const PICS = import.meta.glob('./art/*.webp', { eager: true, query: '?url', import: 'default' });
+const pic = (id, alt) => () => createElement('img', { className: 'mg-pic', src: PICS[`./art/${id}.webp`], alt, draggable: false });
+const SkeletalArt = pic('skeletal', 'Skeletal muscle of the arm, on the bones');
+const CardiacArt = pic('cardiac', 'Branched cardiac muscle cells joined end to end');
+const SmoothArt = pic('smooth', 'A spindle-shaped smooth muscle cell');
 
 // OL2 — differentiate skeletal, cardiac and smooth muscle (lecture §3, §14–16, §20).
 export const GROUPS = [
@@ -28,7 +34,8 @@ export const TEXT_CARDS = [
   { answer: 'smooth', text: 'No sarcomeres, so no striations', why: 'Filaments form an irregular network in smooth muscle.' },
 ];
 
-const hierarchy = (kind) => () => createElement(HierarchyArt, { kind });
+const hierarchy = (kind) =>
+  pic(kind, { muscle: 'The biceps on its own, with its tendons', fascicle: 'A fascicle: a bundle of muscle fibers', fiber: 'One muscle fiber', myofibril: 'A myofibril', sarcomere: 'One sarcomere', filaments: 'Actin and myosin filaments' }[kind]);
 
 // Picture Match pairs: a picture card matched with its name card, or (later rounds) with a key feature.
 export const PAIRS = [
