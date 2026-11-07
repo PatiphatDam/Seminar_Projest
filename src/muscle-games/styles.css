@@ -1440,6 +1440,13 @@
 }
 .mg-zp__loading { color: #6b4410; }
 .mg-zp__msg, .mg-zp__tip { color: #3d4a36; }
+/* keep the clue, the board and the tray close together, so all three fit on one screen */
+.mg-zp { gap: 8px; }
+.mg-zp__stage { max-width: 680px; margin: 2px 0; }
+.mg-zp__msg { min-height: 0; margin: -2px 0; font-size: 14px; }
+.mg-zp__msg:empty { display: none; }
+.mg-zp__tray { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px 6px; padding: 8px; }
+.mg-zp__plate { width: 64px; }
 .mg-zp__tray {
   gap: 10px 8px; padding: 12px 10px; border-radius: 14px; border: 2px solid #8a5a2b;
   background:
@@ -1462,7 +1469,7 @@
   .mg-zp__stage { border-radius: 16px; }
   .mg-zp__tray { gap: 8px 6px; padding: 10px 6px; }
   .mg-zp__piece { height: auto; padding: 0; }
-  .mg-zp__plate { width: 62px; }
+  .mg-zp__plate { width: 58px; }
 }
 
 /* ---------- Shared bits ---------- */
