@@ -169,7 +169,9 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
       data-piece={piece.id}
       aria-pressed={picked}
     >
-      <img className="mg-zp__thumb" src={piece.thumb} alt="" draggable="false" />
+      <span className="mg-zp__plate">
+        <img className="mg-zp__thumb" src={piece.thumb} alt="" draggable="false" />
+      </span>
       <span className="mg-zp__pname">{piece.name}</span>
     </button>
   );
