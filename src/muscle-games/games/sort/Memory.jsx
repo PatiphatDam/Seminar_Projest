@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { pick, useFx } from '../../fx/Fx.jsx';
-import { TimerBar, useCountdown } from '../../components/Hud.jsx';
+import { useCountdown } from '../../components/Hud.jsx';
+import { MagnifierTimer } from '../../components/SortTimers.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import { sample, shuffle } from '../util.js';
 import { PAIRS } from './data.js';
@@ -162,7 +163,7 @@ export default function Memory({ onScore, onFinish }) {
   return (
     <section className="mg-memory">
       <div className="mg-hud">
-        <TimerBar left={left} total={TIME} />
+        <MagnifierTimer left={left} total={TIME} />
         <div className="mg-hud__row">
           <span className="mg-hud__q">
             🔎 Case {round + 1}/{ROUNDS.length} · {ROUNDS[round].title} · {Object.keys(matched).length}/{deck.pics.length}

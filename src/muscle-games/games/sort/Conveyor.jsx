@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { pick, useFx } from '../../fx/Fx.jsx';
-import { Lives, TimerBar, useCountdown } from '../../components/Hud.jsx';
+import { Lives, useCountdown } from '../../components/Hud.jsx';
+import { GearTimer } from '../../components/SortTimers.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import { shuffle } from '../util.js';
 import { GROUPS, TEXT_CARDS, groupLabel } from './data.js';
@@ -257,7 +258,7 @@ export default function Conveyor({ onScore, onFinish }) {
   return (
     <section className="mg-conveyor">
       <div className="mg-hud">
-        <TimerBar left={left} total={TIME} />
+        <GearTimer left={left} total={TIME} />
         <div className="mg-hud__row">
           <span className="mg-hud__q">📦 {s.sorted} packed</span>
           <Lives lives={s.lives} max={LIVES} />
