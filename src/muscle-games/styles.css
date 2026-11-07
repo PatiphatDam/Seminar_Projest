@@ -1376,16 +1376,6 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 .mg-zp__num.mg-on { background: #16a34a; }
-.mg-root .mg-zp__lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.mg-zp__lines line { stroke: hsl(165 60% 18%); stroke-width: 1.6; filter: drop-shadow(0 0 1.5px #fff); }
-.mg-zp__name {
-  position: absolute; z-index: 1; padding: 3px 8px; transform: translate(-50%, -50%); pointer-events: none;
-  border: 1px solid hsl(165 40% 70%); border-radius: 999px; background: rgb(255 255 255 / 0.94); color: hsl(165 45% 18%);
-  font-size: 12px; font-weight: 700; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; box-shadow: 0 1px 3px rgb(0 0 0 / 0.15);
-}
-.mg-zp__name b { color: hsl(165 52% 32%); font-weight: 800; }
-.mg-zp__name.mg-on { border-color: #16a34a; background: #f0fdf4; }
-.mg-zp__name.mg-on b { color: #16a34a; }
 .mg-zp__pop {
   position: absolute; z-index: 2; transform: translate(-50%, -50%); pointer-events: none; white-space: nowrap;
   color: #fff; font-size: 19px; font-weight: 800; text-shadow: 0 1px 0 hsl(165 52% 22%), 0 0 8px hsl(165 52% 28%); animation: mg-zp-up 1s ease-out forwards;
@@ -1395,13 +1385,15 @@
 .mg-zp__msg { min-height: 22px; margin: 0; color: var(--card-text); font-size: 14.5px; font-weight: 700; text-align: center; }
 .mg-zp__tray { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
 .mg-zp__piece {
-  display: grid; place-items: center; height: 74px; padding: 4px; border: 1px solid var(--card-edge); border-radius: 12px; background: var(--art-bg);
+  display: grid; grid-template-rows: 1fr auto; place-items: center; height: 92px; padding: 4px 4px 3px; border: 1px solid var(--card-edge); border-radius: 12px; background: var(--art-bg);
   box-shadow: 0 2px 6px hsl(165 35% 30% / 0.12); cursor: grab; touch-action: none; transition: transform 0.15s, border-color 0.15s;
 }
 .mg-zp__piece--picked { border: 2px solid var(--sea-600); transform: translateY(-3px); box-shadow: 0 6px 14px hsl(165 35% 30% / 0.25); }
 .mg-zp__piece--done { visibility: hidden; }
 .mg-zp__piece--wrong { animation: mg-shake 0.4s; }
-.mg-zp__thumb { max-width: 92%; max-height: 62px; pointer-events: none; }
+.mg-zp__thumb { max-width: 92%; max-height: 58px; pointer-events: none; }
+/* the piece's name, under its picture */
+.mg-zp__pname { max-width: 100%; color: hsl(165 45% 16%); font-size: 11.5px; font-weight: 700; line-height: 1.2; text-align: center; hyphens: auto; overflow-wrap: anywhere; pointer-events: none; }
 .mg-zp__ghost { position: fixed; z-index: 40; width: 110px; transform: translate(-50%, -50%); pointer-events: none; filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.4)); }
 .mg-zp__tip { margin: 0; color: var(--card-muted); font-size: 13px; text-align: center; }
 @keyframes mg-zp-slot { 50% { opacity: 0.16; } }
@@ -1411,10 +1403,11 @@
   .mg-zp { gap: 10px; padding: 12px; }
   .mg-zp__clue { padding: 10px 12px; font-size: 14.5px; }
   .mg-zp__tray { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
-  .mg-zp__piece { height: 64px; }
-  .mg-zp__thumb { max-height: 52px; }
+  .mg-zp__piece { height: 86px; }
+  .mg-zp__thumb { max-height: 46px; }
+  .mg-zp__piece { padding: 4px 2px 3px; }
+  .mg-zp__pname { font-size: 9.5px; letter-spacing: -0.01em; }
   .mg-zp__num { width: 20px; height: 20px; margin: -10px 0 0 -10px; font-size: 11px; }
-  .mg-zp__name { padding: 2px 6px; font-size: 10px; }
   }
 
 /* ---------- Shared bits ---------- */

@@ -8,7 +8,7 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
 // place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
 // the game moves on to the next step by itself, like Group Sort. Each part's place is numbered from the biggest part to
-// the smallest, with a line from the number out to its name. Out of 10 = pieces placed over all 25 pieces of the
+// the smallest, and every piece in the tray carries its name. Out of 10 = pieces placed over all 25 pieces of the
 // five steps. A wrong answer is just wrong: it takes no point away and adds no time; try again (it is listed for
 // review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
@@ -35,6 +35,7 @@ function loadMask(name) {
       x.drawImage(img, 0, 0, MW, MH);
       const d = x.getImageData(0, 0, MW, MH).data;
       const a = new Uint8Array(MW * MH);
+      let area = 0;
       let x0 = MW;
       let y0 = MH;
       let x1 = 0;
@@ -42,6 +43,7 @@ function loadMask(name) {
       for (let i = 0; i < MW * MH; i++) {
         a[i] = d[i * 4 + 3];
         if (a[i] > 30) {
+          area++;
           const px = i % MW;
           const py = (i / MW) | 0;
           if (px < x0) x0 = px;
@@ -55,7 +57,7 @@ function loadMask(name) {
       t.height = y1 - y0 + 3;
       t.getContext('2d').drawImage(c, x0 - 1, y0 - 1, t.width, t.height, 0, 0, t.width, t.height);
       // the box in full-size pixels
-      resolve({ a, box: { x0: x0 * 2, y0: y0 * 2, x1: x1 * 2 + 1, y1: y1 * 2 + 1 }, thumb: t.toDataURL() });
+      resolve({ a, area, box: { x0: x0 * 2, y0: y0 * 2, x1: x1 * 2 + 1, y1: y1 * 2 + 1 }, thumb: t.toDataURL() });
     };
     img.onerror = () => resolve(null);
     img.src = art(name);
@@ -85,135 +87,18 @@ function spotOptions(mask) {
   }
   return out.map(([x, y, d]) => ({ x: x / MW, y: y / MH, d: Math.sqrt(d) / MW }));
 }
-// How big a part is on the picture: its bounding box, so a wrapping layer counts as big as what it wraps.
-const sizeOf = (m) => (m ? (m.box.x1 - m.box.x0) * (m.box.y1 - m.box.y0) : 0);
-// Where each number and its name label go. The label sits in the clear space of the picture, close to its number; the
-// number sits on its part, near the part's middle. Together they are picked so that no two lines cross, no line runs
-// through a label or a number, and no two labels or numbers touch: a search that tries the best places first and steps
-// back when it gets stuck. items are in number order, each with its spot options; base = the alpha of the whole model;
-// w, h = the picture's size on screen, to know how big a label is. In 0-1.
-function layout(items, base, w, h) {
-  const small = w < 520;
-  // .mg-zp__name: bold 10 px on phones (6 px padding), 12 px elsewhere (8 px padding)
-  const ctx = document.createElement('canvas').getContext('2d');
-  ctx.font = `700 ${small ? 10 : 12}px "Nunito Sans Variable", "Inter Variable", system-ui, sans-serif`;
-  const pad = small ? 18 : 22;
-  const lh = (small ? 18 : 22) / h;
-  const box = (x, y, bw, bh) => ({ x0: x - bw / 2, x1: x + bw / 2, y0: y - bh / 2, y1: y + bh / 2 });
-  const hit = (r, q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0;
-  const grow = (r, m) => ({ x0: r.x0 - m / w, x1: r.x1 + m / w, y0: r.y0 - m / h, y1: r.y1 + m / h });
-  // how much of a box is on the model: a summed-area table of the model's pixels, so each test is four reads
-  const sum = new Uint32Array((MW + 1) * (MH + 1));
-  if (base)
-    for (let y = 0; y < MH; y++)
-      for (let x = 0, row = 0; x < MW; x++) {
-        row += base.a[y * MW + x] > 40 ? 1 : 0;
-        sum[(y + 1) * (MW + 1) + x + 1] = sum[y * (MW + 1) + x + 1] + row;
-      }
-  const onModel = (r) => {
-    if (!base) return 0;
-    const x0 = Math.round(r.x0 * MW);
-    const x1 = Math.round(r.x1 * MW);
-    const y0 = Math.round(r.y0 * MH);
-    const y1 = Math.round(r.y1 * MH);
-    const n = sum[y1 * (MW + 1) + x1] - sum[y0 * (MW + 1) + x1] - sum[y1 * (MW + 1) + x0] + sum[y0 * (MW + 1) + x0];
-    return n / Math.max(1, (x1 - x0) * (y1 - y0));
-  };
-  const options = items.map((p) => {
-    const lw = (ctx.measureText(p.text).width + pad) / w;
-    const labels = [];
-    for (let y = lh / 2 + 0.015; y <= 1 - lh / 2 - 0.015; y += 0.025)
-      for (let x = lw / 2 + 0.012; x <= 1 - lw / 2 - 0.012; x += 0.02) {
-        const r = box(x, y, lw, lh);
-        labels.push({ x, y, r, model: onModel(r) });
-      }
-    const list = [];
-    for (const sp of p.spots) {
-      const n = box(sp.x, sp.y, 30 / w, 30 / h);
-      const mine = [];
-      for (const L of labels) {
-        if (hit(L.r, n)) continue;
-        // short line (the picture is 3:2), label off the model, number near the part's middle
-        mine.push({ cost: Math.hypot((L.x - sp.x) * 1.5, L.y - sp.y) + L.model * 3 + sp.d * 1.5, sp, n, x: L.x, y: L.y, r: L.r });
-      }
-      list.push(...mine.sort((u, v) => u.cost - v.cost).slice(0, 40));
-    }
-    return list.sort((u, v) => u.cost - v.cost).map((c) => ({ ...c, a: [c.sp.x, c.sp.y], b: edge([c.sp.x, c.sp.y], [c.x, c.y], c.r) }));
+// How big a part looks on the picture: how many of its pixels show.
+const sizeOf = (m) => m?.area ?? 0;
+// Each number on its part, at the first spot (nearest the part's middle) that is clear of the numbers already placed.
+// 30 x 30 px numbers, 36 px apart on screen (w, h = the picture's size on screen); in 0-1.
+function numberSpots(list, w, h) {
+  const placed = [];
+  return list.map((spots) => {
+    const ok = spots.find((p) => placed.every((q) => ((p.x - q.x) * w) ** 2 + ((p.y - q.y) * h) ** 2 >= 36 ** 2)) ?? spots[0];
+    if (!ok) return null;
+    placed.push(ok);
+    return { x: ok.x, y: ok.y, left: `${ok.x * 100}%`, top: `${ok.y * 100}%` };
   });
-  const apart = (c, d) => ((c.sp.x - d.sp.x) * w) ** 2 + ((c.sp.y - d.sp.y) * h) ** 2 >= (small ? 26 : 32) ** 2; // numbers
-  const loose = (c, d) => apart(c, d) && !hit(grow(c.r, 3), d.r) && !hit(c.r, d.n) && !hit(d.r, c.n);
-  const fits = (c, d) =>
-    loose(c, d) &&
-    !crosses(c.a, c.b, d.a, d.b) &&
-    !segBox(c.a, c.b, grow(d.r, 2)) &&
-    !segBox(d.a, d.b, grow(c.r, 2)) &&
-    !segBox(c.a, c.b, grow(d.n, -3)) &&
-    !segBox(d.a, d.b, grow(c.n, -3));
-  // The search: take the label with the fewest places left, try its places best first, and after each try strike out
-  // every place of the other labels that no longer fits; step back as soon as one has no place left.
-  let budget = 1500000; // fit tests, about 60 ms on a laptop
-  const solve = (doms, chosen) => {
-    let i = -1;
-    doms.forEach((d, j) => {
-      if (!chosen[j] && (i < 0 || d.length < doms[i].length)) i = j;
-    });
-    if (i < 0) return chosen;
-    for (const c of doms[i]) {
-      if (budget < 0) return null;
-      let dead = false;
-      const next = doms.map((d, j) => {
-        if (dead || j === i || chosen[j]) return d;
-        budget -= d.length;
-        const kept = d.filter((e) => fits(c, e));
-        if (!kept.length) dead = true;
-        return kept;
-      });
-      if (dead) continue;
-      const got = solve(next, chosen.map((x, j) => (j === i ? c : x)));
-      if (got) return got;
-    }
-    return null;
-  };
-  const chosen = solve(options, options.map(() => null)) ?? [];
-  const found = chosen.length > 0;
-  if (!found) {
-    if (import.meta.env?.DEV) {
-      console.warn('Diameter: no clean label layout', items.map((p) => p.id));
-    }
-    // no clean layout (very crowded): place one at a time, as clean as it can be
-    items.forEach((p, i) => chosen.push(options[i].find((c) => chosen.every((d) => fits(c, d))) ?? options[i].find((c) => chosen.every((d) => loose(c, d))) ?? options[i][0]));
-  }
-  const out = {};
-  items.forEach((p, i) => {
-    const c = chosen[i];
-    if (c) out[p.id] = { x: c.sp.x, y: c.sp.y, left: `${c.sp.x * 100}%`, top: `${c.sp.y * 100}%`, lx: c.x, ly: c.y, ex: c.b[0], ey: c.b[1] };
-  });
-  return out;
-}
-// Where the line from a (the number) to c (the middle of a label) meets the label's box r.
-function edge(a, c, r) {
-  const dx = c[0] - a[0];
-  const dy = c[1] - a[1];
-  let t = 0;
-  if (dx) t = Math.max(t, ((dx > 0 ? r.x0 : r.x1) - a[0]) / dx);
-  if (dy) t = Math.max(t, ((dy > 0 ? r.y0 : r.y1) - a[1]) / dy);
-  t = Math.min(1, t);
-  return [a[0] + dx * t, a[1] + dy * t];
-}
-const turn = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
-// do segments ab and cd cross?
-const crosses = (a, b, c, d) => turn(a, b, c) * turn(a, b, d) < 0 && turn(c, d, a) * turn(c, d, b) < 0;
-// does segment ab touch box r?
-function segBox(a, b, r) {
-  const inside = (p) => p[0] > r.x0 && p[0] < r.x1 && p[1] > r.y0 && p[1] < r.y1;
-  if (inside(a) || inside(b)) return true;
-  const c = [
-    [r.x0, r.y0],
-    [r.x1, r.y0],
-    [r.x1, r.y1],
-    [r.x0, r.y1],
-  ];
-  return c.some((p, k) => crosses(a, b, p, c[(k + 1) % 4]));
 }
 
 // The picture under the finger while a piece is dragged. Only one can exist: it lives on <body>, so anything that
@@ -280,11 +165,12 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
       onPointerDown={down}
       onDragStart={(e) => e.preventDefault()}
       disabled={done}
-      aria-label={`Piece ${piece.n}`}
+      aria-label={piece.name}
       data-piece={piece.id}
       aria-pressed={picked}
     >
       <img className="mg-zp__thumb" src={piece.thumb} alt="" draggable="false" />
+      <span className="mg-zp__pname">{piece.name}</span>
     </button>
   );
 }
@@ -350,18 +236,18 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       ...step.parts.map((p) => ({ id: p.id, art: `${step.id}-${p.id}` })),
       ...step.decoys.map((d) => ({ id: `decoy:${d}`, art: DECOYS[d].art, decoy: d })),
     ];
-    Promise.all([...list.map((p) => loadMask(p.art)), loadMask(`${step.id}-grey`)]).then((ms) => {
+    Promise.all(list.map((p) => loadMask(p.art))).then((ms) => {
       if (!live) return;
-      const base = ms.pop();
       maskOf.current = Object.fromEntries(list.map((p, k) => [p.art, ms[k]]));
-      // numbered from the biggest part to the smallest (the clues keep their own order), each with its name
+      // numbered from the biggest part on the picture to the smallest (the clues keep their own order)
       const mask = (id) => maskOf.current[`${step.id}-${id}`];
       const order = step.parts.map((p) => p.id).sort((a, b) => sizeOf(mask(b)) - sizeOf(mask(a)));
       const r = stageRef.current?.getBoundingClientRect();
-      const named = order.map((id, k) => ({ id, text: `${k + 1} ${step.parts.find((x) => x.id === id).name}`, spots: spotOptions(mask(id)) }));
-      const lay = layout(named.filter((p) => p.spots.length), base, r?.width || 600, r?.height || 400);
-      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...lay[id] }])));
-      setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
+      const spots = numberSpots(order.map((id) => spotOptions(mask(id))), r?.width || 600, r?.height || 400);
+      setMarks(Object.fromEntries(order.map((id, k) => [id, { n: k + 1, ...spots[k] }])));
+      // each tray piece carries its name (a decoy, the name of what it really is)
+      const nameOf = (p) => (p.decoy ? DECOYS[p.decoy].name : step.parts.find((x) => x.id === p.id).name);
+      setPieces(shuffle(list).map((p, k) => ({ ...p, n: k + 1, name: nameOf(p), thumb: maskOf.current[p.art]?.thumb ?? art(p.art) })));
       setReady(true);
       if (s.t0 == null) s.t0 = performance.now();
       // load the next stage while this one is played, one picture at a time, so it shows at once and play stays smooth
@@ -527,30 +413,13 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
             const url = `url("${art(`${step.id}-${p.id}`)}")`;
             return <span key={`slot-${p.id}`} className="mg-zp__slot" style={{ maskImage: url, WebkitMaskImage: url }} />;
           })}
-        {/* a line from each number out to its name at the edge */}
-        <svg className="mg-zp__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          {step.parts.map((p) => {
-            const m = marks[p.id];
-            return m?.lx != null ? <line key={p.id} x1={m.x * 100} y1={m.y * 100} x2={m.ex * 100} y2={m.ey * 100} vectorEffect="non-scaling-stroke" /> : null;
-          })}
-        </svg>
-        {step.parts.map((p) => {
-          const m = marks[p.id];
-          if (!m?.left) return null;
-          const on = placed.includes(p.id) ? ' mg-on' : '';
-          return (
-            <span key={`n-${p.id}`}>
-              <span className={`mg-zp__num${on}`} style={{ left: m.left, top: m.top }} aria-hidden="true">
-                {m.n}
-              </span>
-              {m.lx != null && (
-                <span className={`mg-zp__name${on}`} style={{ left: `${m.lx * 100}%`, top: `${m.ly * 100}%` }}>
-                  <b>{m.n}</b> {p.name}
-                </span>
-              )}
+        {step.parts.map((p) =>
+          marks[p.id]?.left ? (
+            <span key={`n-${p.id}`} className={`mg-zp__num${placed.includes(p.id) ? ' mg-on' : ''}`} style={{ left: marks[p.id].left, top: marks[p.id].top }} aria-hidden="true">
+              {marks[p.id].n}
             </span>
-          );
-        })}
+          ) : null
+        )}
         {pops.map((q) => (
           <span key={q.id} className={`mg-zp__pop${q.bad ? ' mg-zp__pop--bad' : ''}`} style={{ left: q.x, top: q.y }}>
             {q.text}
