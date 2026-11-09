@@ -20,7 +20,7 @@
 ## สถานะปัจจุบัน (ขึ้นเว็บจริงแล้ว)
 
 - Repo: `C:\Seminar\Seminar_Projest` (GitHub `arumaosogi-sudo/Seminar_Projest`, branch `main`)
-- เว็บจริง: https://digital-muscle.arumaosogi.workers.dev (Cloudflare Workers + D1, Free plan) — หน้า 3D ต้องเข้าสู่ระบบนักศึกษา
+- เว็บจริง: https://digital-muscle.medicsync.workers.dev (Cloudflare Workers + D1, Free plan) — หน้า 3D ต้องเข้าสู่ระบบนักศึกษา
 - ต้นทางงาน 3D ของทีม: https://github.com/arumaosogi-sudo/test3D (`main` = เฉพาะไฟล์ 3D, `full-app` = เว็บทั้งเว็บที่ใช้ทดสอบ)
   ไฟล์เนื้อหาและโมเดลใน Seminar_Projest ตรงกับ `full-app` ทุกไบต์ ณ วันที่อัปเดต · ไฟล์ Blender และสคริปต์สร้างโมเดล
   (`build_v3.py`) อยู่ในเครื่องของคนทำ (`3d-source/`) ไม่อยู่ใน repo
