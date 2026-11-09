@@ -106,6 +106,7 @@ body {
   --c-muted: hsl(38 25% 34%);
   --c-accent: hsl(38 72% 32%);
   --c-on: #ffffff;
+  --c-video: hsl(205 80% 32%); /* "From the video" notes */
   --c-chip: rgb(255 255 255 / 0.65);
   --c-hair: hsl(38 62% 30% / 0.22);
   --c-edge: hsl(38 62% 40% / 0.35);
@@ -167,6 +168,7 @@ body {
     --c-muted: hsl(38 20% 75%);
     --c-accent: hsl(38 77% 72%);
     --c-on: hsl(38 45% 12%);
+    --c-video: hsl(200 85% 72%);
     --c-chip: rgb(255 255 255 / 0.1);
     --c-hair: hsl(38 62% 80% / 0.18);
     --c-edge: hsl(38 72% 70% / 0.4);
@@ -228,6 +230,7 @@ body {
   --c-muted: hsl(38 20% 75%);
   --c-accent: hsl(38 77% 72%);
   --c-on: hsl(38 45% 12%);
+  --c-video: hsl(200 85% 72%);
   --c-chip: rgb(255 255 255 / 0.1);
   --c-hair: hsl(38 62% 80% / 0.18);
   --c-edge: hsl(38 72% 70% / 0.4);

@@ -57,7 +57,9 @@ Molecular view: PDB 6KN7/6KN8, 5H53 (myofilaments) · 2ZW3, 5J5J (intercalated d
 
 - Slider Relaxed ↔ Contracted + ปุ่ม Animate · แถบ A band / I band / H zone บนโมเดลและแผนภาพ 2D · การ์ดผล (sarcomere, I band, H zone, A band, filament length)
 - ชิ้นส่วนกดได้ 8 ชนิด: actin, tropomyosin, troponin (TnC/TnI/TnT), myosin, Z disc, M line, titin, nebulin
-- กล่องเตือน "Myosin is NOT part of the thin filament" · ขั้นตอนการหดตัว 10 ขั้น · วิดีโอ Motion VDO (youtube-nocookie `ousflrOzQHc`)
+- กล่องเตือน "Myosin is NOT part of the thin filament" · ขั้นตอนการหดตัว 10 ขั้น (ขั้น 5–8 มีลิงก์ ▶ เวลาในวิดีโอ)
+- การ์ด **Motion videos** 2 แท็บ (youtube-nocookie): Cross-bridge cycle `BVcgO4p88AA` (Alila Medical Media) และ Sarcomere bands `Dd9KdvnKoik` (Siebert Science) พร้อมรายการช่วงเวลาที่กดข้ามไปได้ — วิดีโอเดิม `ousflrOzQHc` ถูกลบจาก YouTube แล้ว
+- กล่อง **"From the video"** ใน Info panel (หน้า Sarcomere และ 3D Explore): ข้อมูลเสริมจากวิดีโอ แยกจากเนื้อหา lecture พร้อมลิงก์ ▶ เวลา → `/explore/sarcomere?video=…&t=…#video` (ข้อมูลอยู่ใน `VIDEOS` / `video` ของ `src/content/explore.ts`)
 - ปุ่ม **"Back to 3D Explore"** กลับไประดับที่กด "Contract it" มา (เช่น Cardiac → Sarcomere); เปิดตรง ๆ → Skeletal → Sarcomere
 - ค่าตัวเลข (ใน `sarcomere/model.ts`, มี unit test): sarcomere 2.50 → 2.00 µm, thick filament 1.6 µm, thin filament 1.0 µm — A band และความยาว filament คงที่
 

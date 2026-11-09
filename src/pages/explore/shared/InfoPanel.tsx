@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { BookIcon, XIcon } from "@/components/student/icons";
 import type { PartInfo } from "@/content/explore";
+import { VideoNotes } from "./VideoNotes";
 
 /**
  * What the student tapped (3D-7): name, what it does, and a link to the lesson.
@@ -50,6 +51,7 @@ export function InfoPanel({ part, onClose, variant = "card" }: { part: PartInfo 
           </li>
         ))}
       </ul>
+      <VideoNotes notes={part.video} />
       <Link to={`/lessons/${part.lesson.slug}`} className="coast-accent mt-4 inline-flex items-center gap-1.5 text-[14px] font-bold hover:underline">
         <BookIcon size={16} /> Read: {part.lesson.label}
       </Link>
