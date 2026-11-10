@@ -21,6 +21,42 @@ const CLEARED_MS = 1400; // how long the finished model shows before the next st
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
 
+// art names whose tray picture shows only the part's biggest bit
+const ONE = new Set(STEPS.flatMap((st) => st.parts.filter((p) => p.one).map((p) => `${st.id}-${p.id}`)));
+// The box of the biggest connected bit of a mask (alpha > 30) inside the box x0..x1, y0..y1 (half-size pixels).
+function biggestBit(a, x0, y0, x1, y1) {
+  const seen = new Uint8Array(MW * MH);
+  let best = { n: 0, x0, y0, x1, y1 };
+  const stack = [];
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = y * MW + x;
+      if (seen[i] || a[i] <= 30) continue;
+      const bit = { n: 0, x0: x, y0: y, x1: x, y1: y };
+      seen[i] = 1;
+      stack.push(i);
+      while (stack.length) {
+        const j = stack.pop();
+        const px = j % MW;
+        const py = (j / MW) | 0;
+        bit.n++;
+        if (px < bit.x0) bit.x0 = px;
+        if (px > bit.x1) bit.x1 = px;
+        if (py < bit.y0) bit.y0 = py;
+        if (py > bit.y1) bit.y1 = py;
+        for (const k of [px > 0 ? j - 1 : -1, px < MW - 1 ? j + 1 : -1, py > 0 ? j - MW : -1, py < MH - 1 ? j + MW : -1]) {
+          if (k >= 0 && !seen[k] && a[k] > 30) {
+            seen[k] = 1;
+            stack.push(k);
+          }
+        }
+      }
+      if (bit.n > best.n) best = bit;
+    }
+  }
+  return best;
+}
+
 // The alpha of a piece's render (where it is opaque, it is that part) and its bounding box.
 const masks = new Map();
 function loadMask(name) {
@@ -52,10 +88,13 @@ function loadMask(name) {
           if (py > y1) y1 = py;
         }
       }
+      // the tray picture, cut from the full-size render: the whole part, or for a part in thin bits spread over the
+      // model (`one` in levels.js) just its biggest bit, so it reads on a small plate
+      const b = ONE.has(name) ? biggestBit(a, x0, y0, x1, y1) : { x0, y0, x1, y1 };
       const t = document.createElement('canvas');
-      t.width = x1 - x0 + 3;
-      t.height = y1 - y0 + 3;
-      t.getContext('2d').drawImage(c, x0 - 1, y0 - 1, t.width, t.height, 0, 0, t.width, t.height);
+      t.width = (b.x1 - b.x0 + 3) * 2;
+      t.height = (b.y1 - b.y0 + 3) * 2;
+      t.getContext('2d').drawImage(img, (b.x0 - 1) * 2, (b.y0 - 1) * 2, t.width, t.height, 0, 0, t.width, t.height);
       // the box in full-size pixels
       resolve({ a, area, box: { x0: x0 * 2, y0: y0 * 2, x1: x1 * 2 + 1, y1: y1 * 2 + 1 }, thumb: t.toDataURL() });
     };
@@ -172,7 +211,9 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
       <span className="mg-zp__plate">
         <img className="mg-zp__thumb" src={piece.thumb} alt="" draggable="false" />
       </span>
-      <span className="mg-zp__pname">{piece.name}</span>
+      <span className="mg-zp__pname" lang="en">
+        {piece.name}
+      </span>
     </button>
   );
 }

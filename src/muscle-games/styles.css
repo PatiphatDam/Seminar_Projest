@@ -1446,7 +1446,6 @@
 .mg-zp__msg { min-height: 0; margin: -2px 0; font-size: 14px; }
 .mg-zp__msg:empty { display: none; }
 .mg-zp__tray { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 6px 6px; padding: 8px; }
-.mg-zp__plate { width: 64px; }
 .mg-zp__tray {
   gap: 10px 8px; padding: 12px 10px; border-radius: 14px; border: 2px solid #8a5a2b;
   background:
@@ -1457,11 +1456,13 @@
 }
 .mg-zp__piece { grid-template-rows: auto auto; align-content: start; align-items: start; height: auto; gap: 4px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .mg-zp__plate {
-  display: grid; place-items: center; width: 74px; aspect-ratio: 1; border-radius: 50%; pointer-events: none;
+  --plate: 74px;
+  display: grid; place-items: center; width: var(--plate); height: var(--plate); border-radius: 50%; pointer-events: none;
   background: radial-gradient(circle, #ffffff 0 52%, #eef1f4 53% 62%, #ffffff 63% 68%, #e4e8ec 69%);
   box-shadow: 0 4px 7px rgb(50 30 10 / 0.4); transition: transform 0.15s, box-shadow 0.15s;
 }
-.mg-zp__plate .mg-zp__thumb { max-width: 70%; max-height: 66%; }
+/* the picture always fits the plate's middle, whatever its shape (a tall, narrow part must not stretch the plate) */
+.mg-zp__plate .mg-zp__thumb { width: calc(var(--plate) * 0.66); height: calc(var(--plate) * 0.6); max-width: none; max-height: none; object-fit: contain; }
 .mg-zp__pname { padding: 2px 6px; border-radius: 3px; background: #fffaf0; color: #3b2a1a; box-shadow: 0 1px 2px rgb(0 0 0 / 0.3); }
 .mg-zp__piece--picked { border: 0; transform: none; box-shadow: none; }
 .mg-zp__piece--picked .mg-zp__plate { transform: translateY(-4px); box-shadow: 0 0 0 3px #ea580c, 0 10px 14px rgb(50 30 10 / 0.45); }
@@ -1469,7 +1470,7 @@
   .mg-zp__stage { border-radius: 16px; }
   .mg-zp__tray { gap: 8px 6px; padding: 10px 6px; }
   .mg-zp__piece { height: auto; padding: 0; }
-  .mg-zp__plate { width: 58px; }
+  .mg-zp__plate { --plate: 58px; }
 }
 
 /* ---------- Shared bits ---------- */

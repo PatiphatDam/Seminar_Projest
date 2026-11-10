@@ -3,7 +3,9 @@
 // render of the whole model, and each part on its own, in colour, from the same camera, showing only the pixels of
 // that part that are visible in the model (made with scripts/diameter-art). Clues use the wording of the 3D model's info panels
 // (src/content/exploreZoom.ts in the main site, which follows the lecture sheet). `see`: a see-through wrapping
-// layer, shown at that opacity once placed (as in the 3D viewer), so the parts it wraps stay visible.
+// layer, shown at that opacity once placed (as in the 3D viewer), so the parts it wraps stay visible. `one`: the part is
+// a few thin bits spread over the model (Z discs, M lines, titin), so its tray picture shows just its biggest bit, large
+// enough to read on a plate.
 const ART = import.meta.glob('./art/*.webp', { eager: true, query: '?url', import: 'default' });
 export const art = (name) => ART[`./art/${name}.webp`];
 
@@ -13,7 +15,7 @@ export const DECOYS = {
   dense: { art: 'decoy-dense', name: 'Dense bodies', why: 'they anchor the thin filaments of smooth muscle' },
   perimysium: { art: 'fascicle-perimysium', name: 'Perimysium', why: 'it wraps a fascicle; you meet it one zoom level further out' },
   ttubule: { art: 'fiber-ttubule', name: 'T-tubules', why: 'they belong inside a single muscle fiber, deeper in the zoom' },
-  sr: { art: 'fiber-sr', name: 'Sarcoplasmic reticulum', why: 'it wraps the myofibrils of a fiber, one level further out' },
+  sr: { art: 'fiber-sr', name: 'Sarco\u00adplasmic reticulum', why: 'it wraps the myofibrils of a fiber, one level further out' },
 };
 
 export const STEPS = [
@@ -49,11 +51,11 @@ export const STEPS = [
     title: 'Muscle fiber',
     say: 'Step 3: inside one muscle fiber.',
     parts: [
-      { id: 'nmj', name: 'Neuromuscular junction', clue: 'The synapse where the axon terminal releases ACh into the cleft; junctional folds beneath hold many ACh receptors.' },
+      { id: 'nmj', name: 'Neuro\u00admuscular junction', clue: 'The synapse where the axon terminal releases ACh into the cleft; junctional folds beneath hold many ACh receptors.' },
       { id: 'myofibril', name: 'Myofibrils', clue: 'Long contractile structures that fill much of the sarcoplasm, made of repeating sarcomeres.' },
       { id: 'sarcolemma', name: 'Sarcolemma', clue: 'The plasma membrane of the fiber — keeps its ionic environment and conducts electrical excitation along the surface.' },
       { id: 'ttubule', name: 'T-tubules', clue: 'Inward extensions of the sarcolemma that carry the electrical excitation deep into the fiber.' },
-      { id: 'sr', name: 'Sarcoplasmic reticulum', clue: 'A specialised smooth endoplasmic reticulum around the myofibrils that stores Ca²⁺ and releases it in a regulated way.' },
+      { id: 'sr', name: 'Sarco\u00adplasmic reticulum', clue: 'A specialised smooth endoplasmic reticulum around the myofibrils that stores Ca²⁺ and releases it in a regulated way.' },
       { id: 'cisternae', name: 'Terminal cisternae', clue: 'Enlarged regions of the SR next to the T-tubules — sites for storage and rapid release of Ca²⁺.' },
       { id: 'nuclei', name: 'Nuclei', clue: 'There are many in one fiber, and they usually lie close to the sarcolemma.' },
     ],
@@ -65,10 +67,10 @@ export const STEPS = [
     title: 'Myofibril',
     say: 'Step 4: a myofibril, sarcomere after sarcomere.',
     parts: [
-      { id: 'zdisc', name: 'Z discs', clue: 'Mark the boundary between neighbouring sarcomeres; thin filaments are anchored here.' },
-      { id: 'thick', name: 'Thick filaments (A band)', clue: 'Mainly myosin. Their whole length, including where they overlap thin filaments, is the dark A band.' },
-      { id: 'thin', name: 'Thin filaments (I band)', clue: 'Mainly actin. Where they lie alone, with no thick filaments, they make the light I band.' },
-      { id: 'mline', name: 'M lines', clue: 'Sit at the centre of each sarcomere; their proteins organise and stabilise the thick filaments.' },
+      { id: 'zdisc', one: true, name: 'Z discs', clue: 'Mark the boundary between neighbouring sarcomeres; thin filaments are anchored here.' },
+      { id: 'thick', name: 'Thick filaments (A\u00a0band)', clue: 'Mainly myosin. Their whole length, including where they overlap thin filaments, is the dark A band.' },
+      { id: 'thin', name: 'Thin filaments (I\u00a0band)', clue: 'Mainly actin. Where they lie alone, with no thick filaments, they make the light I band.' },
+      { id: 'mline', one: true, name: 'M lines', clue: 'Sit at the centre of each sarcomere; their proteins organise and stabilise the thick filaments.' },
     ],
     decoys: ['dense', 'sr'],
     zoom: 'Zoom into one sarcomere',
@@ -78,11 +80,11 @@ export const STEPS = [
     title: 'Sarcomere',
     say: 'Step 5: one sarcomere, Z disc to Z disc.',
     parts: [
-      { id: 'zdisc', name: 'Z discs', clue: 'One sarcomere runs from one of these to the next; during contraction they move closer together.' },
+      { id: 'zdisc', one: true, name: 'Z discs', clue: 'One sarcomere runs from one of these to the next; during contraction they move closer together.' },
       { id: 'thick', name: 'Thick filament (myosin)', clue: 'A motor protein that turns ATP into mechanical work; its globular heads project outward and bind actin.' },
       { id: 'thin', name: 'Thin filaments (actin)', clue: 'G-actin joins into helical strands of F-actin; each actin has a site where a myosin head can bind.' },
       { id: 'mline', name: 'M line', clue: 'At the centre of the sarcomere — its proteins organise and stabilise the thick filaments.' },
-      { id: 'titin', name: 'Titin', clue: 'A large elastic protein that keeps the thick filaments in place and resists over-stretching.' },
+      { id: 'titin', one: true, name: 'Titin', clue: 'A large elastic protein that keeps the thick filaments in place and resists over-stretching.' },
     ],
     decoys: ['idisc', 'sr'],
   },
