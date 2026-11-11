@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from "react";
-import { useThree } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import { CanvasTexture, PerspectiveCamera, Sprite, SRGBColorSpace, Vector2, type Intersection, type Raycaster, type Vector3 } from "three";
 
 /**
@@ -158,6 +158,8 @@ export function Marker({
   active,
   onClick,
   label,
+  track,
+  side: sideProp,
 }: {
   id: string;
   n: number;
@@ -166,8 +168,16 @@ export function Marker({
   onClick: () => void;
   /** Part name, shown next to the badge while this marker is selected. */
   label?: string;
+  /** Where the dot is now (writes into `out`) — for parts that move, like the bending arm. */
+  track?: (out: Vector3) => Vector3;
+  /** Which side the badge sits on; default: away from the middle of the model (by the dot's x). */
+  side?: "left" | "right";
 }) {
-  const side: "left" | "right" = pos.x < 0 ? "left" : "right";
+  const ref = useRef<Sprite>(null);
+  useFrame(() => {
+    if (track && ref.current) track(ref.current.position);
+  });
+  const side: "left" | "right" = sideProp ?? (pos.x < 0 ? "left" : "right");
   const text = active && label ? label : null;
   const layout = useMemo(() => calloutLayout(side, text === null ? null : measure(text)), [side, text]);
   const tex = useMemo(() => draw(n, active, layout, text), [n, active, layout, text]);
@@ -202,6 +212,7 @@ export function Marker({
 
   return (
     <sprite
+      ref={ref}
       position={pos}
       center={center}
       scale={[layout.w * unit, layout.h * unit, 1]}

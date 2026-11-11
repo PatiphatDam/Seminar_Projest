@@ -48,6 +48,11 @@ export type Hotspot = {
   anchor: string;
   /** Where on a mesh anchor the marker sits, as a fraction of its bounding box (default: centre of the front face). */
   at?: [number, number, number];
+  /**
+   * Put the dot on the outer edge of the part as seen in the opening view (left or right silhouette), at the height
+   * `at[1]` — the leader then points at the part from outside the model.
+   */
+  edge?: "left" | "right";
   meshes?: string[];
   /** Tapping "Zoom in" here goes to this level. */
   zoomTo?: LevelId;
@@ -129,7 +134,8 @@ export const LEVELS: ZoomLevel[] = [
         ],
         lesson: TISSUE,
         anchor: "Epimysium",
-        at: [0.4, 0.35, 1],
+        at: [0.5, 0.42, 1],
+        edge: "right",
         meshes: ["Epimysium"],
       },
       {
@@ -143,7 +149,8 @@ export const LEVELS: ZoomLevel[] = [
         ],
         lesson: TISSUE,
         anchor: "Long head of biceps brachii",
-        at: [0.5, 0.6, 1],
+        at: [0.5, 0.62, 1],
+        edge: "right",
         meshes: ["Long head of biceps brachii", "Short head of biceps brachii"],
         zoomTo: "fascicle",
       },
