@@ -75,10 +75,10 @@ app.onError((err, c) => {
 
 export default {
   fetch: app.fetch,
-  /** Daily clean-up (wrangler.jsonc → triggers.crons): old audit entries, login throttle rows, orphan images, empty unowned tests. */
+  /** Daily clean-up (wrangler.jsonc → triggers.crons): old audit entries, login throttle rows, orphan images (D1 + R2), empty unowned tests. */
   async scheduled(_event: ScheduledController, env: AppEnv["Bindings"], ctx: ExecutionContext) {
     ctx.waitUntil(
-      pruneOldData(env.DB).then((r) => console.log("Daily clean-up:", JSON.stringify(r))),
+      pruneOldData(env.DB, env.IMAGES).then((r) => console.log("Daily clean-up:", JSON.stringify(r))),
     );
   },
 } satisfies ExportedHandler<AppEnv["Bindings"]>;

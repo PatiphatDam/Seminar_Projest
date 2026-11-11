@@ -25,6 +25,10 @@
     }
   ],
 
+  // Question images (test builder uploads). R2 free tier: 10 GB storage; D1 keeps only a small row per image.
+  // Bucket created with `wrangler r2 bucket create digital-muscle-images`; local dev simulates it under .wrangler/.
+  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "digital-muscle-images" }],
+
   // Non-secret config. Secrets (SESSION_SECRET) go in .dev.vars locally and `wrangler secret put` in production.
   "vars": {
     "ALLOWED_STUDENT_DOMAIN": "lamduan.mfu.ac.th,mfu.ac.th",

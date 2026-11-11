@@ -428,6 +428,9 @@ export interface UsageReport {
   warnRatio: number;
   approx: { students: number; attempts: number; images: number };
   classes: number;
+  /** Question images stored in Cloudflare R2 (migration 0008), against the free 10 GB. */
+  imageBytes: number;
+  imageLimitBytes: number;
 }
 
 export interface AuditEntry {

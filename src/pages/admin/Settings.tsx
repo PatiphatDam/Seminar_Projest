@@ -140,6 +140,10 @@ function StorageCard() {
             {u.classes} classes · about {u.approx.students.toLocaleString()} students · about {u.approx.attempts.toLocaleString()} test attempts ·{" "}
             {u.approx.images} images
           </p>
+          <p className="mt-2 text-xs text-muted tabular-nums">
+            Question images are stored separately in Cloudflare R2: <strong className="text-ink">{mb(u.imageBytes)} MB</strong> of{" "}
+            {Math.round(u.imageLimitBytes / (1024 * 1024 * 1024))} GB
+          </p>
           {warn && (
             <div className="mt-3">
               <ErrorNote>The database is over {Math.round(u.warnRatio * 100)}% full. Export the results of past semesters, then delete those classes.</ErrorNote>
