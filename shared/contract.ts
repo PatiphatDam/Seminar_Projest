@@ -226,9 +226,6 @@ export interface AdminClass extends ClassSummary {
   ownerEmail: string | null;
 }
 
-/** Admin class lists: "mine" (default) = my classes + classes without an owner; "all" = every class. */
-export type ClassScope = "mine" | "all";
-
 export const createClassBody = z.object({
   academicYear: z.number().int().min(2500).max(2700),
   semester: z.number().int().min(1).max(3),
@@ -241,22 +238,21 @@ export const updateClassBody = z.object({
   regenerateJoinCode: z.boolean().optional(),
 });
 
-export const rosterBody = z.object({
-  mode: z.enum(["replace", "append"]).default("append"),
-  entries: z.array(z.object({ studentCode: z.string().regex(/^\d{8,12}$/), firstName: z.string().max(60).optional() })).max(1000),
-});
+/** POST /api/admin/classes/:id/owner · /api/admin/tests/:id/owner (username account only): hand an item to an instructor. */
+export const setOwnerBody = z.object({ email: z.string().trim().toLowerCase().email() });
 
 /* ───────────── admin: students ───────────── */
 
 export interface AdminStudentRow {
-  enrollmentId: number | null; // null for roster-only rows (not joined yet)
+  enrollmentId: number;
+  /** null once the student has been anonymized */
   studentId: number | null;
   studentCode: string;
   firstName: string | null;
   email: string | null;
   classId: number;
   className: string;
-  status: EnrollmentStatus | "not_joined";
+  status: EnrollmentStatus;
   joinedAt: string | null;
   lastLoginAt: string | null;
 }
@@ -442,4 +438,9 @@ export interface AuditEntry {
   targetId: string | null;
   detail: Record<string, unknown>;
   createdAt: string;
+  /**
+   * Names looked up when the log is read (ids in the entry → what they are called now), so Settings can show a sentence.
+   * Missing when the thing has been deleted since; an anonymized student has no student ID.
+   */
+  names?: { student?: string; className?: string; fromClass?: string; toClass?: string; test?: string };
 }

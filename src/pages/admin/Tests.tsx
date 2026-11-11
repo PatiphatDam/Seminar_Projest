@@ -12,12 +12,14 @@ import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
 import { useCanChange } from "@/components/admin/ownership";
+import { OwnerPicker } from "@/components/admin/OwnerPicker";
 
 export default function Tests() {
   const q = useQuery({ queryKey: adminKeys.tests, queryFn: () => api.get<AdminTestSummary[]>("/admin/tests") });
   const [createOpen, setCreateOpen] = useState(false);
   const [toDelete, setToDelete] = useState<AdminTestSummary | null>(null);
-  const canEdit = useCanChange(); // decision A: anyone may view and assign a test; only its owner edits or deletes it
+  // Tests are private: instructors get only their own; the username account gets every test (with an owner picker).
+  const canEdit = useCanChange();
   const qc = useQueryClient();
   const toast = useToast();
 
@@ -38,7 +40,7 @@ export default function Tests() {
     <>
       <PageHeader
         title="Tests"
-        subtitle="Build pretests and posttests like a Google Form, then assign them to sections."
+        subtitle="Your own pretests and posttests — other instructors can’t see them. Build them like a Google Form, then assign them to your sections."
         actions={
           <>
             <Button onClick={() => setCreateOpen(true)}>
@@ -85,7 +87,7 @@ export default function Tests() {
                         <Link to={`/admin/tests/${t.id}`} className="font-semibold hover:underline">
                           {t.title}
                         </Link>
-                        {!mine && <span className="block text-xs text-muted">by {t.ownerEmail ?? "no owner"} · view only</span>}
+                        <OwnerPicker kind="test" id={t.id} ownerEmail={t.ownerEmail} className="mt-1 block" />
                       </td>
                       <td className="px-3 py-3">
                         <KindBadge kind={t.kind} />
@@ -103,9 +105,11 @@ export default function Tests() {
                           <Link to={`/admin/tests/${t.id}`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold hover:bg-zinc-100">
                             {mine ? "Edit" : "View"}
                           </Link>
-                          <Link to={`/admin/tests/${t.id}/assign`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-tests hover:bg-tests-soft">
-                            Assign
-                          </Link>
+                          {mine && (
+                            <Link to={`/admin/tests/${t.id}/assign`} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-tests hover:bg-tests-soft">
+                              Assign
+                            </Link>
+                          )}
                           {mine && (
                             <span title={t.attemptCount > 0 ? "Can’t delete: students have already taken this test" : undefined}>
                               <button

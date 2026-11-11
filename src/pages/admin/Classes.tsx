@@ -1,11 +1,11 @@
 import { useMemo, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClassBody, type AdminClass, type AdminStudentRow, type ClassScope } from "@shared/contract";
+import { createClassBody, type AdminClass, type AdminStudentRow } from "@shared/contract";
 import { api } from "@/lib/api";
 import { Button, Card, cx, EmptyState, ErrorNote, Input, PageHeader, PageLoader, Select, Spinner } from "@/components/ui";
 import { useAdminClass } from "@/components/admin/adminClass";
-import { CardTitle, FilterPills, QueryError, SearchBox, StatusChip, Switch } from "@/components/admin/controls";
+import { CardTitle, QueryError, SearchBox, StatusChip, Switch } from "@/components/admin/controls";
 import { copyText, errorMessage, formatDate, formatDateTime, relativeTime } from "@/components/admin/format";
 import { LiveIndicator, isRecentJoin, useLiveInterval } from "@/components/admin/live";
 import { IconDownload, IconPlus } from "@/components/admin/icons";
@@ -14,44 +14,35 @@ import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { downloadDataUrl, useQrDataUrl } from "@/components/admin/qr";
 import { exportWholeClass } from "@/components/admin/exportResults";
 import { useToast } from "@/components/admin/toastContext";
-import { ownerNote, useCanChange } from "@/components/admin/ownership";
-
-type Tab = "active" | "archived";
+import { useCanChange } from "@/components/admin/ownership";
+import { OwnerPicker } from "@/components/admin/OwnerPicker";
 
 const joinUrl = (code: string) => `${window.location.origin}/join/${encodeURIComponent(code)}`;
-
-function StatusBadge({ c }: { c: AdminClass }) {
-  if (c.status === "archived") return <StatusChip tone="neutral">Archived</StatusChip>;
-  if (c.studentCount === 0) return <StatusChip tone="neutral">Waiting</StatusChip>;
-  return <StatusChip tone="success">Active</StatusChip>;
-}
 
 export default function Classes() {
   const { classId: currentId, setClassId } = useAdminClass();
   const live = useLiveInterval();
-  // Default: only my classes (+ legacy classes without an owner) — keeps lists small with many instructors.
-  const [scope, setScope] = useState<ClassScope>("mine");
+  // Every instructor's sections; only the owner can change one (useCanChange).
   const q = useQuery({
-    queryKey: adminKeys.classes("all", scope),
-    queryFn: () => api.get<AdminClass[]>(`/admin/classes?status=all&scope=${scope}`),
+    queryKey: adminKeys.classes("all"),
+    queryFn: () => api.get<AdminClass[]>("/admin/classes?status=all"),
     refetchInterval: live, // only while "Live" is on — counts change during class
   });
-  const [tab, setTab] = useState<Tab>("active");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
   const all = useMemo(() => q.data ?? [], [q.data]);
-  const counts = useMemo(() => ({ active: all.filter((c) => c.status === "active").length, archived: all.filter((c) => c.status === "archived").length }), [all]);
-  // The "Archived" pill disappears after the last archived class is deleted → fall back to Active.
-  const effectiveTab: Tab = tab === "archived" && counts.archived === 0 ? "active" : tab;
+  // One list: active sections first, then old archived ones (greyed, still deletable).
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return all
-      .filter((c) => c.status === effectiveTab)
       .filter((c) => !term || c.name.toLowerCase().includes(term) || c.joinCode.toLowerCase().includes(term))
-      .sort((a, b) => b.academicYear - a.academicYear || b.semester - a.semester || a.section - b.section);
-  }, [all, effectiveTab, search]);
+      .sort(
+        (a, b) =>
+          Number(a.status === "archived") - Number(b.status === "archived") || b.academicYear - a.academicYear || b.semester - a.semester || a.section - b.section,
+      );
+  }, [all, search]);
 
   // Selection: explicit choice → current class (if visible) → first row.
   const selected =
@@ -94,49 +85,23 @@ export default function Classes() {
       ) : (
         <div className="grid items-start gap-[25px] xl:grid-cols-[minmax(0,1fr)_339px]">
           <Card className="min-w-0 px-[19px] pb-[15px] pt-[17px]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <FilterPills<Tab>
-                label="Class status"
-                value={effectiveTab}
-                onChange={(t) => {
-                  setTab(t);
-                  setSelectedId(null);
-                }}
-                options={[
-                  { value: "active", label: `Active (${counts.active})` },
-                  // Archiving was replaced by Delete; the tab only remains so old archived classes can be deleted.
-                  ...(counts.archived > 0 ? [{ value: "archived" as Tab, label: `Archived (${counts.archived})` }] : []),
-                ]}
-              />
-              <FilterPills<ClassScope>
-                label="Whose classes"
-                value={scope}
-                onChange={(s) => {
-                  setScope(s);
-                  setSelectedId(null);
-                }}
-                options={[
-                  { value: "mine", label: "My classes" },
-                  { value: "all", label: "All classes" },
-                ]}
-              />
+            <div className="flex flex-wrap items-center justify-end gap-3">
               <div className="w-full sm:w-[259px]">
                 <SearchBox value={search} onChange={setSearch} placeholder="Search class..." label="Search classes or join codes" />
               </div>
             </div>
 
             {rows.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted">{search ? "No classes match your search." : effectiveTab === "active" ? "No active classes." : "No archived classes."}</p>
+              <p className="py-10 text-center text-sm text-muted">{search ? "No classes match your search." : "No classes."}</p>
             ) : (
               <div className="relative -mx-[19px] mt-[28px] overflow-x-auto">
-                <table className="w-full min-w-[700px] table-fixed text-[14px]">
+                <table className="w-full min-w-[620px] table-fixed text-[14px]">
                   <caption className="sr-only">Classes — select a row to see its QR code</caption>
                   <colgroup>
-                    <col className="w-[196px]" />
-                    <col className="w-[130px]" />
-                    <col className="w-[95px]" />
-                    <col className="w-[107px]" />
-                    <col className="w-[106px]" />
+                    <col className="w-[38%]" />
+                    <col className="w-[18%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[15%]" />
                     <col />
                   </colgroup>
                   <thead>
@@ -145,8 +110,7 @@ export default function Classes() {
                       <th scope="col" className="pb-[14px] font-semibold">Join code</th>
                       <th scope="col" className="pb-[14px] font-semibold">Students</th>
                       <th scope="col" className="pb-[14px] font-semibold">Pretest</th>
-                      <th scope="col" className="pb-[14px] font-semibold">Posttest</th>
-                      <th scope="col" className="pb-[14px] pr-5 font-semibold">Status</th>
+                      <th scope="col" className="pb-[14px] pr-5 font-semibold">Posttest</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -167,14 +131,18 @@ export default function Classes() {
                             archived ? "text-muted" : "text-ink",
                           )}
                         >
-                          <td className={cx("pl-5", !archived && "font-semibold")}>{c.name}</td>
+                          <td className={cx("pl-5 pr-3", !archived && "font-semibold")}>
+                            {c.name}
+                            {archived && (
+                              <span className="ml-2 inline-flex">
+                                <StatusChip tone="neutral">Archived</StatusChip>
+                              </span>
+                            )}
+                          </td>
                           <td className={cx("text-[13.5px]", archived && "text-faint")}>{c.joinCode}</td>
                           <td className="tabular-nums">{c.studentCount}</td>
                           <td className="tabular-nums">{dash(c.pretestSubmitted)}</td>
-                          <td className="tabular-nums">{c.posttestSubmitted === 0 ? "—" : dash(c.posttestSubmitted)}</td>
-                          <td className="pr-5">
-                            <StatusBadge c={c} />
-                          </td>
+                          <td className="pr-5 tabular-nums">{c.posttestSubmitted === 0 ? "—" : dash(c.posttestSubmitted)}</td>
                         </tr>
                       );
                     })}
@@ -199,7 +167,6 @@ export default function Classes() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={(c) => {
-          setTab("active");
           setSelectedId(c.id);
           setClassId(c.id);
         }}
@@ -230,7 +197,8 @@ function RecentJoins({ c }: { c: AdminClass }) {
 
   return (
     <Card className="p-[25px]">
-      <div className="flex items-center justify-between gap-2">
+      {/* Title on its own line: the 339 px column is too narrow for the title and the live controls side by side */}
+      <div className="space-y-2.5">
         <CardTitle>Joined via QR</CardTitle>
         <LiveIndicator
           updatedAt={q.dataUpdatedAt}
@@ -285,7 +253,8 @@ function SelectedClass({ c }: { c: AdminClass }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exported, setExported] = useState(false);
-  const mine = useCanChange()(c.ownerEmail); // decision A: only the owner (or the emergency account) changes a class
+  // Instructors only see their own sections; the username account sees all of them
+  const mine = useCanChange()(c.ownerEmail);
 
   const remove = useMutation({
     mutationFn: () => api.del<{ ok: true; deleted: { students: number; attempts: number } }>(`/admin/classes/${c.id}`),
@@ -363,7 +332,7 @@ function SelectedClass({ c }: { c: AdminClass }) {
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[12px] leading-[18px] text-amber-900">
               {c.rosterCount > 0
                 ? `Roster only: just the ${c.rosterCount} student${c.rosterCount === 1 ? "" : "s"} on the roster can join. Others are refused.`
-                : "Roster only is on, but the roster is empty — anyone can join until you import it from Students."}{" "}
+                : "Roster only is on, but the roster is empty — anyone can join."}{" "}
               Change it in Edit.
             </p>
           )}
@@ -387,9 +356,9 @@ function SelectedClass({ c }: { c: AdminClass }) {
             Delete class
           </button>
         </div>
-      ) : (
-        <p className="mt-[35px] rounded-xl bg-zinc-100 px-3 py-2 text-center text-[12px] leading-[18px] text-zinc-700">{ownerNote(c.ownerEmail)}</p>
-      )}
+      ) : null}
+
+      <OwnerPicker kind="class" id={c.id} ownerEmail={c.ownerEmail} className="mt-3 block [&_select]:w-full" />
 
       {editOpen && <EditClassModal c={c} onClose={() => setEditOpen(false)} />}
 
@@ -460,25 +429,30 @@ function EditClassModal({ c, onClose }: { c: AdminClass; onClose: () => void }) 
         footer={
           <>
             <Button variant="outline" onClick={onClose} disabled={patch.isPending}>
-              Cancel
+              {c.restrictToRoster ? "Cancel" : "Close"}
             </Button>
-            <Button loading={patch.isPending && !regenOpen} disabled={restrict === c.restrictToRoster} onClick={() => patch.mutate({ restrictToRoster: restrict })}>
-              Save
-            </Button>
+            {c.restrictToRoster && (
+              <Button loading={patch.isPending && !regenOpen} disabled={restrict === c.restrictToRoster} onClick={() => patch.mutate({ restrictToRoster: restrict })}>
+                Save
+              </Button>
+            )}
           </>
         }
       >
         <div className="space-y-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold">Only students on the roster can join</p>
-              <p className="mt-0.5 text-xs text-muted">
-                Roster has {c.rosterCount} student{c.rosterCount === 1 ? "" : "s"}. Import it from <Link to="/admin/students" className="underline">Students</Link>.
-              </p>
+          {/* Roster import was removed; the switch stays only so a section that still has it on can be opened to everyone. */}
+          {c.restrictToRoster && (
+            <div className="flex items-start justify-between gap-4 border-b border-line pb-5">
+              <div>
+                <p className="text-sm font-semibold">Only students on the roster can join</p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Roster has {c.rosterCount} student{c.rosterCount === 1 ? "" : "s"}. Turn this off to let anyone with the QR code join.
+                </p>
+              </div>
+              <Switch checked={restrict} onChange={setRestrict} label="Only students on the roster can join" />
             </div>
-            <Switch checked={restrict} onChange={setRestrict} label="Only students on the roster can join" />
-          </div>
-          <div className="flex items-start justify-between gap-4 border-t border-line pt-5">
+          )}
+          <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold">Join code</p>
               <p className="mt-0.5 text-xs text-muted">
@@ -522,7 +496,6 @@ function CreateClassModal({ open, onClose, onCreated }: { open: boolean; onClose
   const [year, setYear] = useState("2569");
   const [semester, setSemester] = useState("1");
   const [section, setSection] = useState("1");
-  const [restrict, setRestrict] = useState(false);
   const [fieldErr, setFieldErr] = useState<Record<string, string>>({});
 
   const create = useMutation({
@@ -543,7 +516,7 @@ function CreateClassModal({ open, onClose, onCreated }: { open: boolean; onClose
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const parsed = createClassBody.safeParse({ academicYear: Number(year), semester: Number(semester), section: Number(section), restrictToRoster: restrict });
+    const parsed = createClassBody.safeParse({ academicYear: Number(year), semester: Number(semester), section: Number(section), restrictToRoster: false });
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -585,13 +558,6 @@ function CreateClassModal({ open, onClose, onCreated }: { open: boolean; onClose
           </Select>
           <Input name="section" label="Section" type="number" min={1} max={99} value={section} onChange={(e) => setSection(e.target.value)} error={fieldErr.section} />
         </div>
-        <label className="flex items-start gap-3 rounded-xl border border-line p-3 text-sm">
-          <input type="checkbox" className="mt-0.5 size-4 accent-ink" checked={restrict} onChange={(e) => setRestrict(e.target.checked)} />
-          <span>
-            <span className="font-semibold">Only students on the roster can join</span>
-            <span className="mt-0.5 block text-xs text-muted">Import the roster CSV from the Students page after creating the class.</span>
-          </span>
-        </label>
         <p className="text-xs text-muted">
           Preview: <span className="font-semibold text-ink">{`${year || "—"}/${semester} · Section ${section || "—"} · your name`}</span>
         </p>

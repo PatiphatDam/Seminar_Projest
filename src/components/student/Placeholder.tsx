@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Badge, Card, cx } from "@/components/ui";
+import { Badge, cx } from "@/components/ui";
 import { ArrowLeftIcon, CheckIcon } from "./icons";
 import { useDocumentTitle } from "./useDocumentTitle";
 
@@ -141,14 +141,5 @@ export function Placeholder({
   );
 }
 
-/** Re-usable card wrapper for small live widgets rendered under a placeholder. */
-export function PlaceholderSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Card className="p-5 sm:p-6">
-      <h2 className="text-lg font-bold">{title}</h2>
-      <div className="mt-4">{children}</div>
-    </Card>
-  );
-}
 
 export default Placeholder;

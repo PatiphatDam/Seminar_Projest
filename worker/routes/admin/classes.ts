@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import { createClassBody, rosterBody, updateClassBody, type AdminClass } from "../../../shared/contract";
+import { createClassBody, setOwnerBody, updateClassBody, type AdminClass } from "../../../shared/contract";
 import { auditStmt, auditStmtForLastInsert, isConstraintError, nowIso, queryAll, queryFirst, stmt } from "../../db";
 import type { AppEnv } from "../../env";
 import { generateJoinCode } from "../../grading";
-import { badRequest, conflict, idParam, readBody } from "../../http";
+import { badRequest, conflict, forbidden, idParam, notFound, readBody } from "../../http";
 import { className } from "../../identity";
-import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow, scopeWhere, assertOwner, ownerLabel } from "./common";
+import { ADMIN_CLASS_SELECT, assertWritable, loadAdminClass, loadClassBasics, toAdminClass, type AdminClassRow, ownedClasses, assertOwner, ownerLabel, isEmergencyAdmin } from "./common";
+import { findAdmin } from "../../auth";
 
 export const classRoutes = new Hono<AppEnv>();
 
@@ -27,9 +28,7 @@ async function freshJoinCode(db: D1Database): Promise<string> {
 classRoutes.get("/classes", async (c) => {
   const status = c.req.query("status") ?? "active";
   if (!["active", "archived", "all"].includes(status)) throw badRequest("status must be active, archived or all.");
-  const scope = c.req.query("scope");
-  if (scope !== undefined && scope !== "mine" && scope !== "all") throw badRequest("scope must be mine or all.");
-  const own = scopeWhere(scope, c.get("admin").email);
+  const own = ownedClasses(c.get("admin"));
   const where = status === "all" ? `WHERE ${own.sql}` : `WHERE c.status = ? AND ${own.sql}`;
   const params = status === "all" ? own.params : [status, ...own.params];
   const rows = await queryAll<AdminClassRow>(
@@ -98,8 +97,6 @@ classRoutes.post("/classes", async (c) => {
   throw new Error("Could not create class");
 });
 
-classRoutes.get("/classes/:id", async (c) => c.json(await loadAdminClass(c.env.DB, idParam(c))));
-
 classRoutes.patch("/classes/:id", async (c) => {
   const id = idParam(c);
   const body = await readBody(c, updateClassBody);
@@ -126,39 +123,46 @@ classRoutes.patch("/classes/:id", async (c) => {
   return c.json(await loadAdminClass(db, id));
 });
 
-classRoutes.post("/classes/:id/archive", async (c) => {
-  const id = idParam(c);
-  const db = c.env.DB;
-  const cls = await loadClassBasics(db, id);
-  assertOwner(cls.owner_email, c.get("admin"));
-  if (cls.status !== "archived") {
-    await db.batch([
-      stmt(db, "UPDATE classes SET status = 'archived', archived_at = ? WHERE id = ?", nowIso(), id),
-      auditStmt(db, c.get("admin").email, "class.archive", "class", id, { name: cls.name }),
-    ]);
-  }
-  return c.json(await loadAdminClass(db, id));
-});
-
-classRoutes.post("/classes/:id/unarchive", async (c) => {
-  const id = idParam(c);
-  const db = c.env.DB;
-  const cls = await loadClassBasics(db, id);
-  assertOwner(cls.owner_email, c.get("admin"));
-  if (cls.status === "archived") {
-    await db.batch([
-      stmt(db, "UPDATE classes SET status = 'active', archived_at = NULL WHERE id = ?", id),
-      auditStmt(db, c.get("admin").email, "class.unarchive", "class", id, { name: cls.name }),
-    ]);
-  }
-  return c.json(await loadAdminClass(db, id));
-});
-
 /**
  * Permanently deletes a section: its enrollments, every attempt (score) in it, its roster and its test assignments.
  * Students who are left without any section are deleted too (we don't keep data for people who left).
  * The audit log keeps a record of the deletion (name, join code, counts) but no student data.
  */
+/**
+ * Username account only: hand a section to an instructor (e.g. one made before owners were recorded). The section is
+ * renamed with the new owner's short name, as if they had created it.
+ */
+classRoutes.post("/classes/:id/owner", async (c) => {
+  const id = idParam(c);
+  const db = c.env.DB;
+  if (!isEmergencyAdmin(c.get("admin"))) throw forbidden("Only the admin username account can change owners.", "not_manager");
+  const body = await readBody(c, setOwnerBody);
+  const to = await findAdmin(db, c.env, body.email);
+  if (!to || isEmergencyAdmin(to)) throw badRequest(`${body.email} is not an instructor.`);
+  const cls = await queryFirst<{ academic_year: number; semester: number; section: number }>(
+    db,
+    "SELECT academic_year, semester, section FROM classes WHERE id = ?",
+    id,
+  );
+  if (!cls) throw notFound("Class not found.");
+  const name = `${className(cls.academic_year, cls.semester, cls.section)} · ${ownerLabel(to)}`;
+  const dup = await queryFirst(
+    db,
+    "SELECT 1 AS one FROM classes WHERE owner_email = ? AND academic_year = ? AND semester = ? AND section = ? AND id <> ?",
+    to.email,
+    cls.academic_year,
+    cls.semester,
+    cls.section,
+    id,
+  );
+  if (dup) throw conflict(`${to.email} already has ${name}.`);
+  await db.batch([
+    stmt(db, "UPDATE classes SET owner_email = ?, name = ? WHERE id = ?", to.email, name, id),
+    auditStmt(db, c.get("admin").email, "class.owner", "class", id, { name, owner: to.email }),
+  ]);
+  return c.json(await loadAdminClass(db, id));
+});
+
 classRoutes.delete("/classes/:id", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
@@ -202,72 +206,3 @@ classRoutes.delete("/classes/:id", async (c) => {
   return c.json({ ok: true as const, deleted: { students: counts?.students ?? 0, attempts: counts?.attempts ?? 0 } });
 });
 
-/* ───────────── roster ───────────── */
-
-export interface RosterEntry {
-  studentCode: string;
-  firstName: string | null;
-  joined: boolean;
-}
-
-async function listRoster(db: D1Database, classId: number): Promise<RosterEntry[]> {
-  const rows = await queryAll<{ student_code: string; first_name: string | null; joined: number }>(
-    db,
-    `SELECT r.student_code, r.first_name,
-            EXISTS (SELECT 1 FROM enrollments e JOIN students s ON s.id = e.student_id
-                     WHERE e.class_id = r.class_id AND s.student_code = r.student_code) AS joined
-       FROM class_roster r WHERE r.class_id = ? ORDER BY r.student_code`,
-    classId,
-  );
-  return rows.map((r) => ({ studentCode: r.student_code, firstName: r.first_name, joined: r.joined === 1 }));
-}
-
-classRoutes.get("/classes/:id/roster", async (c) => {
-  const id = idParam(c);
-  await loadClassBasics(c.env.DB, id);
-  return c.json(await listRoster(c.env.DB, id));
-});
-
-classRoutes.post("/classes/:id/roster", async (c) => {
-  const id = idParam(c);
-  const body = await readBody(c, rosterBody);
-  const db = c.env.DB;
-  const cls = await loadClassBasics(db, id);
-  assertOwner(cls.owner_email, c.get("admin"));
-  assertWritable(cls);
-
-  // De-duplicate by student code (last entry wins).
-  const byCode = new Map<string, string | null>();
-  for (const e of body.entries) byCode.set(e.studentCode, e.firstName?.trim() || null);
-
-  const statements: D1PreparedStatement[] = [];
-  if (body.mode === "replace") statements.push(stmt(db, "DELETE FROM class_roster WHERE class_id = ?", id));
-  for (const [code, firstName] of byCode) {
-    statements.push(
-      stmt(
-        db,
-        `INSERT INTO class_roster (class_id, student_code, first_name) VALUES (?, ?, ?)
-         ON CONFLICT (class_id, student_code) DO UPDATE SET first_name = COALESCE(excluded.first_name, class_roster.first_name)`,
-        id,
-        code,
-        firstName,
-      ),
-    );
-  }
-  statements.push(auditStmt(db, c.get("admin").email, "roster.import", "class", id, { mode: body.mode, count: byCode.size }));
-  await db.batch(statements);
-  return c.json(await listRoster(db, id));
-});
-
-classRoutes.delete("/classes/:id/roster", async (c) => {
-  const id = idParam(c);
-  const db = c.env.DB;
-  const cls = await loadClassBasics(db, id);
-  assertOwner(cls.owner_email, c.get("admin"));
-  assertWritable(cls);
-  const [del] = await db.batch([
-    stmt(db, "DELETE FROM class_roster WHERE class_id = ?", id),
-    auditStmt(db, c.get("admin").email, "roster.clear", "class", id, {}),
-  ]);
-  return c.json({ ok: true as const, removed: del.meta.changes ?? 0 });
-});

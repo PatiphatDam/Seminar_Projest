@@ -3,7 +3,7 @@ import { api } from "@/lib/api";
 
 /** Enrollment rows of `studentId` in classes other than `classId` (pure — unit tested). */
 export function otherEnrollments(rows: AdminStudentRow[], studentId: number, classId: number): AdminStudentRow[] {
-  return rows.filter((r) => r.studentId === studentId && r.classId !== classId && r.enrollmentId !== null);
+  return rows.filter((r) => r.studentId === studentId && r.classId !== classId);
 }
 
 /**

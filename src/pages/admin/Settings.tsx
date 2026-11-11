@@ -2,27 +2,103 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { addAdminBody, type AdminUser, type AuditEntry, type UsageReport } from "@shared/contract";
 import { api } from "@/lib/api";
-import { useAppConfig, useMe } from "@/lib/auth";
-import { Badge, Button, Card, ErrorNote, Input, PageHeader, Spinner } from "@/components/ui";
+import { Link, useNavigate } from "react-router";
+import { useAppConfig, useLogout, useMe } from "@/lib/auth";
+import { Button, Card, ErrorNote, Input, PageHeader, Spinner } from "@/components/ui";
 import { CardTitle, QueryError } from "@/components/admin/controls";
 import { errorMessage, formatDateTime, relativeTime } from "@/components/admin/format";
 import { adminKeys } from "@/components/admin/keys";
 import { ConfirmDialog } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
+import { describeAudit } from "@/components/admin/auditText";
+import { useAdminClass } from "@/components/admin/adminClass";
+import { loginMethodStore } from "@/components/admin/session";
 
 export default function Settings() {
+  const me = useMe().data;
+  // Only the username (emergency) account manages instructors; everyone else sees just their own account.
+  const manager = me?.role === "admin" && me.admin.email.startsWith("local:");
   return (
     <>
-      <PageHeader title="Settings" subtitle="Instructor accounts, sign-in status and recent activity." />
+      <PageHeader title="Settings" subtitle="Your account, storage space and the changes you made." />
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-6">
-          <AdminsCard />
-          <SignInCard />
+          <MyAccountCard />
+          {manager && <AdminsCard />}
           <StorageCard />
         </div>
         <ActivityCard />
       </div>
     </>
+  );
+}
+
+/* ───────── My account ───────── */
+
+function MyAccountCard() {
+  const me = useMe().data;
+  const config = useAppConfig();
+  const { classes } = useAdminClass();
+  const logout = useLogout();
+  const navigate = useNavigate();
+  if (me?.role !== "admin") return null;
+  const email = me.admin.email;
+  const local = email.startsWith("local:");
+  const method = local ? "password" : (loginMethodStore.get() ?? (config.data && !config.data.googleClientId ? "dev" : "google"));
+  const mine = classes.filter((c) => c.ownerEmail === email);
+  const rows: [string, string][] = [
+    ["E-mail", local ? `${email.slice("local:".length)} (username account)` : email],
+    ["Signed in with", method === "password" ? "Username and password" : method === "dev" ? "Dev login (this computer only)" : "Google"],
+  ];
+  return (
+    <Card className="p-5">
+      <CardTitle>My account</CardTitle>
+      <dl className="mt-3 divide-y divide-line text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex justify-between gap-4 py-2.5">
+            <dt className="text-muted">{k}</dt>
+            <dd className="truncate text-right font-semibold" title={v}>
+              {v}
+            </dd>
+          </div>
+        ))}
+        <div className="py-2.5">
+          <dt className="text-muted">My sections</dt>
+          <dd className="mt-1.5">
+            {local ? (
+              <p className="text-[13px] text-muted">This account can change every section.</p>
+            ) : mine.length === 0 ? (
+              <p className="text-[13px] text-muted">
+                None yet — <Link to="/admin/classes" className="font-semibold text-ink underline">create a class</Link> to get a QR code for your students.
+              </p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {mine.map((c) => (
+                  <li key={c.id} className="rounded-full bg-zinc-100 px-3 py-1 text-[12.5px] font-semibold">
+                    {c.name} <span className="font-normal text-muted">· {c.studentCount} student{c.studentCount === 1 ? "" : "s"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </dd>
+        </div>
+      </dl>
+      <Button
+        variant="outline"
+        className="mt-3"
+        loading={logout.isPending}
+        onClick={() =>
+          logout.mutate(undefined, {
+            onSuccess: () => {
+              loginMethodStore.clear();
+              navigate("/admin/login", { replace: true });
+            },
+          })
+        }
+      >
+        Sign out
+      </Button>
+    </Card>
   );
 }
 
@@ -124,7 +200,7 @@ function AdminsCard() {
       return;
     }
     if (q.data?.some((a) => a.email.toLowerCase() === parsed.data.email)) {
-      setFieldErr("That e-mail is already an admin.");
+      setFieldErr("That e-mail is already an instructor.");
       return;
     }
     setFieldErr(null);
@@ -133,8 +209,11 @@ function AdminsCard() {
 
   return (
     <Card className="p-5">
-      <CardTitle>Admins</CardTitle>
-      <p className="mt-1 text-xs text-muted">Anyone listed here can sign in to this dashboard with Google. Admins from the server’s ADMIN_EMAILS setting can’t be removed here.</p>
+      <CardTitle>Instructors</CardTitle>
+      <p className="mt-1 text-xs text-muted">
+        Only this username account sees this list. Everyone listed can sign in to the dashboard with their Google account (“For instructors” on the sign-in
+        page); each sees only their own sections, students and tests. To hand a section or test to someone, use its Owner menu (Classes / Tests).
+      </p>
       {q.isPending ? (
         <div className="grid place-items-center py-8 text-muted">
           <Spinner />
@@ -145,7 +224,7 @@ function AdminsCard() {
         </div>
       ) : (
         <ul className="mt-3 divide-y divide-line">
-          {q.data.length === 0 && <li className="py-3 text-sm text-muted">No admins in the database yet.</li>}
+          {q.data.length === 0 && <li className="py-3 text-sm text-muted">No instructors added yet.</li>}
           {q.data.map((a) => {
             const isMe = a.email.toLowerCase() === myEmail;
             return (
@@ -160,7 +239,11 @@ function AdminsCard() {
                   </p>
                   {a.name && <p className="truncate text-xs text-muted">{a.email}</p>}
                 </div>
-                <Badge tone={a.source === "env" ? "neutral" : "tests"}>{a.source === "env" ? "env" : "database"}</Badge>
+                {a.source === "env" && (
+                  <span className="text-xs text-muted" title="Set on the server (ADMIN_EMAILS) — the developer changes it, not this page">
+                    Built in
+                  </span>
+                )}
                 {a.source === "database" && a.id !== null ? (
                   <Button size="sm" variant="ghost" onClick={() => setToRemove(a)} disabled={isMe} title={isMe ? "You can’t remove yourself" : undefined}>
                     Remove
@@ -178,7 +261,7 @@ function AdminsCard() {
         <Input name="new-admin-email" type="email" label="E-mail" placeholder="name@mfu.ac.th" value={email} onChange={(e) => setEmail(e.target.value)} error={fieldErr ?? undefined} autoComplete="off" />
         <Input name="new-admin-name" label="Name (optional)" value={name} maxLength={80} onChange={(e) => setName(e.target.value)} autoComplete="off" />
         <Button type="submit" loading={add.isPending} className={fieldErr ? "sm:mb-5" : undefined}>
-          Add admin
+          Add instructor
         </Button>
       </form>
       {add.isError && (
@@ -199,7 +282,7 @@ function AdminsCard() {
         loading={remove.isPending}
         error={remove.isError ? errorMessage(remove.error) : null}
         title={`Remove ${toRemove?.email ?? ""}?`}
-        confirmLabel="Remove admin"
+        confirmLabel="Remove instructor"
         accent="danger"
       >
         <p>They’ll lose access to the admin dashboard on their next request. You can add them again later.</p>
@@ -208,70 +291,14 @@ function AdminsCard() {
   );
 }
 
-/* ───────── Sign-in status ───────── */
-
-function StatusRow({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
-  return (
-    <li className="flex items-start justify-between gap-4 py-3">
-      <div>
-        <p className="text-sm font-semibold">{label}</p>
-        <p className="text-xs text-muted">{detail}</p>
-      </div>
-      <Badge tone={ok ? "success" : "neutral"}>{ok ? "Yes" : "No"}</Badge>
-    </li>
-  );
-}
-
-function SignInCard() {
-  const config = useAppConfig();
-  return (
-    <Card className="p-5">
-      <CardTitle>Sign-in status</CardTitle>
-      {config.isPending ? (
-        <div className="grid place-items-center py-8 text-muted">
-          <Spinner />
-        </div>
-      ) : config.isError ? (
-        <div className="mt-3">
-          <QueryError error={config.error} onRetry={() => void config.refetch()} what="sign-in settings" />
-        </div>
-      ) : (
-        <ul className="mt-2 divide-y divide-line">
-          <StatusRow
-            label="Google client ID configured"
-            ok={!!config.data.googleClientId}
-            detail={config.data.googleClientId ? "Sign in with Google is available for students and instructors." : "Set GOOGLE_CLIENT_ID on the Worker to enable Google sign-in."}
-          />
-          <StatusRow
-            label="Dev login enabled"
-            ok={config.data.devLogin}
-            detail={config.data.devLogin ? "Anyone can sign in by typing an e-mail — local development only, never in production." : "Disabled (as it should be in production)."}
-          />
-          <li className="flex items-start justify-between gap-4 py-3">
-            <div>
-              <p className="text-sm font-semibold">Student e-mail domains</p>
-              <p className="text-xs text-muted">Only accounts from these Google Workspace domains can join as students.</p>
-            </div>
-            <span className="font-mono text-xs">{(config.data.allowedStudentDomains ?? [config.data.allowedStudentDomain]).join(", ") || "—"}</span>
-          </li>
-        </ul>
-      )}
-    </Card>
-  );
-}
-
 /* ───────── Activity ───────── */
-
-function describeTarget(e: AuditEntry): string {
-  const t = e.targetType.replace(/_/g, " ");
-  return e.targetId ? `${t} #${e.targetId}` : t;
-}
 
 function ActivityCard() {
   const q = useQuery({ queryKey: adminKeys.audit, queryFn: () => api.get<AuditEntry[]>("/admin/audit?limit=50") });
   return (
     <Card className="p-5">
-      <CardTitle right={q.isFetching && !q.isPending ? <Spinner className="size-4 text-muted" /> : undefined}>Recent activity</CardTitle>
+      <CardTitle right={q.isFetching && !q.isPending ? <Spinner className="size-4 text-muted" /> : undefined}>My recent changes</CardTitle>
+      <p className="mt-1 text-xs text-muted">The last 50 changes you made — students withdrawn or moved, tests edited or assigned, classes created or deleted.</p>
       {q.isPending ? (
         <div className="grid place-items-center py-12 text-muted">
           <Spinner />
@@ -281,20 +308,17 @@ function ActivityCard() {
           <QueryError error={q.error} onRetry={() => void q.refetch()} what="activity" />
         </div>
       ) : q.data.length === 0 ? (
-        <p className="py-10 text-center text-sm text-muted">No admin activity yet.</p>
+        <p className="py-10 text-center text-sm text-muted">You haven’t changed anything yet.</p>
       ) : (
         <ol className="mt-2 max-h-[640px] divide-y divide-line overflow-y-auto">
           {q.data.slice(0, 50).map((e) => (
             <li key={e.id} className="py-2.5">
               <div className="flex items-baseline justify-between gap-3">
-                <p className="min-w-0 text-sm">
-                  <span className="font-semibold">{e.action.replace(/[._]/g, " ")}</span> <span className="text-muted">· {describeTarget(e)}</span>
-                </p>
+                <p className="min-w-0 text-sm">{describeAudit(e)}</p>
                 <time dateTime={e.createdAt} title={formatDateTime(e.createdAt)} className="shrink-0 text-xs text-muted">
                   {relativeTime(e.createdAt)}
                 </time>
               </div>
-              <p className="truncate text-xs text-faint">{e.adminEmail}</p>
             </li>
           ))}
         </ol>

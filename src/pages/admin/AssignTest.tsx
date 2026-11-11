@@ -211,25 +211,38 @@ function AssignEditor({ test, assignments, classes }: { test: AdminTestDetail; a
           Create a section first, then assign this test to it.
         </EmptyState>
       ) : (
-        <div className="grid items-start gap-[25px] lg:grid-cols-[239px_minmax(0,1fr)]">
+        <div className="grid items-start gap-[25px] lg:grid-cols-[330px_minmax(0,1fr)]">
           <Card className="px-[19px] pb-[19px] pt-[22px]">
-            <CardTitle>Sections</CardTitle>
-            <ul className="mt-[14px] space-y-2.5">
+            <CardTitle>Your sections</CardTitle>
+            <p className="mt-1 text-[12.5px] leading-[18px] text-muted">
+              <strong className="font-semibold text-ink">Tick</strong> a section to give it this test. <strong className="font-semibold text-ink">Click</strong> a section to
+              change its settings on the right.
+            </p>
+            <ul className="mt-[14px] space-y-2">
               {classes.map((c) => {
                 const a = byClass.get(c.id);
                 const s = statusLine(a, now);
                 const isChecked = checked.has(c.id);
-                const pending = isChecked && !a ? "Will be assigned" : !isChecked && a ? "Will be unassigned" : null;
+                const isSel = selectedId === c.id;
+                const pending = isChecked && !a ? "assign" : !isChecked && a ? "unassign" : null;
+                const chip =
+                  s.tone === "open"
+                    ? { label: "Open", cls: "bg-success-soft text-success" }
+                    : s.tone === "scheduled"
+                      ? { label: "Scheduled", cls: "bg-tests-soft text-tests" }
+                      : s.tone === "closed"
+                        ? { label: "Closed", cls: "bg-zinc-200 text-zinc-700" }
+                        : { label: "Not assigned", cls: "bg-zinc-100 text-muted" };
                 return (
                   <li key={c.id}>
                     <div
                       className={cx(
-                        "flex min-h-[60px] items-center gap-[14px] rounded-xl px-[13px] py-2 transition-colors",
-                        selectedId === c.id ? "bg-tests-soft" : "hover:bg-zinc-50",
-                        errors[c.id] && "ring-1 ring-red-300",
+                        "flex items-start gap-3 rounded-xl border px-3 py-3 transition-colors",
+                        isSel ? "border-tests bg-tests-soft/60 ring-1 ring-tests" : "border-line hover:bg-zinc-50",
+                        errors[c.id] && "border-red-300 ring-1 ring-red-300",
                       )}
                     >
-                      <span className="relative grid size-[18px] shrink-0 place-items-center">
+                      <span className="relative mt-0.5 grid size-[20px] shrink-0 place-items-center">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -237,17 +250,30 @@ function AssignEditor({ test, assignments, classes }: { test: AdminTestDetail; a
                             toggle(c.id);
                             setSelectedId(c.id);
                           }}
-                          className="peer size-[18px] cursor-pointer appearance-none rounded-[5px] border border-zinc-300 bg-surface checked:border-tests checked:bg-tests"
+                          className="peer size-[20px] cursor-pointer appearance-none rounded-[6px] border-2 border-zinc-300 bg-surface checked:border-tests checked:bg-tests"
                           aria-label={`Assign to ${c.name}`}
                         />
-                        <IconCheck size={12} strokeWidth={3} className="pointer-events-none absolute hidden text-white peer-checked:block" />
+                        <IconCheck size={13} strokeWidth={3} className="pointer-events-none absolute hidden text-white peer-checked:block" />
                       </span>
-                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedId(c.id)} aria-pressed={selectedId === c.id}>
-                        <span className="block truncate text-[13px] font-semibold leading-[18px] text-ink">{c.name}</span>
-                        <span className="block text-[12px] leading-4 text-muted" title={s.text}>
-                          {s.tone === "open" ? "Open" : s.tone === "scheduled" ? "Scheduled" : s.tone === "closed" ? "Closed" : "Not assigned"}
+                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => setSelectedId(c.id)} aria-pressed={isSel}>
+                        <span className="block text-[14px] font-semibold leading-5 text-ink">{c.name}</span>
+                        <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className={cx("inline-flex h-[22px] items-center rounded-full px-2.5 text-[11.5px] font-semibold", chip.cls)} title={s.text}>
+                            {chip.label}
+                          </span>
+                          {a && <span className="text-[12px] text-muted tabular-nums">{a.submittedCount}/{a.studentCount} submitted</span>}
                         </span>
-                        {pending && <span className="block text-[12px] font-semibold text-amber-700">{pending}</span>}
+                        {pending && (
+                          <span
+                            className={cx(
+                              "mt-1.5 inline-flex h-[22px] items-center rounded-full px-2.5 text-[11.5px] font-semibold",
+                              pending === "assign" ? "bg-amber-100 text-amber-800" : "bg-danger-soft text-danger",
+                            )}
+                          >
+                            {pending === "assign" ? "Will be assigned when you save" : "Will be removed when you save"}
+                          </span>
+                        )}
+                        {isSel && <span className="mt-1.5 block text-[11.5px] font-semibold text-tests">Editing these settings →</span>}
                         {errors[c.id] && <span className="mt-1 block text-[12px] text-danger">{errors[c.id]}</span>}
                       </button>
                     </div>
@@ -255,13 +281,17 @@ function AssignEditor({ test, assignments, classes }: { test: AdminTestDetail; a
                 );
               })}
             </ul>
+            <p className="mt-3 border-t border-line pt-3 text-[12.5px] text-muted">
+              {checked.size === 0 ? "No section ticked — students won’t see this test." : `${checked.size} of ${classes.length} section${classes.length === 1 ? "" : "s"} will have this test.`}
+            </p>
           </Card>
 
           {selected && form && (
             <Card className="px-[30px] pb-6 pt-[26px]">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-[22px] font-semibold leading-8 text-ink">{selected.name.split(" · ")[1] ?? selected.name} settings</h2>
+                  <p className="text-[12px] font-semibold uppercase text-faint">Settings for</p>
+                  <h2 className="text-[22px] font-semibold leading-8 text-ink">{selected.name}</h2>
                   {!checked.has(selected.id) && <p className="text-[12px] text-muted">Not assigned — tick the section on the left to assign it</p>}
                 </div>
                 <div className="flex items-center gap-2 pt-1">

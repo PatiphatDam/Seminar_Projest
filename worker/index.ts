@@ -27,11 +27,11 @@ app.use("*", async (c, next) => {
   c.header("X-Frame-Options", "DENY");
 });
 
-/** Body size guard: 64 KB by default, 1 MB for the test builder, roster import and image upload. */
+/** Body size guard: 64 KB by default, 1 MB for the test builder and image upload. */
 const tooLarge = (c: Context) => c.json({ error: "The request is too large.", code: "payload_too_large" }, 413);
 const smallBody = bodyLimit({ maxSize: 64 * 1024, onError: tooLarge });
 const largeBody = bodyLimit({ maxSize: 1024 * 1024, onError: tooLarge });
-const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/classes\/\d+\/roster$/, /^\/api\/admin\/images$/, /^\/api\/attempts\/\d+\/(answers|submit)$/];
+const LARGE_BODY_PATHS = [/^\/api\/admin\/tests(\/\d+)?$/, /^\/api\/admin\/images$/, /^\/api\/attempts\/\d+\/(answers|submit)$/];
 app.use("*", async (c, next) => {
   if (SAFE_METHODS.has(c.req.method)) return next();
   const large = LARGE_BODY_PATHS.some((re) => re.test(c.req.path));

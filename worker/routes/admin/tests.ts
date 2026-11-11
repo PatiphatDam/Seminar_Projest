@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import {
   assignmentSettings,
   saveTestBody,
+  setOwnerBody,
   type AdminAssignment,
   type AdminQuestion,
   type AdminTestDetail,
@@ -13,9 +14,10 @@ import { auditStmt, nowIso, queryAll, queryFirst, stmt } from "../../db";
 import { loadQuestions } from "../../engine";
 import type { AppEnv } from "../../env";
 import { isAssignmentOpen } from "../../grading";
-import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
+import { badRequest, conflict, forbidden, idParam, notFound, readBody } from "../../http";
 import { normalizeQuestionInput, type NormalizedQuestion } from "../../questionInput";
-import { assertWritable, loadClassBasics, assertOwner } from "./common";
+import { assertWritable, assertVisibleClass, loadClassBasics, assertOwner, isEmergencyAdmin } from "./common";
+import { findAdmin } from "../../auth";
 
 export const testAdminRoutes = new Hono<AppEnv>();
 
@@ -92,12 +94,43 @@ async function loadTestDetail(db: D1Database, id: number): Promise<AdminTestDeta
   };
 }
 
+/** Tests are private to their owner; the username (emergency) account sees all. SQL filter on alias t. */
+function visibleTests(admin: { email: string }): { sql: string; params: string[] } {
+  if (isEmergencyAdmin(admin)) return { sql: "1 = 1", params: [] };
+  return { sql: "t.owner_email = ?", params: [admin.email] };
+}
+
+/** 404 (not 403) for someone else's test, so other instructors can't even tell it exists. */
+async function assertVisibleTest(db: D1Database, id: number, admin: { email: string }): Promise<{ title: string; owner_email: string | null }> {
+  const t = await queryFirst<{ title: string; owner_email: string | null }>(db, "SELECT title, owner_email FROM tests WHERE id = ?", id);
+  if (!t || (!isEmergencyAdmin(admin) && t.owner_email !== admin.email)) throw notFound("Test not found.");
+  return t;
+}
+
+/**
+ * Your tests, or with ?classId= (one of your sections) the tests assigned to it — Results → test picker; a section's
+ * results show every test it was given, including old ones assigned before tests became private.
+ */
 testAdminRoutes.get("/tests", async (c) => {
-  const rows = await queryAll<TestSummaryRow>(c.env.DB, `${TEST_SUMMARY_SELECT} ORDER BY t.updated_at DESC, t.id DESC`);
+  const classIdRaw = c.req.query("classId");
+  if (classIdRaw !== undefined && !/^\d+$/.test(classIdRaw)) throw badRequest("classId must be a number.");
+  if (classIdRaw) assertVisibleClass(await loadClassBasics(c.env.DB, Number(classIdRaw)), c.get("admin"));
+  const own = visibleTests(c.get("admin"));
+  const rows = classIdRaw
+    ? await queryAll<TestSummaryRow>(
+        c.env.DB,
+        `${TEST_SUMMARY_SELECT} WHERE t.id IN (SELECT test_id FROM test_assignments WHERE class_id = ?) ORDER BY t.updated_at DESC, t.id DESC`,
+        Number(classIdRaw),
+      )
+    : await queryAll<TestSummaryRow>(c.env.DB, `${TEST_SUMMARY_SELECT} WHERE ${own.sql} ORDER BY t.updated_at DESC, t.id DESC`, ...own.params);
   return c.json<AdminTestSummary[]>(rows.map(toSummary));
 });
 
-testAdminRoutes.get("/tests/:id", async (c) => c.json(await loadTestDetail(c.env.DB, idParam(c))));
+testAdminRoutes.get("/tests/:id", async (c) => {
+  const id = idParam(c);
+  await assertVisibleTest(c.env.DB, id, c.get("admin"));
+  return c.json(await loadTestDetail(c.env.DB, id));
+});
 
 /* ───────────── create / save ───────────── */
 
@@ -338,10 +371,27 @@ function toAdminAssignment(r: AssignmentAdminRow, now: Date): AdminAssignment {
   };
 }
 
+/** Username account only: hand a test to an instructor (e.g. one made before owners were recorded). */
+testAdminRoutes.post("/tests/:id/owner", async (c) => {
+  const id = idParam(c);
+  const db = c.env.DB;
+  if (!isEmergencyAdmin(c.get("admin"))) throw forbidden("Only the admin username account can change owners.", "not_manager");
+  const body = await readBody(c, setOwnerBody);
+  const to = await findAdmin(db, c.env, body.email);
+  if (!to || isEmergencyAdmin(to)) throw badRequest(`${body.email} is not an instructor.`);
+  const t = await queryFirst<{ title: string }>(db, "SELECT title FROM tests WHERE id = ?", id);
+  if (!t) throw notFound("Test not found.");
+  await db.batch([
+    stmt(db, "UPDATE tests SET owner_email = ? WHERE id = ?", to.email, id),
+    auditStmt(db, c.get("admin").email, "test.owner", "test", id, { title: t.title, owner: to.email }),
+  ]);
+  return c.json(await loadTestDetail(db, id));
+});
+
 testAdminRoutes.get("/tests/:id/assignments", async (c) => {
   const id = idParam(c);
   const db = c.env.DB;
-  if (!(await queryFirst(db, "SELECT 1 AS one FROM tests WHERE id = ?", id))) throw notFound("Test not found.");
+  await assertVisibleTest(db, id, c.get("admin"));
   const rows = await queryAll<AssignmentAdminRow>(db, `${ASSIGNMENT_ADMIN_SELECT} WHERE ta.test_id = ? ORDER BY c.academic_year DESC, c.semester DESC, c.section`, id);
   const now = new Date();
   return c.json<AdminAssignment[]>(rows.map((r) => toAdminAssignment(r, now)));
@@ -352,10 +402,10 @@ testAdminRoutes.put("/tests/:id/assignments/:classId", async (c) => {
   const classId = idParam(c, "classId");
   const s = await readBody(c, assignmentSettings);
   const db = c.env.DB;
-  const test = await queryFirst<{ title: string }>(db, "SELECT title FROM tests WHERE id = ?", testId);
-  if (!test) throw notFound("Test not found.");
+  // Only your own tests, and only in your own sections.
+  await assertVisibleTest(db, testId, c.get("admin"));
   const cls = await loadClassBasics(db, classId);
-  assertOwner(cls.owner_email, c.get("admin")); // any test may be used, but only in your own classes
+  assertOwner(cls.owner_email, c.get("admin"));
   assertWritable(cls);
 
   const opensAt = s.opensAt ? new Date(s.opensAt).toISOString() : null;

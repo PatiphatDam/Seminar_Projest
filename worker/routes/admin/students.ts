@@ -13,8 +13,10 @@ import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
 import {
   ENROLLMENT_ROW_SELECT,
   assertOwner,
+  assertVisibleClass,
   assertWritable,
   loadClassBasics,
+  ownedClasses,
   loadStudentRow,
   toStudentRow,
   type EnrollmentRowFull,
@@ -22,7 +24,7 @@ import {
 
 export const studentAdminRoutes = new Hono<AppEnv>();
 
-const STATUSES = ["active", "withdrawn", "not_joined", "all"] as const;
+const STATUSES = ["active", "withdrawn", "all"] as const;
 
 function likePattern(q: string): string {
   return `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
@@ -36,25 +38,29 @@ studentAdminRoutes.get("/students", async (c) => {
   const db = c.env.DB;
   const classIdRaw = c.req.query("classId");
   const status = (c.req.query("status") ?? "all") as (typeof STATUSES)[number];
-  if (!STATUSES.includes(status)) throw badRequest("status must be active, withdrawn, not_joined or all.");
+  if (!STATUSES.includes(status)) throw badRequest("status must be active, withdrawn or all.");
   const q = (c.req.query("q") ?? "").trim().slice(0, 100);
 
   let classId: number | null = null;
   if (classIdRaw) {
     if (!/^\d+$/.test(classIdRaw)) throw badRequest("classId must be a number.");
     classId = Number(classIdRaw);
-    await loadClassBasics(db, classId);
+    assertVisibleClass(await loadClassBasics(db, classId), c.get("admin"));
   }
+  const own = ownedClasses(c.get("admin"));
 
   const rows: AdminStudentRow[] = [];
 
-  if (status !== "not_joined") {
+  {
     const where: string[] = [];
     const params: SqlValue[] = [];
     if (classId !== null) {
       where.push("c.id = ?");
       params.push(classId);
-    } else where.push("c.status = 'active'");
+    } else {
+      where.push("c.status = 'active'", own.sql);
+      params.push(...own.params);
+    }
     if (status === "active" || status === "withdrawn") {
       where.push("e.status = ?");
       params.push(status);
@@ -70,45 +76,6 @@ studentAdminRoutes.get("/students", async (c) => {
       ...params,
     );
     rows.push(...found.map(toStudentRow));
-  }
-
-  if (status === "not_joined" || status === "all") {
-    const where: string[] = [
-      `NOT EXISTS (SELECT 1 FROM enrollments e JOIN students s ON s.id = e.student_id
-                    WHERE e.class_id = r.class_id AND s.student_code = r.student_code)`,
-    ];
-    const params: SqlValue[] = [];
-    if (classId !== null) {
-      where.push("c.id = ?");
-      params.push(classId);
-    } else where.push("c.status = 'active'");
-    if (q) {
-      where.push("(r.student_code LIKE ? ESCAPE '\\' OR r.first_name LIKE ? ESCAPE '\\')");
-      const p = likePattern(q);
-      params.push(p, p);
-    }
-    const rosterOnly = await queryAll<{ student_code: string; first_name: string | null; class_id: number; class_name: string }>(
-      db,
-      `SELECT r.student_code, r.first_name, c.id AS class_id, c.name AS class_name
-         FROM class_roster r JOIN classes c ON c.id = r.class_id
-        WHERE ${where.join(" AND ")}
-        ORDER BY c.academic_year DESC, c.semester DESC, c.section, r.student_code`,
-      ...params,
-    );
-    rows.push(
-      ...rosterOnly.map<AdminStudentRow>((r) => ({
-        enrollmentId: null,
-        studentId: null,
-        studentCode: r.student_code,
-        firstName: r.first_name,
-        email: null,
-        classId: r.class_id,
-        className: r.class_name,
-        status: "not_joined",
-        joinedAt: null,
-        lastLoginAt: null,
-      })),
-    );
   }
 
   return c.json(rows);
@@ -185,7 +152,8 @@ studentAdminRoutes.post("/students/:id/enroll", async (c) => {
 /** Every enrollment of one student in any class (archived included) — used before a hard delete. */
 studentAdminRoutes.get("/students/:id/enrollments", async (c) => {
   const id = idParam(c);
-  const rows = await queryAll<EnrollmentRowFull>(c.env.DB, `${ENROLLMENT_ROW_SELECT} WHERE s.id = ? ORDER BY e.id`, id);
+  const own = ownedClasses(c.get("admin"));
+  const rows = await queryAll<EnrollmentRowFull>(c.env.DB, `${ENROLLMENT_ROW_SELECT} WHERE s.id = ? AND ${own.sql} ORDER BY e.id`, id, ...own.params);
   return c.json(rows.map(toStudentRow));
 });
 
