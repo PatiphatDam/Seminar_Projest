@@ -7,6 +7,7 @@ import { Button, Card, cx, EmptyState, ErrorNote, PageHeader, PageLoader, Spinne
 import { useAdminClass } from "@/components/admin/adminClass";
 import { FilterPills, FilterSelect, QueryError, SearchBox } from "@/components/admin/controls";
 import { useCanChange } from "@/components/admin/ownership";
+import { useIsManager } from "@/components/admin/OwnerPicker";
 import { exportWholeClass } from "@/components/admin/exportResults";
 import { findOtherEnrollments } from "@/components/admin/students";
 import { errorMessage, formatDateTime } from "@/components/admin/format";
@@ -103,6 +104,7 @@ function StudentsForClass({ cls, classes, tabs }: { cls: AdminClass | null; clas
   // Instructors only see their own sections (the username account sees all), so every listed student can be changed.
   const canEdit = useCanChange();
   const classOf = (r: AdminStudentRow) => classes.find((c) => c.id === r.classId) ?? null;
+  const manager = useIsManager();
 
   /** Row ⋯ menu: Withdraw / Reactivate and Delete / anonymize. Moving to another section is in the Actions panel (click the row). */
   const rowMenu = (r: AdminStudentRow, k: string): MenuItem[] => [
@@ -207,7 +209,8 @@ function StudentsForClass({ cls, classes, tabs }: { cls: AdminClass | null; clas
 
       {tabs}
 
-      {cls && <UnassignedStudents cls={cls} onEnrolled={invalidate} />}
+      {/* students in no section are placed by the username account only */}
+      {cls && manager && <UnassignedStudents cls={cls} onEnrolled={invalidate} />}
 
       <div className="grid items-start gap-[25px] xl:grid-cols-[minmax(0,1fr)_339px]">
         <Card className="min-w-0 px-[19px] pb-[15px] pt-[17px]">

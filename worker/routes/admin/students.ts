@@ -9,7 +9,7 @@ import {
 import { auditStmt, nowIso, queryAll, queryFirst, stmt, type SqlValue } from "../../db";
 import { envAdminEmails, sessionKey, type AppEnv } from "../../env";
 import { anonymizedIdentityHashes } from "../../identityHash";
-import { badRequest, conflict, idParam, notFound, readBody } from "../../http";
+import { badRequest, conflict, forbidden, idParam, notFound, readBody } from "../../http";
 import {
   ENROLLMENT_ROW_SELECT,
   assertOwner,
@@ -20,6 +20,7 @@ import {
   loadStudentRow,
   toStudentRow,
   type EnrollmentRowFull,
+  isEmergencyAdmin,
 } from "./common";
 
 export const studentAdminRoutes = new Hono<AppEnv>();
@@ -86,6 +87,8 @@ studentAdminRoutes.get("/students", async (c) => {
  * Students with only withdrawn enrollments are not listed — they can't sign in until reactivated.
  */
 studentAdminRoutes.get("/students/unassigned", async (c) => {
+  // Students in no section belong to nobody yet, so only the username (emergency) account sees and places them.
+  if (!isEmergencyAdmin(c.get("admin"))) throw forbidden("Only the admin username account can see students who are in no class.", "not_manager");
   const rows = await queryAll<{
     id: number;
     student_code: string;

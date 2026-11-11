@@ -90,6 +90,7 @@ public/images/            logo.png, login-hero-{desktop,tablet,phone}-*.webp, me
 | POST | `/api/auth/logout` | clears cookie |
 | GET | `/api/me` | `Me` or 401 |
 | PATCH | `/api/me` | student only, body `updateMeBody` |
+| POST | `/api/me/join` · `/api/me/leave` | student joins a section by join code / leaves the current one (joined by mistake; refused with 409 `has_attempts` once a test was started there) → `Me` |
 
 ### Student
 | Method | Path | Notes |
@@ -108,6 +109,7 @@ public/images/            logo.png, login-hero-{desktop,tablet,phone}-*.webp, me
 | PATCH/DELETE | `/api/admin/classes/:id` | `updateClassBody` (new join code, turn roster-only off) / delete the section (owner only) |
 | POST | `/api/admin/classes/:id/owner` | username account only: hand a section to an instructor (`setOwnerBody`) — renamed with their short name |
 | GET | `/api/admin/students` | `?classId=&status=active|withdrawn|all&q=` → `AdminStudentRow[]` (no classId = all your active sections; someone else's section → 404) |
+| GET | `/api/admin/students/unassigned` | username account only: signed-in students in no section |
 | PATCH | `/api/admin/enrollments/:id` | `setEnrollmentStatusBody` (withdraw / reactivate) |
 | POST | `/api/admin/enrollments/:id/move` | `moveEnrollmentBody` (attempts move with the enrollment) |
 | POST | `/api/admin/students/:id/anonymize` | clears code/e-mail/name, keeps scores |
@@ -119,6 +121,7 @@ public/images/            logo.png, login-hero-{desktop,tablet,phone}-*.webp, me
 | PUT/DELETE | `/api/admin/tests/:id/assignments/:classId` | body `assignmentSettings` / unassign (409 if attempts exist) |
 | GET | `/api/admin/results` | `?classId=&testIds=1,2` → `AdminResults` (Excel export is built in the browser from `rows`) |
 | GET/POST/DELETE | `/api/admin/admins` · `/api/admin/admins/:id` | `AdminUser[]` / `addAdminBody` — username (emergency) account only |
+| GET | `/api/admin/usage` | username account only: database size (Settings → Storage) |
 | GET | `/api/admin/audit` | `?limit=50` → the signed-in admin's own `AuditEntry[]`, with names looked up (`names`) |
 
 Every admin mutation writes an `audit_log` row.

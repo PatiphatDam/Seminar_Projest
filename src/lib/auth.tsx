@@ -48,6 +48,18 @@ export function useJoinClass() {
   });
 }
 
+/** Leave the current section (joined by mistake). The server refuses once a test was started there. */
+export function useLeaveClass() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<Me>("/me/leave", {}),
+    onSuccess: (next) => {
+      qc.setQueryData(meKey, next);
+      void qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== meKey[0] && q.queryKey[0] !== "config" });
+    },
+  });
+}
+
 const JOIN_KEY = "dm_join_code";
 
 /** Join code from a section QR (/join/:code) is kept until login succeeds. */

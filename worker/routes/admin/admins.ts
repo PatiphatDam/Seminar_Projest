@@ -69,8 +69,11 @@ adminUserRoutes.delete("/admins/:id", async (c) => {
   return c.json({ ok: true as const });
 });
 
-/** Admin → Settings → Storage: database size against the Free-plan limit and rough row counts. */
-adminUserRoutes.get("/usage", async (c) => c.json(await usage(c.env.DB)));
+/** Settings → Storage (username account only): database size against the Free-plan limit and rough row counts. */
+adminUserRoutes.get("/usage", async (c) => {
+  assertManager(c.get("admin"));
+  return c.json(await usage(c.env.DB));
+});
 
 /** Settings → "My recent changes": the signed-in instructor's own entries. */
 adminUserRoutes.get("/audit", async (c) => {

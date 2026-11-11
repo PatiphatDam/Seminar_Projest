@@ -16,16 +16,16 @@ import { loginMethodStore } from "@/components/admin/session";
 
 export default function Settings() {
   const me = useMe().data;
-  // Only the username (emergency) account manages instructors; everyone else sees just their own account.
+  // Only the username (emergency) account manages instructors and storage; everyone else sees just their own account.
   const manager = me?.role === "admin" && me.admin.email.startsWith("local:");
   return (
     <>
-      <PageHeader title="Settings" subtitle="Your account, storage space and the changes you made." />
+      <PageHeader title="Settings" subtitle={manager ? "Instructors, storage space and the changes you made." : "Your account and the changes you made."} />
       <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="space-y-6">
           <MyAccountCard />
           {manager && <AdminsCard />}
-          <StorageCard />
+          {manager && <StorageCard />}
         </div>
         <ActivityCard />
       </div>

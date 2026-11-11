@@ -4,7 +4,7 @@ import type { StudentStatus } from "@shared/contract";
 import { cx } from "@/components/ui";
 import { useStudentMe } from "@/components/student/RequireStudent";
 import { describeAuthError, joinNoticeStore } from "@/components/student/authHelpers";
-import { useJoinClass } from "@/lib/auth";
+import { useJoinClass, useLeaveClass } from "@/lib/auth";
 import { TOPICS } from "@/content/lessons";
 import { useStudentStatus } from "@/components/student/queries";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
@@ -43,6 +43,7 @@ export default function Home() {
         <p className="mt-1 text-[13px] leading-[18px] text-muted md:mt-1.5 md:text-[15px] md:leading-[22px] lg:mt-2.5 lg:text-[16px] lg:leading-6">
           {me.student.studentCode}
           {me.enrollment && ` · ${sectionLabel(me.enrollment.className)}`}
+          {enrolled && me.enrollment && <LeaveClass className={me.enrollment.className} onLeft={setNotice} />}
         </p>
       </div>
 
@@ -163,6 +164,53 @@ function JoinCodeForm({ onJoined }: { onJoined: (notice: string | undefined) => 
       </button>
       {join.isError && <p className="w-full text-[13px] font-medium text-red-700">{describeAuthError(join.error)}</p>}
     </form>
+  );
+}
+
+/** "Leave class" next to the section name, for a student who joined the wrong section; asks once before leaving. */
+function LeaveClass({ className, onLeft }: { className: string; onLeft: (notice: string | undefined) => void }) {
+  const leave = useLeaveClass();
+  const [asking, setAsking] = useState(false);
+  if (!asking)
+    return (
+      <>
+        {" · "}
+        <button type="button" onClick={() => setAsking(true)} className="font-semibold text-ink underline-offset-2 hover:underline">
+          Wrong class? Leave
+        </button>
+      </>
+    );
+  return (
+    <span className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-[13px] text-amber-900">
+      <span>Leave {sectionLabel(className)}? You can then scan the right section&apos;s QR code.</span>
+      <button
+        type="button"
+        disabled={leave.isPending}
+        onClick={() =>
+          leave.mutate(undefined, {
+            onSuccess: (next) => {
+              setAsking(false);
+              if (next.role === "student") onLeft(next.joinNotice);
+            },
+          })
+        }
+        className="h-8 rounded-lg bg-ink px-3 text-[13px] font-semibold text-on-ink hover:bg-zinc-700 disabled:opacity-50"
+      >
+        {leave.isPending ? "Leaving…" : "Yes, leave"}
+      </button>
+      <button
+        type="button"
+        disabled={leave.isPending}
+        onClick={() => {
+          setAsking(false);
+          leave.reset();
+        }}
+        className="h-8 rounded-lg px-3 text-[13px] font-semibold hover:bg-amber-100"
+      >
+        Cancel
+      </button>
+      {leave.isError && <span className="w-full font-medium text-red-700">{describeAuthError(leave.error)}</span>}
+    </span>
   );
 }
 
