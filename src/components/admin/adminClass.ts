@@ -4,10 +4,10 @@ import type { AdminClass } from "@shared/contract";
 export const ADMIN_CLASS_KEY = "dm_admin_class";
 
 export interface AdminClassState {
-  /** Active classes (sidebar selector source). Empty while loading or when there are none. */
+  /** Active classes of every instructor. Empty while loading or when there are none. */
   classes: AdminClass[];
   loading: boolean;
-  /** Current class id (persisted in localStorage), null when there are no active classes. */
+  /** Last section the instructor picked on a page (persisted in localStorage) — the default section of the next page. */
   classId: number | null;
   currentClass: AdminClass | null;
   setClassId: (id: number | null) => void;
@@ -15,7 +15,7 @@ export interface AdminClassState {
 
 export const AdminClassContext = createContext<AdminClassState | null>(null);
 
-/** Current class chosen in the admin sidebar. Pages use it as the default for their filters. */
+/** The admin's active classes and the remembered section. Pages use it as the default for their own section pickers. */
 export function useAdminClass(): AdminClassState {
   const ctx = useContext(AdminClassContext);
   if (!ctx) throw new Error("useAdminClass must be used inside AdminLayout");

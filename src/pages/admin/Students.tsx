@@ -1,38 +1,34 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AdminClass, AdminStudentRow, UnassignedStudent } from "@shared/contract";
 import { api } from "@/lib/api";
 import { Button, Card, cx, EmptyState, ErrorNote, PageHeader, PageLoader, Spinner } from "@/components/ui";
 import { useAdminClass } from "@/components/admin/adminClass";
-import { FilterPills, QueryError, SearchBox, StatusChip } from "@/components/admin/controls";
-import { ownerNote, useCanChange } from "@/components/admin/ownership";
-import { MAX_ROSTER_ENTRIES, parseRosterCsv, type RosterParseResult } from "@/components/admin/csv";
+import { FilterPills, FilterSelect, QueryError, SearchBox } from "@/components/admin/controls";
+import { useCanChange } from "@/components/admin/ownership";
+import { useIsManager } from "@/components/admin/OwnerPicker";
 import { exportWholeClass } from "@/components/admin/exportResults";
 import { findOtherEnrollments } from "@/components/admin/students";
 import { errorMessage, formatDateTime } from "@/components/admin/format";
 import { adminKeys } from "@/components/admin/keys";
 import { LiveIndicator, isRecentJoin, useLiveInterval } from "@/components/admin/live";
-import { RowMenu } from "@/components/admin/Menu";
+import { RowMenu, type MenuItem } from "@/components/admin/Menu";
 import { ConfirmDialog, Modal } from "@/components/admin/Modal";
 import { useToast } from "@/components/admin/toastContext";
 
-// The section comes from the sidebar's "Current class" (Figma has no class picker on this page).
-type Filter = "active" | "withdrawn" | "not_joined" | "all";
+// Class dropdown at the top of the page (every active section + "All sections"); the last pick is remembered.
+type Section = number | "all";
+type Filter = "active" | "withdrawn";
 
-const rowKey = (r: AdminStudentRow) => (r.enrollmentId !== null ? `e${r.enrollmentId}` : `r${r.studentCode}`);
-
-function StatusBadge({ status }: { status: AdminStudentRow["status"] }) {
-  if (status === "active") return <StatusChip tone="success">Active</StatusChip>;
-  if (status === "withdrawn") return <StatusChip tone="neutral">Withdrawn</StatusChip>;
-  return <StatusChip tone="neutral">Not joined</StatusChip>;
-}
+const rowKey = (r: AdminStudentRow) => `e${r.enrollmentId}`;
 
 export default function Students() {
-  const { classes, classId, currentClass, loading } = useAdminClass();
+  const { classes, classId, setClassId, loading } = useAdminClass();
+  const [picked, setPicked] = useState<Section | null>(null);
 
   if (loading) return <PageLoader />;
-  if (!classId || !currentClass)
+  if (classes.length === 0)
     return (
       <>
         <PageHeader title="Students" />
@@ -41,37 +37,97 @@ export default function Students() {
         </EmptyState>
       </>
     );
-  return <StudentsForClass key={classId} cls={currentClass} classes={classes} />;
+  const sorted = [...classes].sort((a, b) => b.academicYear - a.academicYear || b.semester - a.semester || a.section - b.section);
+  // a picked or remembered section that has since been deleted falls back to "All sections"
+  const exists = (id: Section | null) => id === "all" || (id !== null && classes.some((c) => c.id === id));
+  const section: Section = exists(picked) ? (picked as Section) : exists(classId) ? (classId as number) : "all";
+  const choose = (next: Section) => {
+    setPicked(next);
+    if (next !== "all") setClassId(next);
+  };
+  const cls = section === "all" ? null : (classes.find((c) => c.id === section) ?? null);
+  return (
+    <StudentsForClass
+      key={String(section)}
+      cls={cls}
+      classes={sorted}
+      tabs={<SectionSelect classes={sorted} value={section} onChange={choose} />}
+    />
+  );
 }
 
-function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminClass[] }) {
+/** Same dropdown as Results → Class, with each section's number of active students. */
+function SectionSelect({ classes, value, onChange }: { classes: AdminClass[]; value: Section; onChange: (s: Section) => void }) {
+  const total = classes.reduce((n, c) => n + c.studentCount, 0);
+  const current = value === "all" ? null : classes.find((c) => c.id === value);
+  return (
+    <div className="mb-[25px]">
+      <FilterSelect
+        label="Class"
+        value={String(value)}
+        onChange={(v) => onChange(v === "all" ? "all" : Number(v))}
+        display={current ? `${current.name} (${current.studentCount})` : `All sections (${total})`}
+        className="w-full sm:w-[340px]"
+      >
+        <option value="all">All sections ({total})</option>
+        <optgroup label="Active">
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name} ({c.studentCount})
+            </option>
+          ))}
+        </optgroup>
+      </FilterSelect>
+    </div>
+  );
+}
+
+/** `cls` null = every section at once (adds a Section column; "add to this section" needs one section). */
+function StudentsForClass({ cls, classes, tabs }: { cls: AdminClass | null; classes: AdminClass[]; tabs: ReactNode }) {
   const qc = useQueryClient();
   const toast = useToast();
   const q = useQuery({
-    queryKey: adminKeys.students(cls.id, "all"),
-    queryFn: () => api.get<AdminStudentRow[]>(`/admin/students?${new URLSearchParams({ classId: String(cls.id), status: "all" })}`),
+    queryKey: adminKeys.students(cls?.id ?? "all", "all"),
+    queryFn: () => api.get<AdminStudentRow[]>(`/admin/students?${new URLSearchParams({ ...(cls ? { classId: String(cls.id) } : {}), status: "all" })}`),
     // Live during class: students appear here a few seconds after they scan the section's QR code and sign in.
     refetchInterval: useLiveInterval(),
   });
   const [filter, setFilter] = useState<Filter>("active");
   const [search, setSearch] = useState("");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
   const [exported, setExported] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [danger, setDanger] = useState<null | "anonymize" | "delete">(null);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [checkingDelete, setCheckingDelete] = useState(false);
   const [deleteBlockedBy, setDeleteBlockedBy] = useState<AdminStudentRow[] | null>(null);
+  // Instructors only see their own sections (the username account sees all), so every listed student can be changed.
   const canEdit = useCanChange();
-  const mine = canEdit(cls.ownerEmail); // decision A: other instructors' sections are view-only
+  const classOf = (r: AdminStudentRow) => classes.find((c) => c.id === r.classId) ?? null;
+  const manager = useIsManager();
+
+  /** Row ⋯ menu: Withdraw / Reactivate and Delete / anonymize. Moving to another section is in the Actions panel (click the row). */
+  const rowMenu = (r: AdminStudentRow, k: string): MenuItem[] => [
+    r.status === "withdrawn"
+      ? { label: "Reactivate", onSelect: () => setStatus.mutate({ r, status: "active" }) }
+      : { label: "Withdraw", onSelect: () => setStatus.mutate({ r, status: "withdrawn" }) },
+    {
+      label: "Delete / anonymize…",
+      danger: true,
+      disabled: r.studentId === null,
+      onSelect: () => {
+        setSelectedKey(k);
+        setRemoveOpen(true);
+      },
+    },
+  ];
 
   /** Delete wipes attempts in every section, but the export covers only this one → block when enrolled elsewhere. */
   async function requestDelete(r: AdminStudentRow) {
     if (r.studentId === null) return;
     setCheckingDelete(true);
     try {
-      const others = await findOtherEnrollments({ studentId: r.studentId, studentCode: r.studentCode }, cls.id);
+      const others = await findOtherEnrollments({ studentId: r.studentId, studentCode: r.studentCode }, r.classId);
       if (others.length > 0) setDeleteBlockedBy(others);
       else setDanger("delete");
     } catch (e) {
@@ -83,18 +139,20 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
 
   const all = useMemo(() => q.data ?? [], [q.data]);
   const counts = useMemo(() => {
-    const c: Record<Filter, number> = { active: 0, withdrawn: 0, not_joined: 0, all: all.length };
-    for (const r of all) c[r.status]++;
+    const c: Record<Filter, number> = { active: 0, withdrawn: 0 };
+    for (const r of all) if (r.status === "active" || r.status === "withdrawn") c[r.status]++;
     return c;
   }, [all]);
   const rows = useMemo(() => {
     const term = search.trim().toLowerCase();
     return all
-      .filter((r) => filter === "all" || r.status === filter)
+      .filter((r) => r.status === filter)
       .filter((r) => !term || r.studentCode.includes(term) || (r.firstName ?? "").toLowerCase().includes(term) || (r.email ?? "").toLowerCase().includes(term))
-      .sort((a, b) => a.studentCode.localeCompare(b.studentCode));
-  }, [all, filter, search]);
+      .sort((a, b) => (cls ? 0 : a.className.localeCompare(b.className)) || a.studentCode.localeCompare(b.studentCode));
+  }, [all, filter, search, cls]);
   const selected = all.find((r) => rowKey(r) === selectedKey) ?? null;
+  // The selected student's section: the page's section, or the row's own one on "All sections"
+  const selectedCls = selected ? classOf(selected) : cls;
 
   const invalidate = () => {
     void qc.invalidateQueries({ queryKey: adminKeys.studentsRoot });
@@ -125,7 +183,8 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
   async function onExport() {
     setExporting(true);
     try {
-      const name = await exportWholeClass(cls.id, cls.name);
+      if (!selectedCls) return;
+      const name = await exportWholeClass(selectedCls.id, selectedCls.name);
       setExported(true);
       toast.show(name ? `Exported ${name}` : "No tests are assigned to this class, so there are no scores to export.", "success");
     } catch (e) {
@@ -139,29 +198,19 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
   const pills: { value: Filter; label: string }[] = [
     { value: "active", label: `Active (${counts.active})` },
     { value: "withdrawn", label: `Withdrawn (${withdrawn})` },
-    // Not in the Figma frame; only shown when roster students haven't joined yet so they stay reachable.
-    ...(counts.not_joined > 0 ? [{ value: "not_joined" as Filter, label: `Not joined (${counts.not_joined})` }] : []),
   ];
 
   return (
     <>
       <PageHeader
         title="Students"
-        subtitle={`${cls.name} · ${counts.active} active · ${withdrawn} withdrawn`}
-        actions={
-          mine && (
-            <button
-              type="button"
-              onClick={() => setImportOpen(true)}
-              className="h-[43px] whitespace-nowrap rounded-[11.5px] border border-line bg-surface px-5 text-[15px] font-semibold text-ink hover:bg-zinc-50"
-            >
-              Import roster (CSV)
-            </button>
-          )
-        }
+        subtitle={`${cls ? cls.name : `All sections (${classes.length})`} · ${counts.active} active · ${withdrawn} withdrawn`}
       />
 
-      {mine && <UnassignedStudents cls={cls} onEnrolled={invalidate} />}
+      {tabs}
+
+      {/* students in no section are placed by the username account only */}
+      {cls && manager && <UnassignedStudents cls={cls} onEnrolled={invalidate} />}
 
       <div className="grid items-start gap-[25px] xl:grid-cols-[minmax(0,1fr)_339px]">
         <Card className="min-w-0 px-[19px] pb-[15px] pt-[17px]">
@@ -181,7 +230,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             </div>
           ) : all.length === 0 ? (
             <div className="mt-4">
-              <EmptyState title="No students yet" action={mine ? <Button onClick={() => setImportOpen(true)}>Import roster (CSV)</Button> : undefined}>
+              <EmptyState title="No students yet">
                 Share the section’s QR code from <Link to="/admin/classes" className="underline">Classes</Link> — students appear here after they sign in.
               </EmptyState>
             </div>
@@ -189,12 +238,12 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             <p className="py-10 text-center text-sm text-muted">No students match.</p>
           ) : (
             <div className="relative -mx-[19px] mt-[28px] overflow-x-auto">
-              <table className="w-full min-w-[640px] table-fixed text-[14px]">
-                <caption className="sr-only">Students in {cls.name}</caption>
+              <table className={cx("w-full table-fixed text-[14px]", cls ? "min-w-[560px]" : "min-w-[740px]")}>
+                <caption className="sr-only">Students in {cls ? cls.name : "all sections"}</caption>
                 <colgroup>
                   <col className="w-[167px]" />
                   <col className="w-[167px]" />
-                  <col className="w-[199px]" />
+                  {!cls && <col className="w-[190px]" />}
                   <col />
                   <col className="w-[64px]" />
                 </colgroup>
@@ -202,8 +251,8 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
                   <tr className="text-left text-[12px] uppercase text-faint">
                     <th scope="col" className="pb-[14px] pl-5 font-semibold">Student ID</th>
                     <th scope="col" className="pb-[14px] font-semibold">First name</th>
+                    {!cls && <th scope="col" className="pb-[14px] font-semibold">Section</th>}
                     <th scope="col" className="pb-[14px] font-semibold">Joined via QR</th>
-                    <th scope="col" className="pb-[14px] font-semibold">Status</th>
                     <th scope="col" className="pb-[14px] pr-5">
                       <span className="sr-only">Actions</span>
                     </th>
@@ -229,6 +278,11 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
                       >
                         <td className="pl-5 tabular-nums">{r.studentCode}</td>
                         <td className="truncate pr-3">{r.firstName ?? <span className="text-faint">—</span>}</td>
+                        {!cls && (
+                          <td className="truncate pr-3 text-muted" title={r.className}>
+                            {r.className}
+                          </td>
+                        )}
                         <td className="tabular-nums" title={formatDateTime(r.joinedAt)}>
                           {joinedLabel(r.joinedAt)}
                           {isRecentJoin(r) && (
@@ -237,36 +291,11 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
                             </span>
                           )}
                         </td>
-                        <td>
-                          <StatusBadge status={r.status} />
-                        </td>
                         <td className="pr-5 text-right">
                           <RowMenu
                             label={`Actions for ${r.studentCode}`}
                             active={isSel}
-                            items={[
-                              { label: "Select", onSelect: () => setSelectedKey(k) },
-                              ...(!mine
-                                ? []
-                                : r.status === "active"
-                                ? [{ label: "Withdraw", onSelect: () => setStatus.mutate({ r, status: "withdrawn" }) }]
-                                : r.status === "withdrawn"
-                                  ? [{ label: "Reactivate", onSelect: () => setStatus.mutate({ r, status: "active" }) }]
-                                  : []),
-                              ...(mine && r.enrollmentId !== null ? [{ label: "Move to section…", onSelect: () => setSelectedKey(k) }] : []),
-                              ...(mine && r.studentId !== null
-                                ? [
-                                    {
-                                      label: "Delete / anonymize…",
-                                      danger: true,
-                                      onSelect: () => {
-                                        setSelectedKey(k);
-                                        setRemoveOpen(true);
-                                      },
-                                    },
-                                  ]
-                                : []),
-                            ]}
+                            items={rowMenu(r, k)}
                           />
                         </td>
                       </tr>
@@ -282,9 +311,8 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
           <StudentActions
             key={selected ? rowKey(selected) : "none"}
             r={selected}
-            cls={cls}
+            cls={selectedCls}
             classes={classes.filter((c) => canEdit(c.ownerEmail))}
-            readOnly={!mine}
             busy={setStatus.isPending}
             onStatus={(status) => selected && setStatus.mutate({ r: selected, status })}
             onMoved={() => {
@@ -352,7 +380,7 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
             Irreversible. <strong>Anonymize</strong> removes the ID, name and e-mail but keeps the scores; <strong>Delete</strong> removes the student and all their attempts.
           </p>
           <Button block variant={exported ? "outline" : "solid"} accent="success" loading={exporting} onClick={() => void onExport()}>
-            {exported ? "✓ Exported — export again" : `1 · Export ${cls.name} first`}
+            {exported ? "✓ Exported — export again" : `1 · Export ${selectedCls?.name ?? "the class"} first`}
           </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" disabled={!exported} onClick={() => setDanger("anonymize")} title={!exported ? "Export the class first" : undefined}>
@@ -394,11 +422,11 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
       >
         <div className="space-y-3 text-sm text-zinc-700">
           <p>
-            Deleting removes this student’s attempts in <strong>every</strong> section, but your export only covers {cls.name}. They’re also enrolled in:
+            Deleting removes this student’s attempts in <strong>every</strong> section, but your export only covers {selectedCls?.name ?? "one section"}. They’re also enrolled in:
           </p>
           <ul className="list-disc pl-5">
             {(deleteBlockedBy ?? []).map((r) => (
-              <li key={r.enrollmentId ?? r.classId}>
+              <li key={r.enrollmentId}>
                 {r.className} <span className="text-muted">({r.status === "active" ? "active" : "withdrawn"})</span>
               </li>
             ))}
@@ -407,7 +435,6 @@ function StudentsForClass({ cls, classes }: { cls: AdminClass; classes: AdminCla
         </div>
       </Modal>
 
-      <ImportRosterModal open={importOpen} onClose={() => setImportOpen(false)} cls={cls} onImported={invalidate} />
 
       {selected && (
         <ConfirmDialog
@@ -535,23 +562,22 @@ function StudentActions({
   r,
   cls,
   classes,
-  readOnly,
   busy,
   onStatus,
   onMoved,
 }: {
   r: AdminStudentRow | null;
-  cls: AdminClass;
+  /** The selected student's section (null on "All sections" while nobody is selected). */
+  cls: AdminClass | null;
   /** Sections the admin may move students into (their own). */
   classes: AdminClass[];
-  readOnly: boolean;
   busy: boolean;
   onStatus: (s: "active" | "withdrawn") => void;
   onMoved: () => void;
 }) {
   const toast = useToast();
   const moveSelectRef = useRef<HTMLSelectElement>(null);
-  const others = classes.filter((c) => c.id !== cls.id);
+  const others = classes.filter((c) => c.id !== cls?.id);
   const [target, setTarget] = useState<string>(others[0] ? String(others[0].id) : "");
   const move = useMutation({
     mutationFn: () => api.post<unknown>(`/admin/enrollments/${r?.enrollmentId}/move`, { classId: Number(target) }),
@@ -570,14 +596,8 @@ function StudentActions({
         {r ? `Actions · ${r.firstName ?? "No name"} (${r.studentCode})` : "Actions"}
       </h2>
 
-      {readOnly ? (
-        <p className="mt-3 rounded-[10px] bg-app p-3 text-[13px] text-muted">{ownerNote(cls.ownerEmail)}</p>
-      ) : !r ? (
+      {!r ? (
         <p className="mt-3 text-[13px] text-muted">Select a student in the table to move, withdraw or reactivate them.</p>
-      ) : r.enrollmentId === null ? (
-        <p className="mt-3 rounded-[10px] bg-app p-3 text-[13px] text-muted">
-          On the roster but hasn’t joined yet. They’ll appear as active after scanning this section’s QR code.
-        </p>
       ) : (
         <>
           <div className="mt-[14px] space-y-1">
@@ -637,139 +657,5 @@ function StudentActions({
         </>
       )}
     </section>
-  );
-}
-
-/* ───────────────────────── Roster import ───────────────────────── */
-
-function ImportRosterModal({ open, onClose, cls, onImported }: { open: boolean; onClose: () => void; cls: AdminClass; onImported: () => void }) {
-  const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [parsed, setParsed] = useState<RosterParseResult | null>(null);
-  const [readError, setReadError] = useState<string | null>(null);
-
-  const upload = useMutation({
-    mutationFn: (entries: RosterParseResult["entries"]) => api.post<unknown>(`/admin/classes/${cls.id}/roster`, { mode: "append", entries }),
-    onSuccess: (_d, entries) => {
-      toast.show(`Added ${entries.length} student${entries.length === 1 ? "" : "s"} to the ${cls.name} roster`, "success");
-      onImported();
-      close();
-    },
-  });
-
-  function close() {
-    setFileName(null);
-    setParsed(null);
-    setReadError(null);
-    upload.reset();
-    if (fileRef.current) fileRef.current.value = "";
-    onClose();
-  }
-
-  async function onFile(e: ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    setParsed(null);
-    setReadError(null);
-    upload.reset();
-    if (!f) return;
-    setFileName(f.name);
-    if (f.size > 2 * 1024 * 1024) {
-      setReadError("That file is larger than 2 MB — is it really a roster CSV?");
-      return;
-    }
-    try {
-      setParsed(parseRosterCsv(await f.text()));
-    } catch {
-      setReadError("Couldn’t read the file. Save it as CSV (UTF-8) and try again.");
-    }
-  }
-
-  const tooMany = (parsed?.entries.length ?? 0) > MAX_ROSTER_ENTRIES;
-
-  return (
-    <Modal
-      open={open}
-      onClose={close}
-      title="Import roster (CSV)"
-      description={`Adds students to the ${cls.name} roster (existing entries are kept).`}
-      busy={upload.isPending}
-      footer={
-        <>
-          <Button variant="outline" onClick={close} disabled={upload.isPending}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => parsed && upload.mutate(parsed.entries)}
-            loading={upload.isPending}
-            disabled={!parsed || parsed.entries.length === 0 || tooMany}
-          >
-            Add {parsed?.entries.length ?? 0} student{parsed?.entries.length === 1 ? "" : "s"}
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-4 text-sm">
-        <p className="text-muted">
-          Columns: <code className="rounded bg-zinc-100 px-1">student_code</code> (8–12 digits) and optional <code className="rounded bg-zinc-100 px-1">first_name</code>.
-          Headers like “Student ID” / “First name” work too.
-        </p>
-        <label className="block">
-          <span className="mb-1.5 block font-semibold">CSV file</span>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,text/csv,text/plain"
-            onChange={(e) => void onFile(e)}
-            className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-ink file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-          />
-        </label>
-        {readError && <ErrorNote>{readError}</ErrorNote>}
-        {parsed && (
-          <div className="rounded-xl border border-line p-4" aria-live="polite">
-            <p className="font-semibold">
-              {fileName}: {parsed.entries.length} valid student{parsed.entries.length === 1 ? "" : "s"}
-            </p>
-            <ul className="mt-1 space-y-0.5 text-xs text-muted">
-              {parsed.duplicates > 0 && <li>{parsed.duplicates} duplicate row(s) skipped</li>}
-              {parsed.invalid.length > 0 && (
-                <li className="text-danger">
-                  {parsed.invalid.length} row(s) without a valid student ID skipped (e.g. line {parsed.invalid[0].line}: “{parsed.invalid[0].value.slice(0, 40)}”)
-                </li>
-              )}
-              {!parsed.headerDetected && <li>No header row detected — using column 1 as student ID and column 2 as first name.</li>}
-            </ul>
-            {parsed.entries.length > 0 && (
-              <table className="mt-3 w-full text-xs">
-                <caption className="sr-only">Preview of the first rows</caption>
-                <thead>
-                  <tr className="text-left text-muted">
-                    <th scope="col" className="py-1 font-semibold">Student ID</th>
-                    <th scope="col" className="py-1 font-semibold">First name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsed.entries.slice(0, 5).map((e) => (
-                    <tr key={e.studentCode} className="border-t border-line">
-                      <td className="py-1 font-mono">{e.studentCode}</td>
-                      <td className="py-1">{e.firstName ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-            {tooMany && <p className="mt-2 text-xs text-danger">A roster can have at most {MAX_ROSTER_ENTRIES} students per upload.</p>}
-          </div>
-        )}
-        <p className="rounded-xl bg-app p-3 text-xs text-muted">
-          To let <em>only</em> these students join, turn on “Only students on the roster can join” for this class in{" "}
-          <Link to="/admin/classes" className="underline">
-            Classes → Edit
-          </Link>
-          . It’s currently <strong>{cls.restrictToRoster ? "on" : "off"}</strong>.
-        </p>
-        {upload.isError && <ErrorNote>{errorMessage(upload.error)}</ErrorNote>}
-      </div>
-    </Modal>
   );
 }

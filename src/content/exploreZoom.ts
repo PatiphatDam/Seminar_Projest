@@ -9,7 +9,7 @@
  * `anchor` = node name in the level's .glb (mesh → bounding box, empty → its position); code-built scenes place
  * their own markers by hotspot id. `meshes` = meshes that select the hotspot when tapped.
  */
-import { BANDS, partById, type PartId } from "./explore";
+import { BANDS, partById, SARCOMERE_VIDEO_NOTES, type PartId, type VideoNote } from "./explore";
 
 export type LevelId =
   // skeletal
@@ -42,10 +42,17 @@ export type Hotspot = {
   points: string[];
   /** Statements from the team document that the lecture sheet does not state — shown with an "awaiting review" badge. */
   pending?: string[];
+  /** Supplementary points from the sarcomere-page videos, shown in a separate "From the video" box. */
+  video?: VideoNote[];
   lesson: { slug: string; label: string };
   anchor: string;
   /** Where on a mesh anchor the marker sits, as a fraction of its bounding box (default: centre of the front face). */
   at?: [number, number, number];
+  /**
+   * Put the dot on the outer edge of the part as seen in the opening view (left or right silhouette), at the height
+   * `at[1]` — the leader then points at the part from outside the model.
+   */
+  edge?: "left" | "right";
   meshes?: string[];
   /** Tapping "Zoom in" here goes to this level. */
   zoomTo?: LevelId;
@@ -94,6 +101,7 @@ const band = (id: "aband" | "iband" | "hzone", anchor: string, meshes?: string[]
   group: "Band",
   points: [...BANDS[id].points, `During contraction: ${BANDS[id].change.toLowerCase()}`],
   lesson: { slug: "sarcomere-and-myofilaments", label: "Myofilaments and the sarcomere" },
+  video: BANDS[id].video,
   anchor,
   meshes,
 });
@@ -101,7 +109,7 @@ const band = (id: "aband" | "iband" | "hzone", anchor: string, meshes?: string[]
 /** Sarcomere / myofilament hotspots reuse the part texts of the interactive sarcomere page. */
 const part = (id: PartId, anchor: string, mesh?: string, extra: Partial<Hotspot> = {}): Hotspot => {
   const p = partById(id);
-  return { id, name: p.name, group: p.group, points: p.points, lesson: p.lesson, anchor, meshes: mesh ? [mesh] : undefined, link: INTERACTIVE, ...extra };
+  return { id, name: p.name, group: p.group, points: p.points, video: p.video, lesson: p.lesson, anchor, meshes: mesh ? [mesh] : undefined, link: INTERACTIVE, ...extra };
 };
 
 export const LEVELS: ZoomLevel[] = [
@@ -126,7 +134,8 @@ export const LEVELS: ZoomLevel[] = [
         ],
         lesson: TISSUE,
         anchor: "Epimysium",
-        at: [0.4, 0.35, 1],
+        at: [0.5, 0.42, 1],
+        edge: "right",
         meshes: ["Epimysium"],
       },
       {
@@ -140,7 +149,8 @@ export const LEVELS: ZoomLevel[] = [
         ],
         lesson: TISSUE,
         anchor: "Long head of biceps brachii",
-        at: [0.5, 0.6, 1],
+        at: [0.5, 0.62, 1],
+        edge: "right",
         meshes: ["Long head of biceps brachii", "Short head of biceps brachii"],
         zoomTo: "fascicle",
       },
@@ -355,6 +365,7 @@ export const LEVELS: ZoomLevel[] = [
         name: "A band (dark)",
         group: "Band",
         points: ["The whole length of the thick filaments, including where thick and thin filaments overlap."],
+        video: BANDS.aband.video,
         lesson: SARCOMERE,
         anchor: "hs_aband",
         meshes: ["Thick filaments"],
@@ -364,6 +375,7 @@ export const LEVELS: ZoomLevel[] = [
         name: "I band (light)",
         group: "Band",
         points: ["Thin filaments only, with no thick filaments; a Z disc runs through about its centre."],
+        video: BANDS.iband.video,
         lesson: SARCOMERE,
         anchor: "hs_iband",
         meshes: ["Thin filaments"],
@@ -373,6 +385,7 @@ export const LEVELS: ZoomLevel[] = [
         name: "Z disc",
         group: "Sarcomere boundary",
         points: ["Marks the boundary between neighbouring sarcomeres.", "Thin filaments are anchored here."],
+        video: partById("zdisc").video,
         lesson: SARCOMERE,
         anchor: "hs_zdisc",
         meshes: ["Z discs"],
@@ -382,6 +395,7 @@ export const LEVELS: ZoomLevel[] = [
         name: "Sarcomere",
         group: "Repeating unit",
         points: ["One sarcomere extends from one Z disc to the next Z disc."],
+        video: SARCOMERE_VIDEO_NOTES,
         lesson: SARCOMERE,
         anchor: "hs_sarcomere",
         zoomTo: "sarcomere",
@@ -429,6 +443,7 @@ export const LEVELS: ZoomLevel[] = [
           "Its globular heads bind actin, change position and pull the thin filament toward the centre of the sarcomere (power stroke).",
           "Heads repeatedly attach, generate force, detach and repeat while Ca²⁺ and ATP are available.",
         ],
+        video: partById("myosin").video,
         lesson: CONTRACTION,
         anchor: "hs_myosin",
         meshes: ["Myosin head", "Thick filament"],
@@ -695,6 +710,7 @@ export const LEVELS: ZoomLevel[] = [
         name: "Z disc",
         group: "Sarcomere boundary",
         points: ["Marks the boundary between neighbouring sarcomeres.", "Thin filaments are anchored here."],
+        video: partById("zdisc").video,
         lesson: SARCOMERE,
         anchor: "hs_zdisc",
         meshes: ["Z discs"],

@@ -12,6 +12,7 @@ import { Timeline } from "./anim/timeline";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
 import { backState } from "./shared/backLink";
 import { WebGLHelp } from "./shared/WebGLHelp";
+import { VideoNotes } from "./shared/VideoNotes";
 
 // three.js + R3F + the model loader live in their own chunk.
 const ZoomScene = lazy(() => import("./zoom/ZoomScene"));
@@ -480,6 +481,7 @@ function Details({
           </ul>
         </div>
       )}
+      <VideoNotes notes={hotspot.video} />
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
         {hotspot.zoomTo && (
           <button

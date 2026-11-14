@@ -36,7 +36,7 @@ import {
 } from "../env";
 import { verifyPassword } from "../password";
 import { normalizeJoinCode } from "../grading";
-import { HttpError, forbidden, readBody, unauthenticated } from "../http";
+import { HttpError, badRequest, conflict, forbidden, readBody, unauthenticated } from "../http";
 import { domainsLabel, parseStudentEmail } from "../identity";
 
 export const publicRoutes = new Hono<AppEnv>();
@@ -308,6 +308,42 @@ publicRoutes.post("/me/join", requireStudent, async (c) => {
   const load = await loadStudent(db, s.id);
   if (load.kind !== "ok") throw unauthenticated("This account can no longer sign in.");
   return c.json<Me>(toStudentMe(load.student, joinNotice));
+});
+
+/**
+ * A student leaves the section they joined by mistake, then scans the right QR. Only while they haven't started a test
+ * there — scores are never lost; after that the instructor moves them (Students → Move to another section).
+ */
+publicRoutes.post("/me/leave", requireStudent, async (c) => {
+  const s = c.get("student");
+  const db = c.env.DB;
+  const before = await loadStudent(db, s.id);
+  if (before.kind !== "ok") throw unauthenticated("This account can no longer sign in.");
+  const enr = before.student.enrollment;
+  if (!enr) throw badRequest("You are not in a class.");
+  if (await queryFirst(db, "SELECT 1 AS one FROM attempts WHERE enrollment_id = ? LIMIT 1", enr.id)) {
+    throw conflict(
+      `You have already started a test in ${enr.className}, so you can't leave it yourself. Ask your instructor to move you to the right section.`,
+      "has_attempts",
+    );
+  }
+  // With only withdrawn sections left the student would count as withdrawn and be locked out of signing in.
+  const others = await queryFirst<{ active: number; total: number }>(
+    db,
+    "SELECT COALESCE(SUM(status = 'active'), 0) AS active, COUNT(*) AS total FROM enrollments WHERE student_id = ? AND id <> ?",
+    s.id,
+    enr.id,
+  );
+  if (others && others.total > 0 && others.active === 0) {
+    throw conflict("You can't leave this class yourself. Ask your instructor to move you to the right section.", "would_lock_out");
+  }
+  await db.batch([
+    stmt(db, "DELETE FROM enrollment_progress WHERE enrollment_id = ?", enr.id),
+    stmt(db, "DELETE FROM enrollments WHERE id = ? AND student_id = ?", enr.id, s.id),
+  ]);
+  const load = await loadStudent(db, s.id);
+  if (load.kind !== "ok") throw unauthenticated("This account can no longer sign in.");
+  return c.json<Me>(toStudentMe(load.student, `You left ${enr.className}. Scan your section's QR code or type its join code to join the right class.`));
 });
 
 publicRoutes.patch("/me", requireStudent, async (c) => {

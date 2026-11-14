@@ -1,7 +1,7 @@
 # เปิดใช้ "Sign in with Google" (Google OAuth Client ID)
 
 > ✅ **ตั้งค่าแล้ว (8 ต.ค. 2026):** Google Cloud project `digital-muscle-510921` (บัญชี arumaosogi@gmail.com) · consent screen External · **In production**
-> Client ID `802030159205-1tm8v14uihqi060us1iinnrh8iop9se3.apps.googleusercontent.com` · origins: เว็บจริง, `http://localhost:5173`, `http://localhost`
+> Client ID `802030159205-1tm8v14uihqi060us1iinnrh8iop9se3.apps.googleusercontent.com` · origins: เว็บจริง + ลิงก์ทดสอบ (`*.medicsync.workers.dev`; ชื่อบัญชี workers.dev เปลี่ยนจาก arumaosogi เป็น medicsync เมื่อ 10 พ.ย. 2026), `http://localhost:5173`, `http://localhost`
 > โดเมนที่รับ: `ALLOWED_STUDENT_DOMAIN=lamduan.mfu.ac.th,mfu.ac.th` · ขั้นตอนด้านล่างเก็บไว้เผื่อต้องสร้างใหม่
 
 ระบบตรวจ Google ID token ที่ฝั่ง Worker และรับเฉพาะบัญชีที่ `hd = lamduan.mfu.ac.th` (นักศึกษา)
@@ -20,7 +20,8 @@
    - Application type: **Web application** · Name: `Digital Muscle web`
    - **Authorized JavaScript origins** (ใส่ทั้งสองบรรทัด):
      - `http://localhost:5173`
-     - `https://digital-muscle.arumaosogi.workers.dev`
+     - `https://digital-muscle.medicsync.workers.dev`
+     - `https://test-digital-muscle.medicsync.workers.dev` (ลิงก์ทดสอบ `wrangler versions upload --preview-alias test`)
    - Authorized redirect URIs: **ไม่ต้องใส่**
    - กด Create → คัดลอก **Client ID** (หน้าตาแบบ `1234567890-xxxx.apps.googleusercontent.com`)
 

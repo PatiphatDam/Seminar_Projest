@@ -85,9 +85,9 @@ export async function loadClassBasics(db: D1Database, id: number): Promise<Class
 }
 
 /**
- * Decision A (docs/ARCHITECTURE.md §7.1): instructors change only what they created; everything stays viewable.
- * The username/password account is the emergency account and may change anything (e.g. an instructor has left).
- * Items without an owner (made before owners were recorded) can only be changed by the emergency account.
+ * Private by owner (docs/ARCHITECTURE.md §7.1): an instructor sees and changes only the sections and tests they created.
+ * The username/password account is the emergency account: it sees and changes everything and can hand an item to an
+ * instructor (e.g. one made before owners were recorded, or one whose instructor has left).
  */
 export const isEmergencyAdmin = (admin: Pick<AdminContext, "email">) => admin.email.startsWith(LOCAL_ADMIN_PREFIX);
 
@@ -108,10 +108,15 @@ export function ownerLabel(admin: Pick<AdminContext, "email" | "name">): string 
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : admin.email;
 }
 
-/** SQL filter (alias c) for an admin's class scope: their own classes plus legacy classes without an owner. */
-export function scopeWhere(scope: string | undefined, adminEmail: string): { sql: string; params: string[] } {
-  if (scope === "all") return { sql: "1 = 1", params: [] };
-  return { sql: "(c.owner_email = ? OR c.owner_email IS NULL)", params: [adminEmail] };
+/** SQL filter (alias c): the sections this admin may see — their own, or all of them for the emergency account. */
+export function ownedClasses(admin: Pick<AdminContext, "email">): { sql: string; params: string[] } {
+  if (isEmergencyAdmin(admin)) return { sql: "1 = 1", params: [] };
+  return { sql: "c.owner_email = ?", params: [admin.email] };
+}
+
+/** Someone else's section answers 404, as if it didn't exist. */
+export function assertVisibleClass(cls: { owner_email: string | null }, admin: Pick<AdminContext, "email">): void {
+  if (!canChange(cls.owner_email, admin)) throw notFound("Class not found.");
 }
 
 /** Archived classes are read-only (docs/plan/02 §8 level 2). */

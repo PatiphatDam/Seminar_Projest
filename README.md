@@ -80,7 +80,7 @@ src/                  React app
 
 ## ☁️ Deploy ขึ้น Cloudflare
 
-เว็บจริง: **https://digital-muscle.arumaosogi.workers.dev**
+เว็บจริง: **https://digital-muscle.medicsync.workers.dev**
 
 ```bash
 npx wrangler login

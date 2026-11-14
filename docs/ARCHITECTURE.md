@@ -90,6 +90,7 @@ public/images/            logo.png, login-hero-{desktop,tablet,phone}-*.webp, me
 | POST | `/api/auth/logout` | clears cookie |
 | GET | `/api/me` | `Me` or 401 |
 | PATCH | `/api/me` | student only, body `updateMeBody` |
+| POST | `/api/me/join` · `/api/me/leave` | student joins a section by join code / leaves the current one (joined by mistake; refused with 409 `has_attempts` once a test was started there) → `Me` |
 
 ### Student
 | Method | Path | Notes |
@@ -104,22 +105,24 @@ public/images/            logo.png, login-hero-{desktop,tablet,phone}-*.webp, me
 ### Admin (all require admin session)
 | Method | Path | Notes |
 |---|---|---|
-| GET/POST | `/api/admin/classes` | list `AdminClass[]` (`?status=active|archived|all`) / create (`createClassBody`) — join code generated `MUS-XXXX` |
-| GET/PATCH | `/api/admin/classes/:id` | detail / `updateClassBody` |
-| POST | `/api/admin/classes/:id/archive` · `/unarchive` | |
-| GET/POST/DELETE | `/api/admin/classes/:id/roster` | roster list / `rosterBody` / clear |
-| GET | `/api/admin/students` | `?classId=&status=active|withdrawn|not_joined|all&q=` → `AdminStudentRow[]` |
+| GET/POST | `/api/admin/classes` | list your own `AdminClass[]` (username account: all) (`?status=active|archived|all`) / create (`createClassBody`) — join code generated `MUS-XXXX` |
+| PATCH/DELETE | `/api/admin/classes/:id` | `updateClassBody` (new join code, turn roster-only off) / delete the section (owner only) |
+| POST | `/api/admin/classes/:id/owner` | username account only: hand a section to an instructor (`setOwnerBody`) — renamed with their short name |
+| GET | `/api/admin/students` | `?classId=&status=active|withdrawn|all&q=` → `AdminStudentRow[]` (no classId = all your active sections; someone else's section → 404) |
+| GET | `/api/admin/students/unassigned` | username account only: signed-in students in no section |
 | PATCH | `/api/admin/enrollments/:id` | `setEnrollmentStatusBody` (withdraw / reactivate) |
 | POST | `/api/admin/enrollments/:id/move` | `moveEnrollmentBody` (attempts move with the enrollment) |
 | POST | `/api/admin/students/:id/anonymize` | clears code/e-mail/name, keeps scores |
 | DELETE | `/api/admin/students/:id` | deletes student + enrollments + attempts |
-| GET/POST | `/api/admin/tests` | `AdminTestSummary[]` / create (`saveTestBody`) |
-| GET/PUT/DELETE | `/api/admin/tests/:id` | `AdminTestDetail` / save whole test (`saveTestBody`) → `AdminTestSaveResult` / delete (409 if attempts exist) |
+| GET/POST | `/api/admin/tests` | your own `AdminTestSummary[]` (username account: all; `?classId=` one of your sections = every test assigned to it) / create (`saveTestBody`) |
+| POST | `/api/admin/tests/:id/owner` | username account only: hand a test to an instructor (`setOwnerBody`) |
+| GET/PUT/DELETE | `/api/admin/tests/:id` | (someone else's test → 404) `AdminTestDetail` / save whole test (`saveTestBody`) → `AdminTestSaveResult` / delete (409 if attempts exist) |
 | GET | `/api/admin/tests/:id/assignments` | `AdminAssignment[]` (one per class that has it) |
 | PUT/DELETE | `/api/admin/tests/:id/assignments/:classId` | body `assignmentSettings` / unassign (409 if attempts exist) |
 | GET | `/api/admin/results` | `?classId=&testIds=1,2` → `AdminResults` (Excel export is built in the browser from `rows`) |
-| GET/POST/DELETE | `/api/admin/admins` · `/api/admin/admins/:id` | `AdminUser[]` / `addAdminBody` |
-| GET | `/api/admin/audit` | `?limit=50` → `AuditEntry[]` |
+| GET/POST/DELETE | `/api/admin/admins` · `/api/admin/admins/:id` | `AdminUser[]` / `addAdminBody` — username (emergency) account only |
+| GET | `/api/admin/usage` | username account only: database size (Settings → Storage) |
+| GET | `/api/admin/audit` | `?limit=50` → the signed-in admin's own `AuditEntry[]`, with names looked up (`names`) |
 
 Every admin mutation writes an `audit_log` row.
 
@@ -154,7 +157,7 @@ Instructor "Live" polling is the largest consumer; Results-in-Live is the only r
 
 | # | Decision | Implementation notes |
 |---|---|---|
-| A | **Instructors edit/delete only their own classes and tests; no head/super admin.** Others' items stay viewable ("All classes"). | `tests.owner_email` (like `classes.owner_email`); server checks in `worker/routes/admin/common.ts` (`assertOwner`, 403 `not_owner`) on class PATCH/archive/DELETE/roster, enrollment actions, student anonymize/delete (must own all their sections), test PUT/DELETE, assignment PUT/DELETE (any test may be used, only in your own classes). The UI hides edit/delete for others. **The emergency password account may change everything.** Rows with no owner (made before 0007) can be changed only by the emergency account; unowned tests that are empty and unedited for 7 days are deleted by the daily cron. |
+| A | **Private by owner (changed 11 Nov 2026): instructors see and change only their own classes, students and tests; no head/super admin.** Someone else's class or test answers 404. | `tests.owner_email` (like `classes.owner_email`); server checks in `worker/routes/admin/common.ts` (`assertOwner`, 403 `not_owner`) on class PATCH/archive/DELETE/roster, enrollment actions, student anonymize/delete (must own all their sections), test PUT/DELETE, assignment PUT/DELETE (any test may be used, only in your own classes). Lists are filtered with `ownedClasses` / `visibleTests`. **The emergency password account sees and changes everything** and hands items to an instructor (`POST …/owner`, Settings → Instructors list the candidates). Rows with no owner (made before 0007) are visible only to the emergency account until it hands them over; unowned tests that are empty and unedited for 7 days are deleted by the daily cron. |
 | B | **Section numbers may repeat across instructors.** Name shows the instructor: "2569/1 · Section 1 · Keerakarn". | Rebuilt `classes` with `UNIQUE(owner_email, academic_year, semester, section)` (dependent rows copied aside and restored — dropping a table runs its cascades); student pages already parse "year/sem · rest". |
 | C | **Keep the username/password account for emergencies; throttle per IP + username** (campus NAT shares one IP). | `admin_login_attempts.username`; max 5 failures per (ip, username) in 15 min. |
 | D | **Keep Live as is** (15 s; Results 30 s; auto-off after 2 h). | Revisit if daily reads approach 5 M. |

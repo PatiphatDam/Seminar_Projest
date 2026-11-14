@@ -20,7 +20,7 @@
 ## สถานะปัจจุบัน (ขึ้นเว็บจริงแล้ว)
 
 - Repo: `C:\Seminar\Seminar_Projest` (GitHub `arumaosogi-sudo/Seminar_Projest`, branch `main`)
-- เว็บจริง: https://digital-muscle.arumaosogi.workers.dev (Cloudflare Workers + D1, Free plan) — หน้า 3D ต้องเข้าสู่ระบบนักศึกษา
+- เว็บจริง: https://digital-muscle.medicsync.workers.dev (Cloudflare Workers + D1, Free plan) — หน้า 3D ต้องเข้าสู่ระบบนักศึกษา
 - ต้นทางงาน 3D ของทีม: https://github.com/arumaosogi-sudo/test3D (`main` = เฉพาะไฟล์ 3D, `full-app` = เว็บทั้งเว็บที่ใช้ทดสอบ)
   ไฟล์เนื้อหาและโมเดลใน Seminar_Projest ตรงกับ `full-app` ทุกไบต์ ณ วันที่อัปเดต · ไฟล์ Blender และสคริปต์สร้างโมเดล
   (`build_v3.py`) อยู่ในเครื่องของคนทำ (`3d-source/`) ไม่อยู่ใน repo
@@ -57,7 +57,9 @@ Molecular view: PDB 6KN7/6KN8, 5H53 (myofilaments) · 2ZW3, 5J5J (intercalated d
 
 - Slider Relaxed ↔ Contracted + ปุ่ม Animate · แถบ A band / I band / H zone บนโมเดลและแผนภาพ 2D · การ์ดผล (sarcomere, I band, H zone, A band, filament length)
 - ชิ้นส่วนกดได้ 8 ชนิด: actin, tropomyosin, troponin (TnC/TnI/TnT), myosin, Z disc, M line, titin, nebulin
-- กล่องเตือน "Myosin is NOT part of the thin filament" · ขั้นตอนการหดตัว 10 ขั้น · วิดีโอ Motion VDO (youtube-nocookie `ousflrOzQHc`)
+- กล่องเตือน "Myosin is NOT part of the thin filament" · ขั้นตอนการหดตัว 10 ขั้น (ขั้น 5–8 มีลิงก์ ▶ เวลาในวิดีโอ)
+- การ์ด **Motion videos** 2 แท็บ (youtube-nocookie): Cross-bridge cycle `BVcgO4p88AA` (Alila Medical Media) และ Sarcomere bands `Dd9KdvnKoik` (Siebert Science) พร้อมรายการช่วงเวลาที่กดข้ามไปได้ — วิดีโอเดิม `ousflrOzQHc` ถูกลบจาก YouTube แล้ว
+- กล่อง **"From the video"** ใน Info panel (หน้า Sarcomere และ 3D Explore): ข้อมูลเสริมจากวิดีโอ แยกจากเนื้อหา lecture พร้อมลิงก์ ▶ เวลา → `/explore/sarcomere?video=…&t=…#video` (ข้อมูลอยู่ใน `VIDEOS` / `video` ของ `src/content/explore.ts`)
 - ปุ่ม **"Back to 3D Explore"** กลับไประดับที่กด "Contract it" มา (เช่น Cardiac → Sarcomere); เปิดตรง ๆ → Skeletal → Sarcomere
 - ค่าตัวเลข (ใน `sarcomere/model.ts`, มี unit test): sarcomere 2.50 → 2.00 µm, thick filament 1.6 µm, thin filament 1.0 µm — A band และความยาว filament คงที่
 

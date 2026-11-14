@@ -4,13 +4,14 @@ import { StudentPageHeader } from "@/components/student/StudentPageHeader";
 import { useDocumentTitle } from "@/components/student/useDocumentTitle";
 import { ArrowLeftIcon, InfoIcon } from "@/components/student/icons";
 import { Spinner } from "@/components/ui";
-import { BANDS, CONTRACTION_LESSON, CONTRACTION_STEPS, MOTION_VIDEO, PARTS, partById, type PartId } from "@/content/explore";
+import { BANDS, CONTRACTION_LESSON, CONTRACTION_STEPS, formatTime, PARTS, partById, videoHref, type PartId } from "@/content/explore";
 import { bandsAt, formatUm, THICK_UM, THIN_UM } from "./sarcomere/model";
 import { SarcomereDiagram } from "./sarcomere/SarcomereDiagram";
 import { InfoPanel } from "./shared/InfoPanel";
 import { hasWebGL, prefersReducedMotion } from "./shared/webgl";
 import { exploreBack } from "./shared/backLink";
 import { WebGLHelp } from "./shared/WebGLHelp";
+import { SarcomereVideos } from "./shared/SarcomereVideos";
 
 // three.js + R3F live in their own chunk, so the page shell (slider, cards, text) shows before the 3D code arrives.
 const SarcomereScene = lazy(() => import("./sarcomere/SarcomereScene"));
@@ -21,7 +22,8 @@ const SarcomereScene = lazy(() => import("./sarcomere/SarcomereScene"));
  */
 export default function Sarcomere() {
   useDocumentTitle("Sarcomere");
-  const back = exploreBack(useLocation().state);
+  const location = useLocation();
+  const back = exploreBack(location.state);
   const [pct, setPct] = useState(0);
   const [selected, setSelected] = useState<PartId | null>(null);
   const [showBands, setShowBands] = useState(true);
@@ -224,7 +226,7 @@ export default function Sarcomere() {
         </aside>
       </div>
 
-      {/* Steps + motion video (3D-9) */}
+      {/* Steps + motion videos (3D-9) */}
       <div className="mt-5 grid gap-5 lg:grid-cols-2">
         <section className="coast-card p-5" aria-labelledby="steps-title">
           <h2 id="steps-title" className="text-[18px] font-extrabold text-[var(--c-text)]">
@@ -236,6 +238,21 @@ export default function Sarcomere() {
                 <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--c-panel)] text-[13px] font-extrabold text-[var(--c-text)]">{i + 1}</span>
                 <span className="text-[var(--c-text)]">
                   <strong>{s.title}.</strong> <span className="coast-muted">{s.text}</span>
+                  {s.video !== undefined && (
+                    <>
+                      {" "}
+                      <Link
+                        to={videoHref({ video: "crossbridge", at: s.video })}
+                        state={location.state}
+                        replace
+                        preventScrollReset
+                        className="whitespace-nowrap text-[12.5px] font-bold text-[var(--c-video)] hover:underline"
+                        aria-label={`Watch ${s.title} in the cross-bridge video at ${formatTime(s.video)}`}
+                      >
+                        ▶ {formatTime(s.video)}
+                      </Link>
+                    </>
+                  )}
                 </span>
               </li>
             ))}
@@ -245,23 +262,7 @@ export default function Sarcomere() {
           </Link>
         </section>
 
-        <section className="coast-card p-5" aria-labelledby="video-title">
-          <h2 id="video-title" className="text-[18px] font-extrabold text-[var(--c-text)]">
-            Motion video · sliding filament
-          </h2>
-          <p className="coast-muted mt-1 text-[14px]">Ca²⁺ release from the SR and the cross-bridge cycle.</p>
-          <div className="mt-3 aspect-video overflow-hidden rounded-[14px] bg-black">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${MOTION_VIDEO.id}`}
-              title={MOTION_VIDEO.title}
-              loading="lazy"
-              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-              className="size-full"
-            />
-          </div>
-        </section>
+        <SarcomereVideos />
       </div>
 
       {/* Phone: details as a bottom sheet over the tab bar */}

@@ -4,44 +4,10 @@ import { saveTestBody } from "@shared/contract";
 import { resolveCurrentClass } from "./adminClass";
 import { defaultForm, formFromAssignment, sameSettings, toSettings } from "./assign";
 import { MAX_QUESTIONS, blankQuestion, changeType, draftFromServer, duplicateQuestion, nextOptionId, toSaveBody, validateDraft } from "./builder";
-import { parseCsv, parseRosterCsv } from "./csv";
 import { buildScoresSheet, buildSummarySheet, defaultTestIds, distributionCounts, distributionMaxX, resultsFileName, rowChange } from "./exportResults";
 import { otherEnrollments } from "./students";
 import type { AdminStudentRow } from "@shared/contract";
 import { isoToLocalInput, localInputToIso, relativeTime, signed, slugify } from "./format";
-
-describe("csv", () => {
-  it("parses quotes, escaped quotes, CRLF and BOM", () => {
-    expect(parseCsv('\uFEFFa,"b, c","d ""q"""\r\n1,2,3\n')).toEqual([
-      ["a", "b, c", 'd "q"'],
-      ["1", "2", "3"],
-    ]);
-  });
-  it("detects semicolon and tab delimiters", () => {
-    expect(parseCsv("x;y\n1;2")).toEqual([["x", "y"], ["1", "2"]]);
-    expect(parseCsv("x\ty\n1\t2")).toEqual([["x", "y"], ["1", "2"]]);
-  });
-  it("maps tolerant headers, skips invalid + duplicate rows", () => {
-    const r = parseRosterCsv("First name,Student ID\nAnn,6531501234\nBob,abc\nAnn again,6531501234\nCat,653150123");
-    expect(r.headerDetected).toBe(true);
-    expect(r.entries).toEqual([
-      { studentCode: "6531501234", firstName: "Ann" },
-      { studentCode: "653150123", firstName: "Cat" },
-    ]);
-    expect(r.duplicates).toBe(1);
-    expect(r.invalid).toEqual([{ line: 3, value: "abc" }]);
-  });
-  it("works without a header row", () => {
-    const r = parseRosterCsv("6531501234,Ann\n6531501235");
-    expect(r.headerDetected).toBe(false);
-    expect(r.entries).toEqual([{ studentCode: "6531501234", firstName: "Ann" }, { studentCode: "6531501235" }]);
-  });
-  it("skips an unknown (e.g. Thai) header row instead of reporting it", () => {
-    const r = parseRosterCsv("รหัส,ชื่อ\n6531501234,เอ");
-    expect(r.invalid).toHaveLength(0);
-    expect(r.entries).toEqual([{ studentCode: "6531501234", firstName: "เอ" }]);
-  });
-});
 
 describe("builder", () => {
   const q = (over: Partial<AdminQuestion>): AdminQuestion => ({
@@ -255,26 +221,8 @@ describe("QA fixes", () => {
     ).toBe(9);
   });
 
-  it("M5: Thai headers, other column orders, whitespace in names", () => {
-    const th = parseRosterCsv("ลำดับ,ชื่อ,รหัสนักศึกษา\n1,สมชาย,6531501234\n2,\"สม\n หญิง\",6531501235");
-    expect(th.headerDetected).toBe(true);
-    expect(th.invalid).toHaveLength(0);
-    expect(th.entries).toEqual([
-      { studentCode: "6531501234", firstName: "สมชาย" },
-      { studentCode: "6531501235", firstName: "สม หญิง" },
-    ]);
-    const order = parseRosterCsv("No,Name,Code\n1,Ann,6531501234\n2,Bob,6531501235");
-    expect(order.entries).toEqual([
-      { studentCode: "6531501234", firstName: "Ann" },
-      { studentCode: "6531501235", firstName: "Bob" },
-    ]);
-    // unknown header: falls back to the column that looks like student IDs
-    const unknown = parseRosterCsv("seq,who,sid\n1,Ann,6531501234");
-    expect(unknown.entries).toEqual([{ studentCode: "6531501234", firstName: "Ann" }]);
-  });
-
   it("M10: finds the student's enrollments in other classes", () => {
-    const row = (classId: number, studentId: number | null, enrollmentId: number | null): AdminStudentRow => ({
+    const row = (classId: number, studentId: number | null, enrollmentId: number): AdminStudentRow => ({
       enrollmentId,
       studentId,
       studentCode: "6531501234",
@@ -282,11 +230,11 @@ describe("QA fixes", () => {
       email: null,
       classId,
       className: `C${classId}`,
-      status: enrollmentId ? "active" : "not_joined",
+      status: "active",
       joinedAt: null,
       lastLoginAt: null,
     });
-    const rows = [row(1, 7, 10), row(2, 7, 11), row(3, 8, 12), row(4, null, null)];
+    const rows = [row(1, 7, 10), row(2, 7, 11), row(3, 8, 12), row(4, null, 13)];
     expect(otherEnrollments(rows, 7, 1).map((r) => r.classId)).toEqual([2]);
     expect(otherEnrollments(rows, 7, 2).map((r) => r.classId)).toEqual([1]);
   });

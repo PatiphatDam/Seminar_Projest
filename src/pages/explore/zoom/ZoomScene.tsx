@@ -22,6 +22,7 @@ import {
   MeshStandardMaterial,
   Raycaster,
   Sphere,
+  type SkinnedMesh,
   Vector3,
   type Material,
   type Object3D,
@@ -190,7 +191,70 @@ export type ZoomSceneProps = {
 type HoverLabel = { show: (text: string, x: number, y: number) => void; hide: () => void };
 type BaseLook = { transparent: boolean; opacity: number; depthWrite: boolean; raycast: Mesh["raycast"] };
 
-type Anchor = { id: string; index: number; pos: Vector3; sphere: Sphere };
+/** `track`: the vertex the dot sits on, for rigged models whose pose changes (the arm bends during its animation). */
+type Anchor = { id: string; index: number; pos: Vector3; sphere: Sphere; track?: { mesh: Mesh; index: number } };
+
+const meshesOf = (node: Object3D): Mesh[] => {
+  const out: Mesh[] = [];
+  node.traverse((o) => {
+    if (o instanceof Mesh && o.geometry.getAttribute("position")) out.push(o);
+  });
+  return out;
+};
+
+/** World position of a mesh vertex — for a skinned mesh, in its current pose. */
+const vertexWorld = (mesh: Mesh, i: number, out: Vector3) => mesh.getVertexPosition(i, out).applyMatrix4(mesh.matrixWorld);
+
+/** The vertex of `node` furthest towards `dir` among those near height `fy` (0 = bottom … 1 = top): a point on its outline. */
+function edgeVertex(node: Object3D, dir: Vector3, fy: number): { mesh: Mesh; index: number } | null {
+  const v = new Vector3();
+  let lo = Infinity;
+  let hi = -Infinity;
+  const meshes = meshesOf(node);
+  for (const m of meshes) {
+    const n = m.geometry.getAttribute("position").count;
+    for (let i = 0; i < n; i++) {
+      const y = vertexWorld(m, i, v).y;
+      lo = Math.min(lo, y);
+      hi = Math.max(hi, y);
+    }
+  }
+  const y = lo + (hi - lo) * fy;
+  const band = (hi - lo) * 0.03;
+  let best: { mesh: Mesh; index: number } | null = null;
+  let bestDot = -Infinity;
+  for (const m of meshes) {
+    const n = m.geometry.getAttribute("position").count;
+    for (let i = 0; i < n; i++) {
+      vertexWorld(m, i, v);
+      if (Math.abs(v.y - y) > band) continue;
+      const d = v.dot(dir);
+      if (d > bestDot) {
+        bestDot = d;
+        best = { mesh: m, index: i };
+      }
+    }
+  }
+  return best;
+}
+
+/** The vertex of `node` nearest to `p`. */
+function nearestVertex(node: Object3D, p: Vector3): { mesh: Mesh; index: number } | null {
+  const v = new Vector3();
+  let best: { mesh: Mesh; index: number } | null = null;
+  let bestD = Infinity;
+  for (const m of meshesOf(node)) {
+    const n = m.geometry.getAttribute("position").count;
+    for (let i = 0; i < n; i++) {
+      const d = vertexWorld(m, i, v).distanceToSquared(p);
+      if (d < bestD) {
+        bestD = d;
+        best = { mesh: m, index: i };
+      }
+    }
+  }
+  return best;
+}
 
 function LevelModel({ level, selected, onSelect, zoomTarget, onZoomDone, reducedMotion, timeline, onPick, onParts, isolate = false, label }: ZoomSceneProps) {
   const gltf = useGLTF(level.model, false, true);
@@ -278,7 +342,21 @@ function LevelModel({ level, selected, onSelect, zoomTarget, onZoomDone, reduced
           sides.forEach(([m, s]) => (m.side = s));
           if (hit) pos.copy(hit.point);
         }
-        found.push({ id: h.id, index, pos, sphere });
+        let track: Anchor["track"];
+        if (h.edge) {
+          // outline of the part in the opening view: screen-right = forward × up
+          const view = new Vector3(...(VIEW[level.id] ?? [0.4, 0.4, 1])).normalize();
+          const right = view.clone().negate().cross(new Vector3(0, 1, 0)).normalize();
+          track = edgeVertex(node, h.edge === "right" ? right : right.negate(), fy) ?? undefined;
+          if (track) vertexWorld(track.mesh, track.index, pos);
+        }
+        // rigged models change pose (the arm bends) — keep the dot on its vertex
+        let rigged = false;
+        node.traverse((o) => {
+          if ((o as SkinnedMesh).isSkinnedMesh) rigged = true;
+        });
+        if (rigged && !track) track = nearestVertex(node, pos) ?? undefined;
+        found.push({ id: h.id, index, pos, sphere, track });
       } else {
         const pos = node.getWorldPosition(new Vector3());
         found.push({
@@ -405,7 +483,20 @@ function LevelModel({ level, selected, onSelect, zoomTarget, onZoomDone, reduced
         onClick={onClick}
       />
       {timeline && <LevelAnimation level={level.id} root={root} meshes={meshes} clips={gltf.animations} tl={timeline} keyOf={partKey} size={SIZE} />}
-      {!playing && anchors.map((a) => <Marker key={a.id} id={a.id} n={a.index + 1} pos={a.pos} active={selected === a.id} label={level.hotspots[a.index]?.name} onClick={() => onSelect(a.id)} />)}
+      {!playing &&
+        anchors.map((a) => (
+          <Marker
+            key={a.id}
+            id={a.id}
+            n={a.index + 1}
+            pos={a.pos}
+            track={a.track && ((out) => vertexWorld(a.track!.mesh, a.track!.index, out))}
+            side={level.hotspots[a.index]?.edge}
+            active={selected === a.id}
+            label={level.hotspots[a.index]?.name}
+            onClick={() => onSelect(a.id)}
+          />
+        ))}
     </group>
   );
 }

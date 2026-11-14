@@ -1,4 +1,4 @@
-import { Suspense, useCallback, useEffect, useId, useMemo, useState, type ComponentType } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import type { AdminClass, AdminMe } from "@shared/contract";
@@ -133,7 +133,7 @@ function AdminShell({ me }: { me: AdminMe }) {
             )}
             aria-label="Admin navigation"
           >
-            <Sidebar me={me} ctx={ctx} classesError={classesQ.isError} onClose={() => setNavOpen(false)} />
+            <Sidebar me={me} onClose={() => setNavOpen(false)} />
           </aside>
 
           {/* Figma admin frames: 248 px sidebar, 40 px gutters, title block starts 26 px from the top */}
@@ -150,11 +150,10 @@ function AdminShell({ me }: { me: AdminMe }) {
   );
 }
 
-function Sidebar({ me, ctx, classesError, onClose }: { me: AdminMe; ctx: AdminClassState; classesError: boolean; onClose: () => void }) {
+function Sidebar({ me, onClose }: { me: AdminMe; onClose: () => void }) {
   const logout = useLogout();
   const navigate = useNavigate();
   const config = useAppConfig();
-  const selectId = useId();
   const method = me.admin.email.startsWith("local:")
     ? "password"
     : (loginMethodStore.get() ?? (config.data && !config.data.googleClientId ? "dev" : "google"));
@@ -191,35 +190,7 @@ function Sidebar({ me, ctx, classesError, onClose }: { me: AdminMe; ctx: AdminCl
       </nav>
 
       <div className="px-4 pb-6">
-        <div className="rounded-xl bg-app px-3 py-[13px]">
-          <label htmlFor={selectId} className="block text-[12px] uppercase leading-4 text-faint">
-            Current class
-          </label>
-          {ctx.loading ? (
-            <p className="mt-1 text-[13px] text-muted">Loading…</p>
-          ) : classesError ? (
-            <p className="mt-1 text-xs text-danger">Couldn’t load classes.</p>
-          ) : ctx.classes.length === 0 ? (
-            <p className="mt-1 text-[13px] text-muted">No active classes</p>
-          ) : (
-            // Looks like plain text (Figma) but stays a native select so the instructor can switch class.
-            <select
-              id={selectId}
-              value={ctx.classId ?? ""}
-              onChange={(e) => ctx.setClassId(Number(e.target.value))}
-              title="Change the current class"
-              className="mt-1 w-full cursor-pointer appearance-none truncate rounded bg-transparent p-0 text-[13px] font-semibold leading-5 text-ink outline-none focus-visible:ring-2 focus-visible:ring-tests"
-            >
-              {ctx.classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        <div className="mt-[14px] flex items-center gap-[11px] px-2">
+        <div className="flex items-center gap-[11px] px-2">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#e9eaee] text-[13px] font-semibold text-gray-800" aria-hidden="true">
             {initial}
           </span>

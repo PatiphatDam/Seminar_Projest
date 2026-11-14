@@ -4,9 +4,9 @@
  */
 export const adminKeys = {
   all: ["admin"] as const,
-  classes: (status: "active" | "archived" | "all", scope: "mine" | "all" = "mine") => ["admin", "classes", status, scope] as const,
+  classes: (status: "active" | "archived" | "all") => ["admin", "classes", status] as const,
   classesRoot: ["admin", "classes"] as const,
-  students: (classId: number, status: string) => ["admin", "students", classId, status] as const,
+  students: (classId: number | "all", status: string) => ["admin", "students", classId, status] as const,
   studentsRoot: ["admin", "students"] as const,
   unassigned: ["admin", "students", "unassigned"] as const,
   tests: ["admin", "tests"] as const,

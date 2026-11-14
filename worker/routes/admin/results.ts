@@ -5,7 +5,7 @@ import { SnapshotCache } from "../../engine";
 import type { AppEnv } from "../../env";
 import { gradedQuestions, histogram, isCorrect, pickCountedAttempt, round2, scoreStats } from "../../grading";
 import { badRequest } from "../../http";
-import { ANONYMIZED_LABEL, loadClassBasics, scopeWhere } from "./common";
+import { ANONYMIZED_LABEL, assertVisibleClass, isEmergencyAdmin, loadClassBasics, ownedClasses } from "./common";
 
 export const resultRoutes = new Hono<AppEnv>();
 
@@ -43,9 +43,9 @@ resultRoutes.get("/results", async (c) => {
   if (classIdRaw) {
     if (!/^\d+$/.test(classIdRaw)) throw badRequest("classId must be a number.");
     classId = Number(classIdRaw);
-    await loadClassBasics(db, classId);
+    assertVisibleClass(await loadClassBasics(db, classId), c.get("admin"));
   }
-  const own = scopeWhere(c.req.query("scope"), c.get("admin").email);
+  const own = ownedClasses(c.get("admin"));
   const classWhere = classId === null ? `c.status = 'active' AND ${own.sql}` : "c.id = ?";
   const classParams: SqlValue[] = classId === null ? own.params : [classId];
 
@@ -57,6 +57,19 @@ resultRoutes.get("/results", async (c) => {
     if (parts.some((p) => !/^\d+$/.test(p))) throw badRequest("testIds must be a comma-separated list of numbers.");
     testIds = [...new Set(parts.map(Number))];
     if (testIds.length > MAX_TESTS) throw badRequest(`Select at most ${MAX_TESTS} tests.`);
+    // only your own tests, or tests given to one of your sections — never someone else's test
+    if (!isEmergencyAdmin(c.get("admin")) && testIds.length > 0) {
+      const ok = await queryAll<{ id: number }>(
+        db,
+        `SELECT t.id FROM tests t WHERE t.id IN (${testIds.map(() => "?").join(",")}) AND (t.owner_email = ? OR t.id IN
+           (SELECT ta.test_id FROM test_assignments ta JOIN classes c ON c.id = ta.class_id WHERE ${own.sql}))`,
+        ...testIds,
+        c.get("admin").email,
+        ...own.params,
+      );
+      const allowed = new Set(ok.map((r) => r.id));
+      testIds = testIds.filter((id) => allowed.has(id));
+    }
   } else {
     const rows = await queryAll<{ test_id: number }>(
       db,
