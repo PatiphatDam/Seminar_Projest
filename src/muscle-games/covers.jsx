@@ -142,19 +142,22 @@ export function BalloonScene() {
 }
 
 // Diameter: half built, half blueprint (the user's pick, 2026-11-14). The whole-muscle model from the game, split by a
-// slanted line: on the left it is finished, in full colour on a light studio backdrop; on the right the same arm is still
-// a drawing, white lines on cobalt blueprint paper with a grid, construction nodes and a dimension line. The title is
-// outlined, poster style; the zoom chain the game follows reads down the top right. A still poster.
+// slanted line: on the left it is finished, in full colour on a warm stone backdrop; on the right the same arm is still a
+// technical drawing (scripts/diameter-art/cover-lines.py), white lines on cobalt blueprint paper with a grid,
+// construction nodes and a dimension line marked with what the game holds (5 stages, 25 parts). The title is solid,
+// poster style; the zoom chain the game follows reads down the top right. A still poster.
 const DM_LEFT = '0,0 198,0 122,200 0,200';
 const DM_RIGHT = '198,0 320,0 320,200 122,200';
+// the finished half's backdrop (centre, middle, edge) and the colour of the title and caption written on it
+const DM_TONE = { bg: ['#e9e5dc', '#cfc7b8', '#b5ab99'], ink: '#1d3f9e', sub: '#1d3f9e' };
 export function DiameterScene() {
   return (
     <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
       <defs>
         <radialGradient id="dm-studio" cx=".35" cy=".45" r=".8">
-          <stop offset="0" stopColor="#ffffff" />
-          <stop offset=".7" stopColor="#e4e7ea" />
-          <stop offset="1" stopColor="#cfd4d9" />
+          <stop offset="0" stopColor={DM_TONE.bg[0]} />
+          <stop offset=".7" stopColor={DM_TONE.bg[1]} />
+          <stop offset="1" stopColor={DM_TONE.bg[2]} />
         </radialGradient>
         <pattern id="dm-fine" width="8" height="8" patternUnits="userSpaceOnUse">
           <path d="M8 0H0V8" fill="none" stroke="#fff" strokeOpacity=".07" strokeWidth=".5" />
@@ -162,11 +165,6 @@ export function DiameterScene() {
         <pattern id="dm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
           <path d="M40 0H0V40" fill="none" stroke="#fff" strokeOpacity=".16" strokeWidth=".6" />
         </pattern>
-        {/* outlined title: the letters drawn solid, then their inside cut away, so overlapping strokes leave no lines */}
-        <filter id="dm-outline">
-          <feMorphology in="SourceAlpha" operator="erode" radius=".7" result="inside" />
-          <feComposite in="SourceGraphic" in2="inside" operator="out" />
-        </filter>
         <clipPath id="dm-left">
           <polygon points={DM_LEFT} />
         </clipPath>
@@ -187,15 +185,15 @@ export function DiameterScene() {
         <circle cx="137" cy="160" r="2.2" />
         <path d="M220 165h90M220 162v6M310 162v6" fill="none" strokeWidth=".6" />
       </g>
-      <text x="12" y="44" fontFamily="'Inter Variable', 'Nunito Sans Variable', sans-serif" fontWeight="800" fontSize="30" letterSpacing="1.2" fill="#2346b8" filter="url(#dm-outline)">
+      <text x="12" y="44" fontFamily="'Inter Variable', 'Nunito Sans Variable', sans-serif" fontWeight="800" fontSize="30" letterSpacing="1.2" fill={DM_TONE.ink}>
         DIAMETER
       </text>
       <g fontFamily="ui-monospace, Consolas, 'Cascadia Mono', Menlo, monospace" fontSize="5.6" letterSpacing="1">
-        <text x="13" y="55" fill="#2346b8">OL3 · BUILD THE MUSCLE</text>
+        <text x="13" y="55" fill={DM_TONE.sub}>OL3 · BUILD THE MUSCLE</text>
         <text x="308" y="16" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
         <text x="308" y="24" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
         <text x="308" y="32" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
-        <text x="265" y="175" fill="#fff" textAnchor="middle">≈ 30 cm</text>
+        <text x="265" y="175" fill="#fff" textAnchor="middle">5 STAGES · 25 PARTS</text>
       </g>
     </svg>
   );
