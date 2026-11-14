@@ -143,9 +143,9 @@ export function BalloonScene() {
 
 // Diameter: half built, half blueprint (the user's pick, 2026-11-14). The whole-muscle model from the game, split by a
 // slanted line: on the left it is finished, in full colour on a warm stone backdrop; on the right the same arm is still a
-// technical drawing (scripts/diameter-art/cover-lines.py), white lines on cobalt blueprint paper with a grid,
-// construction nodes and a dimension line marked with what the game holds (5 stages, 25 parts). The title is solid,
-// poster style; the zoom chain the game follows reads down the top right. A still poster.
+// technical drawing (scripts/diameter-art/cover-lines.py), white lines on cobalt blueprint paper with a grid and
+// construction nodes. The title is solid, poster style; the zoom chain the game follows reads down the bottom right.
+// A still poster.
 const DM_LEFT = '0,0 198,0 122,200 0,200';
 const DM_RIGHT = '198,0 320,0 320,200 122,200';
 // the finished half's backdrop (centre, middle, edge) and the colour of the title and caption written on it
@@ -183,17 +183,15 @@ export function DiameterScene() {
         <line x1="198.5" y1="0" x2="121.5" y2="200" strokeWidth=".9" />
         <circle cx="187" cy="30" r="2.2" />
         <circle cx="137" cy="160" r="2.2" />
-        <path d="M220 165h90M220 162v6M310 162v6" fill="none" strokeWidth=".6" />
       </g>
       <text x="12" y="44" fontFamily="'Inter Variable', 'Nunito Sans Variable', sans-serif" fontWeight="800" fontSize="30" letterSpacing="1.2" fill={DM_TONE.ink}>
         DIAMETER
       </text>
       <g fontFamily="ui-monospace, Consolas, 'Cascadia Mono', Menlo, monospace" fontSize="5.6" letterSpacing="1">
         <text x="13" y="55" fill={DM_TONE.sub}>OL3 · BUILD THE MUSCLE</text>
-        <text x="308" y="16" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
-        <text x="308" y="24" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
-        <text x="308" y="32" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
-        <text x="265" y="175" fill="#fff" textAnchor="middle">5 STAGES · 25 PARTS</text>
+        <text x="308" y="170" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
+        <text x="308" y="178" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
+        <text x="308" y="186" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
       </g>
     </svg>
   );
