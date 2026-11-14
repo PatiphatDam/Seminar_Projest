@@ -5,7 +5,7 @@
 // (src/content/exploreZoom.ts in the main site, which follows the lecture sheet). `see`: a see-through wrapping
 // layer, shown at that opacity once placed (as in the 3D viewer), so the parts it wraps stay visible. `one`: the part is
 // a few thin bits spread over the model (Z discs, M lines, titin), so its tray picture shows just its biggest bit, large
-// enough to read on a plate.
+// enough to read on a plate. `scale`: the real size, written on the drawing's dimension line.
 const ART = import.meta.glob('./art/*.webp', { eager: true, query: '?url', import: 'default' });
 export const art = (name) => ART[`./art/${name}.webp`];
 
@@ -30,6 +30,7 @@ export const STEPS = [
       { id: 'bone', name: 'Humerus, radius and ulna', clue: 'Skeletal muscles produce movement by exerting force on these, across the joints.' },
     ],
     decoys: ['idisc', 'perimysium'],
+    scale: 'Whole biceps ≈ 30 cm long',
     zoom: 'Zoom into the biceps: a bundle of fibers',
   },
   {
@@ -44,6 +45,7 @@ export const STEPS = [
       { id: 'vessel', name: 'Blood vessel', clue: 'Brings blood to the fascicle, running along the pathways the perimysium provides.' },
     ],
     decoys: ['dense', 'ttubule'],
+    scale: 'One fascicle ≈ 1 mm across',
     zoom: 'Zoom into one muscle fiber',
   },
   {
@@ -60,6 +62,7 @@ export const STEPS = [
       { id: 'nuclei', name: 'Nuclei', clue: 'There are many in one fiber, and they usually lie close to the sarcolemma.' },
     ],
     decoys: ['idisc', 'perimysium'],
+    scale: 'One fiber ≈ 10–100 µm across',
     zoom: 'Zoom into a myofibril',
   },
   {
@@ -73,6 +76,7 @@ export const STEPS = [
       { id: 'mline', one: true, name: 'M lines', clue: 'Sit at the centre of each sarcomere; their proteins organise and stabilise the thick filaments.' },
     ],
     decoys: ['dense', 'sr'],
+    scale: 'One myofibril ≈ 1–2 µm across',
     zoom: 'Zoom into one sarcomere',
   },
   {
@@ -87,6 +91,7 @@ export const STEPS = [
       { id: 'titin', one: true, name: 'Titin', clue: 'A large elastic protein that keeps the thick filaments in place and resists over-stretching.' },
     ],
     decoys: ['idisc', 'sr'],
+    scale: 'One sarcomere ≈ 2.5 µm, Z disc to Z disc',
   },
 ];
 

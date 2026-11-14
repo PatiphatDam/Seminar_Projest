@@ -208,6 +208,9 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
       data-piece={piece.id}
       aria-pressed={picked}
     >
+      <span className="mg-zp__pno" aria-hidden="true">
+        P-{String(piece.n).padStart(2, '0')}
+      </span>
       <span className="mg-zp__plate">
         <img className="mg-zp__thumb" src={piece.thumb} alt="" draggable="false" />
       </span>
@@ -410,6 +413,9 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   return (
     <section className="mg-zp">
       <div className="mg-zp__top">
+        <span className="mg-zp__dwg">
+          Diameter / DWG-0{stepIdx + 1} · {step.title}
+        </span>
         <span className={`mg-zp__pill${left <= 30 ? ' mg-zp__pill--low' : ''}`} role="timer" aria-label={`${mmss(left)} left`}>
           ⏱ {mmss(left)}
         </span>
@@ -420,7 +426,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       <ol className="mg-zp__steps" aria-label="Zoom steps">
         {STEPS.map((x, k) => (
           <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx || (k === stepIdx && cleared) ? 'mg-done' : undefined}>
-            {k + 1} {x.title}
+            {String(k + 1).padStart(2, '0')} {x.title}
           </li>
         ))}
       </ol>
@@ -471,6 +477,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         {!ready && <span className="mg-zp__loading">Loading the model…</span>}
       </div>
 
+      {/* the drawing's dimension line: the real size of what is on the board */}
+      <p className="mg-zp__dim">{step.scale}</p>
       <p className="mg-zp__msg">{msg}</p>
 
       <div className="mg-zp__tray">
