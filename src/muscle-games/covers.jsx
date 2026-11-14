@@ -1,5 +1,5 @@
-import { jigsawPath } from './fx/jigsaw.jsx';
 import { AirshipShapes, WizardShapes } from './art.jsx';
+import { art } from './games/diameter/levels.js';
 
 // Animated cartoon scenes for the hub cards.
 // Idle loops run all the time; ".is-preview" on the cover plays a short gameplay preview.
@@ -141,69 +141,67 @@ export function BalloonScene() {
   );
 }
 
-export function MicroscopeScene() {
-  const fibers = [];
-  for (let r = -3; r <= 3; r++) {
-    for (let c = -3; c <= 3; c++) {
-      const x = 120 + c * 17 + (r % 2 ? 8 : 0);
-      const y = 100 + r * 15;
-      if (Math.hypot(x - 120, y - 100) < 58) fibers.push([x, y]);
-    }
-  }
-  const gap = jigsawPath(132, 92, 26, 26, { top: 1, right: -1, bottom: 1, left: -1 }, 7);
-  const pieces = [
-    { x: 236, y: 44, c: 'hsl(195 55% 66%)', e: { top: 1, right: -1, bottom: 1, left: 1 }, d: 0 },
-    { x: 262, y: 100, c: '#fbbf24', e: { top: -1, right: 1, bottom: -1, left: 1 }, d: 0.8 },
-  ];
+// Diameter: half built, half blueprint (the user's pick, 2026-11-14). The whole-muscle model from the game, split by a
+// slanted line: on the left it is finished, in full colour on a light studio backdrop; on the right the same arm is still
+// a drawing, white lines on cobalt blueprint paper with a grid, construction nodes and a dimension line. The title is
+// outlined, poster style; the zoom chain the game follows reads down the top right. A still poster.
+const DM_LEFT = '0,0 198,0 122,200 0,200';
+const DM_RIGHT = '198,0 320,0 320,200 122,200';
+export function DiameterScene() {
   return (
     <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
       <defs>
-        <radialGradient id="ms-bg" cx=".3" cy=".3" r="1">
-          <stop offset="0" stopColor="hsl(165 40% 96%)" />
-          <stop offset="1" stopColor="hsl(165 38% 70%)" />
+        <radialGradient id="dm-studio" cx=".35" cy=".45" r=".8">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset=".7" stopColor="#e4e7ea" />
+          <stop offset="1" stopColor="#cfd4d9" />
         </radialGradient>
-        <clipPath id="ms-view">
-          <circle cx="120" cy="100" r="66" />
+        <pattern id="dm-fine" width="8" height="8" patternUnits="userSpaceOnUse">
+          <path d="M8 0H0V8" fill="none" stroke="#fff" strokeOpacity=".07" strokeWidth=".5" />
+        </pattern>
+        <pattern id="dm-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M40 0H0V40" fill="none" stroke="#fff" strokeOpacity=".16" strokeWidth=".6" />
+        </pattern>
+        {/* outlined title: the letters drawn solid, then their inside cut away, so overlapping strokes leave no lines */}
+        <filter id="dm-outline">
+          <feMorphology in="SourceAlpha" operator="erode" radius=".7" result="inside" />
+          <feComposite in="SourceGraphic" in2="inside" operator="out" />
+        </filter>
+        <clipPath id="dm-left">
+          <polygon points={DM_LEFT} />
+        </clipPath>
+        <clipPath id="dm-right">
+          <polygon points={DM_RIGHT} />
         </clipPath>
       </defs>
-      <rect width="320" height="200" fill="url(#ms-bg)" />
-      {[[30, 30], [290, 170], [210, 20], [30, 175]].map(([x, y], k) => (
-        <circle key={k} cx={x} cy={y} r={4 + k} fill="#fff" opacity=".6" className="mg-sc-twinkle" style={{ animationDelay: `${k * 0.5}s` }} />
-      ))}
-      <circle cx="120" cy="100" r="80" fill="hsl(165 40% 12%)" />
-      <circle cx="120" cy="100" r="72" fill="hsl(165 50% 20%)" />
-      <g clipPath="url(#ms-view)">
-        <rect x="40" y="20" width="160" height="160" fill="hsl(38 55% 95%)" />
-        <g className="mg-sc-breathe mg-pv-zoom" style={{ transformOrigin: '145px 105px' }}>
-          {fibers.map(([x, y]) => (
-            <circle key={`${x}-${y}`} cx={x} cy={y} r="7.5" fill="#f9a8d4" stroke="hsl(165 38% 70%)" strokeWidth="2" />
-          ))}
-          <circle cx="120" cy="100" r="58" fill="none" stroke="hsl(195 55% 66%)" strokeWidth="4" />
-          <path d={gap} fill="hsl(38 55% 95%)" stroke="hsl(165 52% 32%)" strokeWidth="1.6" strokeDasharray="3 3" />
-        </g>
-        <line x1="120" y1="28" x2="120" y2="172" stroke="hsl(165 50% 20%)" strokeWidth=".8" opacity=".3" />
-        <line x1="48" y1="100" x2="192" y2="100" stroke="hsl(165 50% 20%)" strokeWidth=".8" opacity=".3" />
+      <polygon points={DM_LEFT} fill="url(#dm-studio)" />
+      <polygon points={DM_RIGHT} fill="#2346b8" />
+      <polygon points={DM_RIGHT} fill="url(#dm-fine)" />
+      <polygon points={DM_RIGHT} fill="url(#dm-grid)" />
+      {/* the same arm twice, from the same camera: finished on the left, drawn on the right */}
+      <image href={art('muscle-full')} x="10" y="20" width="300" height="200" clipPath="url(#dm-left)" />
+      <image href={art('cover-lines')} x="10" y="20" width="300" height="200" clipPath="url(#dm-right)" />
+      <g fill="#fff" stroke="#fff">
+        <line x1="198.5" y1="0" x2="121.5" y2="200" strokeWidth=".9" />
+        <circle cx="187" cy="30" r="2.2" />
+        <circle cx="137" cy="160" r="2.2" />
+        <path d="M220 165h90M220 162v6M310 162v6" fill="none" strokeWidth=".6" />
       </g>
-      {pieces.map((p, k) => (
-        <g key={k} className="mg-sc-bob" style={{ animationDelay: `${p.d}s` }}>
-          <path d={jigsawPath(p.x, p.y, 26, 26, p.e, 7)} fill={p.c} stroke="#fff" strokeWidth="2" />
-        </g>
-      ))}
-      <g className="mg-pv-snap">
-        <path d={jigsawPath(250, 150, 26, 26, { top: 1, right: -1, bottom: 1, left: -1 }, 7)} fill="#f472b6" stroke="#fff" strokeWidth="2" />
-      </g>
-      <g className="mg-pv-sparkle">
-        {[[132, 84], [168, 120], [150, 74]].map(([x, y], k) => (
-          <path key={k} d={`M${x} ${y - 7} L${x + 2} ${y - 2} L${x + 7} ${y} L${x + 2} ${y + 2} L${x} ${y + 7} L${x - 2} ${y + 2} L${x - 7} ${y} L${x - 2} ${y - 2}Z`} fill="#fde68a" />
-        ))}
-      </g>
-      <g className="mg-sc-bob" style={{ animationDelay: '.4s' }}>
-        <circle cx="262" cy="150" r="11" fill="hsl(195 60% 90%)" stroke="hsl(165 45% 15%)" strokeWidth="3" opacity=".9" />
-        <line x1="270" y1="158" x2="282" y2="170" stroke="hsl(165 45% 15%)" strokeWidth="5" strokeLinecap="round" />
+      <text x="12" y="44" fontFamily="'Inter Variable', 'Nunito Sans Variable', sans-serif" fontWeight="800" fontSize="30" letterSpacing="1.2" fill="#2346b8" filter="url(#dm-outline)">
+        DIAMETER
+      </text>
+      <g fontFamily="ui-monospace, Consolas, 'Cascadia Mono', Menlo, monospace" fontSize="5.6" letterSpacing="1">
+        <text x="13" y="55" fill="#2346b8">OL3 · BUILD THE MUSCLE</text>
+        <text x="308" y="16" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
+        <text x="308" y="24" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
+        <text x="308" y="32" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
+        <text x="265" y="175" fill="#fff" textAnchor="middle">≈ 30 cm</text>
       </g>
     </svg>
   );
 }
+// A still poster: no gameplay preview, so the hub hides its Preview chip.
+DiameterScene.preview = false;
 
 const GS_INK = '#141010';
 

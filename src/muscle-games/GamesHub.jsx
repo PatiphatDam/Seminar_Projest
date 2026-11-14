@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GAMES, MAX_SCORE, bestOf } from './games/meta.js';
 import { useScores } from './scores.jsx';
-import { BalloonScene, GroupSortScene, MicroscopeScene } from './covers.jsx';
+import { BalloonScene, DiameterScene, GroupSortScene } from './covers.jsx';
 import { Armin } from './fx/Fx.jsx';
 import { useGamesConfig } from './config.js';
 
-const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': GroupSortScene, diameter: MicroscopeScene };
+const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': GroupSortScene, diameter: DiameterScene };
 
 function GameCard({ g, n }) {
   const { best } = useScores();
