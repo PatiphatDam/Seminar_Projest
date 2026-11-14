@@ -4,7 +4,7 @@ import { queryAll, type SqlValue } from "../../db";
 import type { AppEnv } from "../../env";
 import { round2 } from "../../grading";
 import { badRequest } from "../../http";
-import { ANONYMIZED_LABEL, loadClassBasics, scopeWhere } from "./common";
+import { ANONYMIZED_LABEL, assertVisibleClass, loadClassBasics, ownedClasses } from "./common";
 
 export const gameResultRoutes = new Hono<AppEnv>();
 
@@ -29,9 +29,10 @@ gameResultRoutes.get("/game-results", async (c) => {
   if (classIdRaw) {
     if (!/^\d+$/.test(classIdRaw)) throw badRequest("classId must be a number.");
     classId = Number(classIdRaw);
-    await loadClassBasics(db, classId);
+    assertVisibleClass(await loadClassBasics(db, classId), c.get("admin"));
   }
-  const own = scopeWhere(c.req.query("scope"), c.get("admin").email);
+  // private by owner, like Results: an instructor sees only their own sections (the emergency account sees all)
+  const own = ownedClasses(c.get("admin"));
   const classWhere = classId === null ? `c.status = 'active' AND ${own.sql}` : "c.id = ?";
   const classParams: SqlValue[] = classId === null ? own.params : [classId];
   const statusWhere = includeWithdrawn ? "" : "AND e.status = 'active'";
