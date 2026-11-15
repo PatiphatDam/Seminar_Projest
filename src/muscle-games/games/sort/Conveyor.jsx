@@ -6,9 +6,9 @@ import { scoreOutOf10 } from '../meta.js';
 import { shuffle } from '../util.js';
 import { STAGES, TOTAL_FACTS, groupOf } from './data.js';
 
-// The same two stages as Picture Match (data.js): the nine crates of stage 1, then the bins change and the nine of
-// stage 2 come. A crate packed in the wrong bin or left to fall off costs a heart.
-const TIME = 90;
+// The same two stages as Picture Match (data.js): the 12 crates of stage 1 (3 bins), then the bins change to the six
+// levels of stage 2 for its 12 crates. A crate packed in the wrong bin or left to fall off costs a heart.
+const TIME = 120;
 const STAGE_BREAK_MS = 1600;
 const LIVES = 3;
 // The arm slides to the crate, reaches down and closes its claws at REACH_MS, then lifts it away.
@@ -334,7 +334,7 @@ export default function Conveyor({ onScore, onFinish }) {
         <span className="mg-factory__legs" aria-hidden="true" />
       </div>
 
-      <div className="mg-panel">
+      <div className={`mg-panel${stage.groups.length > 3 ? ' mg-panel--six' : ''}`}>
         {stage.groups.map((g) => (
           <button
             key={g.id}
@@ -351,7 +351,7 @@ export default function Conveyor({ onScore, onFinish }) {
           </button>
         ))}
       </div>
-      <p className="mg-legend">Press a picture button — the robot arm grabs the glowing crate and packs it into that group. After 9 crates the bins change for stage 2.</p>
+      <p className="mg-legend">Press a picture button — the robot arm grabs the glowing crate and packs it into that group. After 12 crates the bins change for stage 2.</p>
     </section>
   );
 }
