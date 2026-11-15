@@ -133,7 +133,7 @@ export function CaseFileResult({ result, best, max, saveText, onRestart }) {
             <path d="M62 62l10 10" stroke="#c9a24a" strokeWidth="10" />
           </svg>
         </div>
-        <Actions again="Reopen the case" onRestart={onRestart} theme="desk" />
+        <Actions again="Play again" onRestart={onRestart} theme="desk" />
       </div>
     </div>
   );
@@ -235,7 +235,7 @@ export function ManifestResult({ result, best, max, saveText, onRestart }) {
             </footer>
           </article>
         </div>
-        <Actions again="Next shift" onRestart={onRestart} theme="dock" />
+        <Actions again="Play again" onRestart={onRestart} theme="dock" />
       </div>
     </div>
   );
@@ -323,7 +323,7 @@ export function DrawingResult({ result, best, max, saveText, onRestart }) {
           </div>
           <Save text={saveText} state={result.save} className="mg-dwg__save" />
         </article>
-        <Actions again="Build again" onRestart={onRestart} theme="blueprint" />
+        <Actions again="Play again" onRestart={onRestart} theme="blueprint" />
       </div>
     </div>
   );
