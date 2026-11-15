@@ -54,8 +54,6 @@ export function CaseFileResult({ result, best, max, saveText, onRestart }) {
   const [a, b] = STAGES[0].groups;
   return (
     <div className="mg-result mg-result--desk" role="dialog" aria-modal="true" aria-labelledby="result-title">
-      <div className="mg-desk__lamp" aria-hidden="true" />
-      <div className="mg-desk__cup" aria-hidden="true" />
       <div className="mg-rwrap">
         <div className="mg-case">
           <div className="mg-case__tab">CASE Nº 02 · OL2</div>

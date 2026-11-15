@@ -488,6 +488,8 @@
 /* Each game's own end screen (components/StyledResults.jsx): Picture Match's case report on the detective's desk,
    Conveyor Sort's delivery manifest on a clipboard, Diameter's drawing sheet. Shared: the scrolling wrap, a red rubber
    stamp (mission complete / failed), the save line and two buttons. */
+/* only the card and its buttons: the game stays dimmed behind, as for Balloon Pop's poster */
+.mg-result--desk, .mg-result--dock, .mg-result--blueprint { background: rgba(8, 10, 16, 0.82); }
 .mg-rwrap {
   position: relative; width: min(400px, 100%); max-height: calc(100svh - 32px - var(--mg-bottom-inset, 0px));
   overflow-y: auto; overflow-x: hidden; padding: 30px 8px 6px; animation: mg-poster-drop 0.45s cubic-bezier(0.2, 1.3, 0.4, 1);
@@ -511,14 +513,7 @@
 .mg-rbtn:active { transform: translateY(2px); }
 
 /* Picture Match: the case report */
-.mg-result--desk {
-  background:
-    radial-gradient(ellipse 70% 40% at 50% 30%, #f6d58a40, transparent 70%),
-    repeating-linear-gradient(92deg, #3a2414 0 6px, #33200f 6px 9px, #40291a 9px 16px), #2a1a0e;
-}
-.mg-desk__lamp { position: absolute; left: -40px; top: -40px; width: 200px; height: 120px; border-radius: 0 0 50% 50%; background: radial-gradient(ellipse at 50% 0, #2f5a3a, #173022); box-shadow: 0 10px 30px #000; }
-.mg-desk__cup { position: absolute; right: 14px; top: 24px; width: 70px; height: 70px; border-radius: 50%; border: 6px solid #6b3f1f; box-shadow: inset 0 0 0 4px #4a2a12; background: radial-gradient(#3a1e0a 55%, #2a1408); }
-.mg-case { position: relative; margin-top: 50px; color: #1d1a16; }
+.mg-case { position: relative; margin-top: 20px; color: #1d1a16; }
 .mg-case__tab { position: absolute; left: 16px; top: -22px; padding: 4px 14px 3px; border-radius: 8px 8px 0 0; background: #d9b66e; font: 700 12px 'Courier New', Courier, monospace; letter-spacing: 2px; color: #5a3a12; }
 .mg-case__folder { padding: 14px 12px 16px; border-radius: 4px 10px 6px 6px; background: #d6ae62; box-shadow: 0 18px 34px #000d, inset 0 0 30px #8a6326aa; }
 .mg-case__sheet { position: relative; padding: 14px 14px 12px; background: #f3ead4; box-shadow: 0 2px 6px #0005; transform: rotate(-0.7deg); font-family: 'Courier New', Courier, monospace; }
@@ -558,12 +553,6 @@
 .mg-ractions--desk .mg-rbtn--main { color: #2a1b10; background: linear-gradient(#f0d595, #c99a4a); border-color: #6b4a1a; box-shadow: 0 3px 0 #6b4a1a; }
 
 /* Conveyor Sort: the delivery manifest */
-.mg-result--dock {
-  background:
-    repeating-linear-gradient(-45deg, #f5c518 0 14px, #1d2328 14px 28px) top / 100% 16px no-repeat,
-    repeating-linear-gradient(-45deg, #f5c518 0 14px, #1d2328 14px 28px) bottom / 100% 16px no-repeat,
-    linear-gradient(#2d3a44, #1d262d);
-}
 .mg-clipboard { position: relative; padding: 34px 12px 12px; border-radius: 12px; background: linear-gradient(#8a5a2e, #6b4220); box-shadow: 0 14px 26px #000b; }
 .mg-clipboard__clip { position: absolute; left: 50%; top: -12px; transform: translateX(-50%); width: 140px; height: 42px; border-radius: 8px 8px 16px 16px; background: linear-gradient(#f2f5f7, #9aa6ae 60%, #6f7a82); box-shadow: 0 3px 4px #0007; }
 .mg-clipboard__clip::after { content: ''; position: absolute; left: 50%; top: 10px; transform: translateX(-50%); width: 36px; height: 10px; border-radius: 5px; background: #4a545b; }
@@ -603,13 +592,13 @@
 .mg-ractions--dock .mg-rbtn--main { color: #1d2328; background: #f5c518; border-color: #f5c518; box-shadow: 0 3px 0 #8a6d0a; }
 
 /* Diameter: the drawing sheet */
-.mg-result--blueprint {
+.mg-dwg {
+  margin: 6px; padding: 12px; border: 2px solid #e8f1ff; color: #e8f1ff; font-family: Consolas, 'Courier New', monospace;
   background: #0f3060;
   background-image: linear-gradient(#ffffff16 1px, transparent 1px), linear-gradient(90deg, #ffffff16 1px, transparent 1px), linear-gradient(#ffffff08 1px, transparent 1px), linear-gradient(90deg, #ffffff08 1px, transparent 1px);
   background-size: 40px 40px, 40px 40px, 8px 8px, 8px 8px;
+  box-shadow: 0 0 0 5px #0f3060, 0 0 0 6px #e8f1ff88, 0 14px 30px #000a;
 }
-.mg-result--blueprint .mg-rwrap { padding-top: 12px; }
-.mg-dwg { margin: 6px; padding: 12px; border: 2px solid #e8f1ff; outline: 1px solid #e8f1ff88; outline-offset: 5px; color: #e8f1ff; font-family: Consolas, 'Courier New', monospace; }
 .mg-dwg__meta { display: flex; justify-content: space-between; margin: 0; font-size: 10px; letter-spacing: 2px; color: #9fc3f0; }
 .mg-dwg__title { margin: 6px 0 0; font: 700 22px Consolas, 'Courier New', monospace; letter-spacing: 2px; color: #e8f1ff; }
 .mg-dwg__sub { margin: 0; font-size: 10px; color: #9fc3f0; }
@@ -637,7 +626,7 @@
 .mg-dwg .mg-dwg__sign { font: 13px 'Segoe Script', 'Brush Script MT', cursive; }
 .mg-dwg__save { margin-top: 8px; color: #9fc3f0; }
 .mg-dwg__save.mg-rsave--saved { color: #7ef0a8; }
-.mg-ractions--blueprint .mg-rbtn { font-family: Consolas, monospace; color: #e8f1ff; border: 1.5px solid #e8f1ff; background: transparent; }
+.mg-ractions--blueprint .mg-rbtn { font-family: Consolas, monospace; color: #e8f1ff; border: 1.5px solid #e8f1ff; background: #0f3060; }
 .mg-ractions--blueprint .mg-rbtn--main { color: #0f3060; background: #f5c518; border-color: #f5c518; }
 @media (prefers-reduced-motion: reduce) { .mg-rwrap, .mg-rstamp { animation: none; } }
 .mg-result__actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
