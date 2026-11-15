@@ -2,6 +2,8 @@ import { createElement } from 'react';
 
 // The pictures are 2D renders of the main site's 3D models (scripts/diameter-art: sort.json + sort-cards.py).
 const PICS = import.meta.glob('./art/*.webp', { eager: true, query: '?url', import: 'default' });
+// the URL of one picture, for the mode covers
+export const picUrl = (id) => PICS[`./art/${id}.webp`];
 const pic = (id, alt) => () => createElement('img', { className: 'mg-pic', src: PICS[`./art/${id}.webp`], alt, draggable: false });
 
 // Both Group Sort modes play the same two stages, taken from the main site's lessons. Stage 1 sorts facts into the

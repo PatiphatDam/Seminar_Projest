@@ -1,5 +1,6 @@
 import { AirshipShapes, WizardShapes } from './art.jsx';
 import { art } from './games/diameter/levels.js';
+import { picUrl } from './games/sort/data.js';
 
 // Cartoon scenes for the hub cards. Every hub cover is a still picture (the user's choice, 2026-11-15).
 
@@ -294,14 +295,12 @@ function CvCrate({ x, y }) {
   );
 }
 
-function CvTissue({ x, y }) {
+// one picture button on the console screen, showing a render of the 3D model like the game's bins
+function CvTissue({ x, y, id }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect width="22" height="15" rx="2.5" fill="#fff1f7" stroke="#8fb3bb" />
-      <rect x="3" y="3" width="16" height="3" rx="1.5" fill="#f08cb4" />
-      <rect x="3" y="7.5" width="16" height="3" rx="1.5" fill="#f08cb4" />
-      <circle cx="8" cy="4.5" r="0.9" fill="#5b3ea8" />
-      <circle cx="14" cy="9" r="0.9" fill="#5b3ea8" />
+      <rect width="22" height="17" rx="2.5" fill="#fff" stroke="#8fb3bb" />
+      <image href={picUrl(id)} x="0.5" y="0.5" width="21" height="16" preserveAspectRatio="xMidYMid meet" />
     </g>
   );
 }
@@ -365,10 +364,10 @@ export function ConveyorCoverScene({ nested = false, bare = false }) {
       <rect x="198" y="100" width="122" height="7" rx="3" fill="#2b3d45" />
       <rect x="202" y="40" width="84" height="52" rx="4" fill="#2b3d45" />
       <rect x="207" y="45" width="74" height="42" rx="2" fill="#e9f4f6" />
-      <CvTissue x={211} y={49} />
-      <CvTissue x={235} y={49} />
-      <CvTissue x={259} y={49} />
-      <rect x="211" y="70" width="66" height="3" rx="1.5" fill="#8fb3bb" />
+      <CvTissue x={211} y={49} id="skeletal" />
+      <CvTissue x={235} y={49} id="cardiac" />
+      <CvTissue x={259} y={49} id="smooth" />
+      <rect x="211" y="71" width="66" height="3" rx="1.5" fill="#8fb3bb" />
       <rect x="211" y="76" width="40" height="3" rx="1.5" fill="#8fb3bb" />
       <rect x="259" y="76" width="22" height="7" rx="2" fill="#1d9e75" />
       <rect x="238" y="92" width="10" height="8" fill="#2b3d45" />
@@ -407,14 +406,12 @@ function CoverWorker() {
 
 // Picture Match cover: a noir detective in a fedora, seen from behind with his pipe, studies an evidence wall of muscle photos tied
 // with red string, lit by a beam through the window blinds.
-function NoirPhoto({ x, y, w, h, r, children }) {
+function NoirPhoto({ x, y, w, h, r, id }) {
   return (
     <g transform={`translate(${x} ${y}) rotate(${r})`}>
       <rect width={w} height={h} fill="#8d7f6b" />
       <rect x="2.5" y="2.5" width={w - 5} height={h - 9} fill="#2b2520" />
-      <g transform="translate(2.5 2.5)" stroke="#a8977d" fill="none" strokeWidth="1">
-        {children}
-      </g>
+      <image href={picUrl(id)} x="2.5" y="2.5" width={w - 5} height={h - 9} preserveAspectRatio="xMidYMid meet" filter="url(#nr-sepia)" />
     </g>
   );
 }
@@ -440,6 +437,10 @@ export function DetectiveCoverScene({ nested = false, bare = false }) {
           <stop offset="0" stopColor="#3a322b" stopOpacity="0.7" />
           <stop offset="1" stopColor="#3a322b" stopOpacity="0" />
         </radialGradient>
+        {/* old-print toning for the evidence photos */}
+        <filter id="nr-sepia" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0.45 0.85 0.2 0 0.04  0.4 0.76 0.18 0 0.03  0.31 0.6 0.14 0 0.02  0 0 0 1 0" />
+        </filter>
         <radialGradient id="nr-vignette" cx="0.55" cy="0.45" r="0.75">
           <stop offset="0.55" stopColor="#000" stopOpacity="0" />
           <stop offset="1" stopColor="#000" stopOpacity="0.7" />
@@ -459,30 +460,10 @@ export function DetectiveCoverScene({ nested = false, bare = false }) {
       </g>
 
       {/* evidence wall */}
-      <NoirPhoto x={22} y={24} w={40} h={32} r={-8}>
-        <rect x="4" y="6" width="27" height="10" rx="5" />
-        {[8, 12, 16, 20, 24, 28].map((x) => (
-          <line key={x} x1={x} y1="7" x2={x} y2="15" />
-        ))}
-      </NoirPhoto>
-      <NoirPhoto x={112} y={14} w={38} h={30} r={5}>
-        <path d="M3 8 Q10 4 17 8 Q10 12 3 8Z M15 13 Q22 9 30 13 Q22 17 15 13Z M5 17 Q12 13 19 17 Q12 21 5 17Z" />
-      </NoirPhoto>
-      <NoirPhoto x={240} y={72} w={34} h={40} r={4}>
-        <circle cx="14.5" cy="15" r="11" />
-        <circle cx="10" cy="12" r="3" />
-        <circle cx="18" cy="11" r="3" />
-        <circle cx="14" cy="18" r="3" />
-        <circle cx="20" cy="18" r="2.5" />
-      </NoirPhoto>
-      <g transform="translate(12 61) rotate(-6)">
-        <rect width="26" height="32" fill="#968874" />
-        <g fill="none" stroke="#2b2520" strokeWidth="0.9">
-          {[3, 5.5, 8, 10.5].map((r) => (
-            <ellipse key={r} cx="13" cy="16" rx={r} ry={r * 1.3} />
-          ))}
-        </g>
-      </g>
+      <NoirPhoto x={22} y={24} w={40} h={32} r={-8} id="myofibril" />
+      <NoirPhoto x={112} y={14} w={38} h={30} r={5} id="cardiac" />
+      <NoirPhoto x={240} y={72} w={34} h={40} r={4} id="fascicle" />
+      <NoirPhoto x={10} y={61} w={30} h={32} r={-6} id="sarcomere" />
       <g transform="translate(71 62) rotate(3)">
         <rect width="26" height="30" fill="#9c8f7c" />
         <text x="13" y="23" textAnchor="middle" fontFamily="'Playfair Display Variable', Georgia, serif" fontWeight="700" fontSize="20" fill="#1a1613">
