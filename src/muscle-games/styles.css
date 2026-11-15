@@ -606,7 +606,8 @@
 .mg-dwg__view svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mg-dwg__muscle { position: absolute; left: 2%; top: 18px; width: 56%; height: 120px; object-fit: contain; filter: grayscale(1) invert(1) brightness(1.6) contrast(1.6); mix-blend-mode: screen; opacity: 0.85; }
 .mg-dwg__detail { position: absolute; right: 3%; top: 12px; width: 120px; height: 120px; border-radius: 50%; border: 1.5px dashed #e8f1ff; overflow: hidden; background: #0f3060; }
-.mg-dwg__detail img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) invert(1) brightness(1.5) contrast(1.5); mix-blend-mode: screen; }
+/* the colour render, greyed and laid soft on the sheet's blue (no invert: the myofilament beads went harsh white) */
+.mg-dwg__detail img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.25); filter: grayscale(1) contrast(0.95) brightness(1.15); mix-blend-mode: luminosity; opacity: 0.85; }
 .mg-dwg__stamp { text-align: center; margin: 8px 0; }
 .mg-dwg__stamp .mg-rstamp { color: #ff5a5a; font-size: 28px; }
 .mg-dwg__label { margin: 0; padding-top: 6px; border-top: 1px solid #e8f1ff88; font-size: 10px; letter-spacing: 2px; color: #9fc3f0; }
