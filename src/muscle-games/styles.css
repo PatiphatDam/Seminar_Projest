@@ -1023,8 +1023,8 @@
   mask: linear-gradient(118deg, transparent 30%, #000 45%, #000 70%, transparent 85%);
   animation: mg-flicker 5s ease-in-out infinite;
 }
-.mg-pmatch { position: relative; display: grid; grid-template-rows: auto 1fr 1fr auto 1fr 1fr; row-gap: 8px; }
-@media (min-width: 600px) { .mg-pmatch { grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr 1fr; column-gap: 22px; } }
+.mg-pmatch { position: relative; display: grid; grid-template-rows: auto 1fr auto 1fr; row-gap: 8px; }
+@media (min-width: 600px) { .mg-pmatch { grid-template-columns: 1fr 1fr; grid-template-rows: auto 1fr; column-gap: 22px; } }
 .mg-pmatch--fade { opacity: 0.45; transition: opacity 0.3s; pointer-events: none; }
 /* a strip of masking tape with the column name on it */
 .mg-pmatch__label {
@@ -1034,9 +1034,9 @@
 }
 /* Every card row is a 1fr row of the one board grid (columns and card grids are subgrids), so photos and
    notes all come out the same height on every screen size. */
-.mg-pmatch__col { grid-row: span 3; display: grid; grid-template-rows: subgrid; }
+.mg-pmatch__col { grid-row: span 2; display: grid; grid-template-rows: subgrid; }
 /* 3 × 2 on every screen so all 12 cards fit without scrolling. */
-.mg-pmatch__grid { grid-row: span 2; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: subgrid; gap: 10px; }
+.mg-pmatch__grid { grid-row: span 1; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: subgrid; gap: 10px; }
 @media (min-width: 600px) { .mg-pmatch__grid { row-gap: 12px; } }
 .mg-pcard {
   --r: 0deg;

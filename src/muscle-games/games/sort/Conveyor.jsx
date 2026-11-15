@@ -4,9 +4,12 @@ import { Lives, useCountdown } from '../../components/Hud.jsx';
 import FrameHead, { TimePill } from '../../components/FrameHead.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import { shuffle } from '../util.js';
-import { GROUPS, TEXT_CARDS, groupLabel } from './data.js';
+import { STAGES, TOTAL_FACTS, groupOf } from './data.js';
 
-const TIME = 60;
+// The same two stages as Picture Match (data.js): the nine crates of stage 1, then the bins change and the nine of
+// stage 2 come. A crate packed in the wrong bin or left to fall off costs a heart.
+const TIME = 90;
+const STAGE_BREAK_MS = 1600;
 const LIVES = 3;
 // The arm slides to the crate, reaches down and closes its claws at REACH_MS, then lifts it away.
 const REACH_MS = 360;
@@ -123,13 +126,15 @@ function Workers() {
 
 export default function Conveyor({ onScore, onFinish }) {
   const fx = useFx();
-  const pool = useMemo(() => shuffle(TEXT_CARDS), []);
+  const pools = useMemo(() => STAGES.map((st) => shuffle(st.facts)), []);
+  const [stageIdx, setStageIdx] = useState(0);
+  const stage = STAGES[stageIdx];
   const [belt, setBelt] = useState([]);
   const [grabbed, setGrabbed] = useState(null);
   const [arm, setArm] = useState({ x: '50%', key: 0, card: null, mark: null });
   const [binFx, setBinFx] = useState({});
   const [over, setOver] = useState(false);
-  const st = useRef({ sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], n: 0, grabs: 0, t0: performance.now() });
+  const st = useRef({ sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], n: 0, grabs: 0, t0: performance.now(), stage: 0, made: 0, handled: 0, pause: 0 });
   const [, rerender] = useReducer((x) => x + 1, 0);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
@@ -140,19 +145,26 @@ export default function Conveyor({ onScore, onFinish }) {
   const busy = useRef(false);
   const overRef = useRef(false);
 
-  // Out of 10: crates packed right over every crate that was packed or missed (wrong bin or fell off).
-  const score = () => scoreOutOf10(s.sorted, s.sorted + s.wrong + s.fell);
+  // Out of 10: crates packed right over all 18 crates (one question each).
+  const score = () => scoreOutOf10(s.sorted, TOTAL_FACTS);
   const [left] = useCountdown(TIME, { running: !over, onExpire: () => end('Time’s up! ⏰') });
 
   useEffect(() => {
-    fx.say('Press a picture button — the robot arm packs the glowing crate!', 'happy', 'point');
+    fx.say(`Stage 1: ${STAGES[0].title}. Press a picture button — the robot arm packs the glowing crate!`, 'happy', 'point');
     let t;
     const spawn = () => {
       if (overRef.current) return;
+      const pool = pools[s.stage];
+      // this stage's crates are all out, or the bins are changing: wait
+      if (s.made >= pool.length || performance.now() < s.pause) {
+        t = setTimeout(spawn, 200);
+        return;
+      }
       const elapsed = (performance.now() - s.t0) / 1000;
-      const card = pool[s.n % pool.length];
+      const card = pool[s.made];
+      s.made += 1;
       s.n += 1;
-      setBelt((b) => [...b, { uid: s.n, card, dur: Math.max(4.4, 8 - elapsed * 0.07) }]);
+      setBelt((b) => [...b, { uid: s.n, card, stage: STAGES[s.stage], dur: Math.max(4.4, 8 - elapsed * 0.07) }]);
       t = setTimeout(spawn, Math.max(1300, 2600 - elapsed * 25));
     };
     t = setTimeout(spawn, 300);
@@ -160,7 +172,7 @@ export default function Conveyor({ onScore, onFinish }) {
       clearTimeout(t);
       timers.current.forEach(clearTimeout);
     };
-  }, [fx, pool, s]);
+  }, [fx, pools, s]);
 
   function end(line) {
     if (overRef.current) return;
@@ -170,12 +182,31 @@ export default function Conveyor({ onScore, onFinish }) {
     later(
       () =>
         onFinish(score(), {
-          summary: `${s.sorted} crates packed · ${s.wrong + s.fell} missed`,
+          summary: `${s.sorted}/${TOTAL_FACTS} crates packed · ${s.wrong + s.fell} missed`,
           mistakes: s.mistakes,
         }),
       1100
     );
   }
+
+  // every crate packed, misplaced or fallen is done with; after the stage's last one the bins change
+  const handled = () => {
+    s.handled += 1;
+    if (s.lives <= 0 || s.handled < pools[s.stage].length) return;
+    if (s.stage + 1 >= STAGES.length) {
+      later(() => end('All crates done! 🎉'), 500);
+      return;
+    }
+    s.stage += 1;
+    s.made = 0;
+    s.handled = 0;
+    s.pause = performance.now() + STAGE_BREAK_MS;
+    later(() => {
+      setStageIdx(s.stage);
+      fx.sound('win');
+      fx.say(`Stage ${s.stage + 1}: ${STAGES[s.stage].title}. New bins!`, 'wow');
+    }, 700);
+  };
 
   const loseLife = () => {
     s.lives -= 1;
@@ -200,15 +231,17 @@ export default function Conveyor({ onScore, onFinish }) {
       fx.float(x, y - 30, '✓');
       flashBin(bin, 'good');
       rerender();
+      handled();
       return 'good';
     }
     s.wrong += 1;
-    s.mistakes.push({ prompt: item.card.text, yours: groupLabel(bin), answer: groupLabel(item.card.answer), why: item.card.why });
+    s.mistakes.push({ prompt: item.card.text, yours: groupOf(item.stage, bin).label, answer: groupOf(item.stage, item.card.answer).label, why: item.card.why });
     fx.sound('bad');
     fx.vibrate(120);
     fx.float(x, y - 30, '✗', 'bad');
     flashBin(bin, 'bad');
     loseLife();
+    handled();
     return 'bad';
   };
 
@@ -218,10 +251,11 @@ export default function Conveyor({ onScore, onFinish }) {
     // Keep the crate on screen while it tips off the end; it is removed when the fall animation ends.
     setBelt((b) => b.map((c) => (c.uid === uid ? { ...c, falling: true } : c)));
     s.fell += 1;
-    s.mistakes.push({ prompt: item.card.text, yours: 'Fell off the belt', answer: groupLabel(item.card.answer), why: item.card.why });
+    s.mistakes.push({ prompt: item.card.text, yours: 'Fell off the belt', answer: groupOf(item.stage, item.card.answer).label, why: item.card.why });
     fx.sound('bad');
     fx.vibrate(100);
     loseLife();
+    handled();
   };
 
   const lead = belt.find((c) => c.uid !== grabbed && !c.falling);
@@ -256,10 +290,13 @@ export default function Conveyor({ onScore, onFinish }) {
     <section className="mg-conveyor mg-frame mg-frame--warehouse">
       {/* the night shift: a dark warehouse floor framed in yellow-and-black hazard tape. Crates keep coming until the
           time is up, so the count is the crate on the belt now and how many are packed */}
-      <FrameHead title="Conveyor Sort">
+      <FrameHead title={`Conveyor Sort · ${stage.title}`}>
         <TimePill left={left} total={TIME} />
-        <span className="mg-fpill" aria-label={`Crate ${s.sorted + s.wrong + s.fell + 1}, ${s.sorted} packed`}>
-          Crate {s.sorted + s.wrong + s.fell + 1} · {s.sorted} packed
+        <span className="mg-fpill">
+          Stage {stageIdx + 1}/{STAGES.length}
+        </span>
+        <span className="mg-fpill" aria-label={`Crate ${Math.min(s.sorted + s.wrong + s.fell + 1, TOTAL_FACTS)} of ${TOTAL_FACTS}, ${s.sorted} packed`}>
+          Crate {Math.min(s.sorted + s.wrong + s.fell + 1, TOTAL_FACTS)}/{TOTAL_FACTS} · {s.sorted} packed
         </span>
         <span className="mg-fpill mg-fpill--lives">
           <Lives lives={s.lives} max={LIVES} />
@@ -298,7 +335,7 @@ export default function Conveyor({ onScore, onFinish }) {
       </div>
 
       <div className="mg-panel">
-        {GROUPS.map((g) => (
+        {stage.groups.map((g) => (
           <button
             key={g.id}
             type="button"
@@ -314,7 +351,7 @@ export default function Conveyor({ onScore, onFinish }) {
           </button>
         ))}
       </div>
-      <p className="mg-legend">Press a picture button — the robot arm grabs the glowing crate and packs it into that group.</p>
+      <p className="mg-legend">Press a picture button — the robot arm grabs the glowing crate and packs it into that group. After 9 crates the bins change for stage 2.</p>
     </section>
   );
 }

@@ -1,38 +1,41 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { pick, useFx } from '../../fx/Fx.jsx';
-import { useCountdown } from '../../components/Hud.jsx';
+import { useFx } from '../../fx/Fx.jsx';
+import { Lives, useCountdown } from '../../components/Hud.jsx';
 import FrameHead, { TimePill } from '../../components/FrameHead.jsx';
 import { scoreOutOf10 } from '../meta.js';
-import { sample, shuffle } from '../util.js';
-import { PAIRS } from './data.js';
+import { shuffle } from '../util.js';
+import { STAGES, TOTAL_FACTS, groupOf } from './data.js';
 
-// Picture Match: every card is face up on an evidence board. Tap a photo, then the note (name or feature)
-// that belongs to it; a found pair gets tied together with a string.
+// Picture Match: the same two stages as Conveyor Sort (data.js). Each stage is three cases; a case pins the stage's
+// three pictures and one fact for each on an evidence board. Tap a picture, then the fact that goes with it.
+// A wrong match costs a heart; with no hearts left the game ends.
 const TIME = 150;
-const ROUND_BREAK_MS = 1400;
-export const ROUNDS = [
-  { id: 'name', title: 'Name it', hint: 'match each picture with its name', count: 6 },
-  { id: 'clue', title: 'Key features', hint: 'match each picture with its key feature', count: 6 },
-  { id: 'mix', title: 'Mix it up', hint: 'names and features mixed together!', count: 6 },
-];
-export const TOTAL_PAIRS = ROUNDS.reduce((n, r) => n + r.count, 0);
+const LIVES = 3;
+const ROUND_BREAK_MS = 1100;
+const PER_STAGE = 3; // cases per stage: one fact per group each
+const makeCases = () => STAGES.flatMap((stage, si) => {
+  const facts = shuffle(stage.facts);
+  return Array.from({ length: PER_STAGE }, (_, k) => ({
+    si,
+    k,
+    stage,
+    facts: stage.groups.map((g) => facts.filter((f) => f.answer === g.id)[k]),
+  }));
+});
+export const TOTAL_PAIRS = TOTAL_FACTS;
 
-function dealRound(round) {
-  const pairs = sample(PAIRS, round.count);
-  const pics = shuffle(pairs.map((p) => ({ uid: `${p.id}-pic`, pair: p.id, kind: 'pic', p })));
-  const texts = shuffle(
-    pairs.map((p) => {
-      const side = round.id === 'mix' ? pick(['name', 'clue']) : round.id;
-      return { uid: `${p.id}-txt`, pair: p.id, kind: 'text', text: p[side], p };
-    })
-  );
+function dealCase(c) {
+  const pics = shuffle(c.stage.groups.map((g) => ({ uid: `${g.id}-pic`, pair: g.id, kind: 'pic', g })));
+  const texts = shuffle(c.facts.map((f) => ({ uid: `${f.answer}-txt`, pair: f.answer, kind: 'text', text: f.text, f })));
   return { pics, texts };
 }
 
 export default function Memory({ onScore, onFinish }) {
   const fx = useFx();
   const [round, setRound] = useState(0);
-  const deck = useMemo(() => dealRound(ROUNDS[round]), [round]);
+  const cases = useMemo(makeCases, []);
+  const kase = cases[round];
+  const deck = useMemo(() => dealCase(kase), [kase]);
   const [selected, setSelected] = useState(null);
   const [matched, setMatched] = useState({});
   const [wrongPair, setWrongPair] = useState([]);
@@ -41,17 +44,17 @@ export default function Memory({ onScore, onFinish }) {
   const [over, setOver] = useState(false);
   const [strings, setStrings] = useState([]);
   const boardRef = useRef(null);
-  const st = useRef({ misses: 0, found: 0, mistakes: [] });
+  const st = useRef({ misses: 0, found: 0, lives: LIVES, mistakes: [] });
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
   const s = st.current;
 
-  // Out of 10: pairs found over all 18 pairs. Wrong matches cost time but no points.
+  // Out of 10: pairs found over all 18 pairs. A wrong match costs a heart, not a point.
   const score = () => scoreOutOf10(s.found, TOTAL_PAIRS);
   const [left] = useCountdown(TIME, { running: !between && !over, onExpire: () => end(false) });
 
   useEffect(() => {
-    fx.say(`Case 1: ${ROUNDS[0].hint}. Tap a photo, then the note that goes with it!`, 'happy', 'point');
+    fx.say(`Stage 1: ${STAGES[0].title}. Tap a picture, then the fact that goes with it!`, 'happy', 'point');
     const list = timers.current;
     return () => list.forEach(clearTimeout);
   }, [fx]);
@@ -90,7 +93,7 @@ export default function Memory({ onScore, onFinish }) {
     s.over = true;
     setOver(true);
     setClosed(completed);
-    fx.say(completed ? 'All pairs found! 🎉' : 'Time’s up! ⏰', completed ? 'wow' : 'sad');
+    fx.say(completed ? 'All pairs found! 🎉' : s.lives <= 0 ? 'Out of hearts 💔' : 'Time’s up! ⏰', completed ? 'wow' : 'sad');
     later(
       () =>
         onFinish(score(), {
@@ -102,15 +105,15 @@ export default function Memory({ onScore, onFinish }) {
   }
 
   const roundCleared = () => {
-    if (round + 1 >= ROUNDS.length) {
+    if (round + 1 >= cases.length) {
       end(true);
       return;
     }
-    const next = ROUNDS[round + 1];
+    const next = cases[round + 1];
     setBetween(true);
     setClosed(true);
     fx.sound('win');
-    fx.say(`Case ${round + 1} cleared! Next, case ${round + 2}: ${next.hint}`, 'wow');
+    fx.say(next.si !== kase.si ? `Stage ${kase.si + 1} cleared! Stage ${next.si + 1}: ${next.stage.title}` : `Case ${kase.k + 1} cleared! Next case…`, 'wow');
     later(() => {
       setRound(round + 1);
       setMatched({});
@@ -121,7 +124,7 @@ export default function Memory({ onScore, onFinish }) {
   };
 
   const tap = (card) => {
-    if (between || over || matched[card.pair] || wrongPair.length) return;
+    if (between || over || s.lives <= 0 || matched[card.pair] || wrongPair.length) return;
     if (!selected || selected.uid === card.uid || selected.kind === card.kind) {
       fx.sound('flip');
       setSelected(selected?.uid === card.uid ? null : card);
@@ -141,8 +144,10 @@ export default function Memory({ onScore, onFinish }) {
       if (Object.keys(nextMatched).length === deck.pics.length) roundCleared();
     } else {
       s.misses += 1;
+      s.lives -= 1;
       onScore(score());
-      s.mistakes.push({ prompt: `What is this picture? (${ROUNDS[round].title})`, yours: text.text, answer: `${pic.p.name} — ${pic.p.clue}`, why: pic.p.why });
+      s.mistakes.push({ prompt: text.text, yours: pic.g.label, answer: groupOf(kase.stage, text.f.answer).label, why: text.f.why });
+      if (s.lives <= 0) later(() => end(false), 500);
       fx.sound('bad');
       fx.vibrate(100);
       setWrongPair([pic.uid, text.uid]);
@@ -161,10 +166,16 @@ export default function Memory({ onScore, onFinish }) {
   return (
     <section className="mg-memory mg-frame mg-frame--noir">
       {/* a film-noir detective's office, the game on an evidence board in a wooden frame (see .mg-frame--noir) */}
-      <FrameHead title={`Picture Match · Case ${round + 1}`}>
+      <FrameHead title={`Picture Match · ${kase.stage.title}`}>
         <TimePill left={left} total={TIME} />
+        <span className="mg-fpill">
+          Stage {kase.si + 1}/{STAGES.length} · Case {kase.k + 1}/{PER_STAGE}
+        </span>
         <span className="mg-fpill" aria-label={`${s.found} of ${TOTAL_PAIRS} pairs found`}>
           Pairs {s.found}/{TOTAL_PAIRS}
+        </span>
+        <span className="mg-fpill mg-fpill--lives">
+          <Lives lives={s.lives} max={LIVES} />
         </span>
       </FrameHead>
       <div className="mg-cork" ref={boardRef}>
@@ -181,19 +192,19 @@ export default function Memory({ onScore, onFinish }) {
                   style={cardStyle(c, i)}
                   onClick={() => tap(c)}
                   aria-pressed={selected?.uid === c.uid}
-                  aria-label={matched[c.pair] ? `Picture: ${c.p.name} (matched)` : 'Picture card'}
+                  aria-label={`Picture: ${c.g.label}`}
                 >
                   <i className="mg-pcard__pin" />
                   <span className="mg-pcard__photo">
-                    <c.p.Art />
+                    <c.g.Art />
                   </span>
-                  <span className="mg-pcard__caption">{matched[c.pair] ? c.p.name : '?'}</span>
+                  <span className="mg-pcard__caption">{c.g.label}</span>
                 </button>
               ))}
             </div>
           </div>
           <div className="mg-pmatch__col">
-            <p className="mg-pmatch__label">{ROUNDS[round].id === 'name' ? 'Names' : ROUNDS[round].id === 'clue' ? 'Key features' : 'Names / key features'}</p>
+            <p className="mg-pmatch__label">Facts</p>
             <div className="mg-pmatch__grid">
               {deck.texts.map((c, i) => (
                 <button

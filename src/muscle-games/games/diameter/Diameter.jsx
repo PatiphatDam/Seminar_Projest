@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useFx } from '../../fx/Fx.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import FrameHead from '../../components/FrameHead.jsx';
+import { Lives } from '../../components/Hud.jsx';
 import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 
 // Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
@@ -10,14 +11,15 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
 // the game moves on to the next step by itself, like Group Sort. Each part's place is numbered from the biggest part to
 // the smallest, and every piece in the tray carries its name. Out of 10 = pieces placed over all 25 pieces of the
-// five steps. A wrong answer is just wrong: it takes no point away and adds no time; try again (it is listed for
-// review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
+// five steps. A wrong answer takes no point away and adds no time, but costs one of 3 hearts; with none left the
+// game ends (try again while hearts last; wrong tries are listed for review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
 const H = 600;
 // shapes are tested on a half-size copy: a quarter of the pixels to read when a step loads (a 1-px slip is 2 px)
 const MW = W / 2;
 const MH = H / 2;
 const TIME = 360; // seconds
+const LIVES = 3;
 const CLEARED_MS = 1400; // how long the finished model shows before the next stage
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
 const shuffle = (a) => a.map((v) => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map((v) => v[1]);
@@ -224,7 +226,7 @@ function Piece({ piece, picked, done, wrong, onPick, onDrop }) {
 
 export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const fx = useFx();
-  const st = useRef({ runId, right: 0, answered: 0, mistakes: [], done: false, t0: null }); // t0: when the first model is on screen
+  const st = useRef({ runId, right: 0, answered: 0, lives: LIVES, mistakes: [], done: false, t0: null }); // t0: when the first model is on screen
   const s = st.current;
   const [stepIdx, setStepIdx] = useState(0);
   const step = STEPS[stepIdx];
@@ -239,6 +241,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   const [msg, setMsg] = useState('');
   const [pops, setPops] = useState([]);
   const [left, setLeft] = useState(TIME); // seconds left
+  const [lives, setLives] = useState(LIVES);
   const stepNow = useRef(0); // stepIdx for the clock's interval, which keeps its first render's closure
   const firstTry = useRef(true);
   const stageRef = useRef(null);
@@ -248,7 +251,9 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   stepNow.current = stepIdx;
   const report = (timeUp) => ({
     runId: s.runId,
-    summary: `${s.right}/${TOTAL_ANSWERS} pieces placed · ${Math.min(stepNow.current + 1, STEPS.length)}/${STEPS.length} steps${timeUp ? " · time's up" : ''}`,
+    summary: `${s.right}/${TOTAL_ANSWERS} pieces placed · ${Math.min(stepNow.current + 1, STEPS.length)}/${STEPS.length} steps${
+      s.lives <= 0 ? ' · out of hearts' : timeUp ? " · time's up" : ''
+    }`,
     mistakes: s.mistakes,
   });
 
@@ -342,6 +347,12 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
       fx.sound('bad');
       fx.vibrate(100);
       pop('✗ Wrong', p, true);
+      s.lives -= 1;
+      setLives(s.lives);
+      if (s.lives <= 0) {
+        fx.say('Out of hearts 💔', 'sad');
+        setTimeout(() => finish(), 700);
+      }
     } else {
       fx.sound('snap');
       fx.burst(p.x, p.y, 14);
@@ -351,7 +362,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   };
 
   const tryPiece = (piece, p) => {
-    if (cleared) return;
+    if (cleared || s.lives <= 0 || s.done) return;
     const want = step.parts[partIdx];
     // The question is which piece fits the clue: the right piece let go anywhere on the picture snaps into its place
     // and counts as right (thin parts are hard to hit exactly with a finger). Only a wrong piece or a decoy is wrong.
@@ -419,6 +430,9 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
         </span>
         <span className="mg-zp__pill">
           Stage {stepIdx + 1}/{STEPS.length}
+        </span>
+        <span className="mg-zp__pill mg-fpill--lives">
+          <Lives lives={lives} max={LIVES} />
         </span>
       </FrameHead>
       <ol className="mg-zp__steps" aria-label="Zoom steps">

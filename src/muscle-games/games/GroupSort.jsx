@@ -10,15 +10,15 @@ const MODES = [
     id: 'memory',
     title: 'Picture Match',
     icon: '🖼️',
-    desc: 'Photos and notes are pinned to an evidence board. Tap a photo, then its name or key feature to tie them with a string — 3 cases to clear.',
-    meta: '3 cases · 18 pairs · 150 s',
+    desc: 'Pictures and facts are pinned to an evidence board. Tap a picture, then the fact that goes with it. Stage 1: the three types of muscle; stage 2: inside skeletal muscle.',
+    meta: '2 stages · 18 pairs · 150 s · 3 lives',
   },
   {
     id: 'conveyor',
     title: 'Conveyor Sort',
     icon: '📦',
-    desc: 'Crates roll down the factory belt. Press a picture button and the robot arm packs the crate into Skeletal, Cardiac or Smooth.',
-    meta: '60 s · 3 lives',
+    desc: 'Crates roll down the factory belt. Press a picture button and the robot arm packs the crate. Stage 1: the three types of muscle; stage 2: inside skeletal muscle.',
+    meta: '2 stages · 18 crates · 90 s · 3 lives',
   },
 ];
 

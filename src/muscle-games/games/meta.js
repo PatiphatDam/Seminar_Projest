@@ -12,7 +12,7 @@ export const GAMES = [
   {
     id: 'group-sort',
     title: 'Group Sort',
-    goal: 'Sort skeletal, cardiac and smooth muscle by picture or on a conveyor belt.',
+    goal: 'Sort muscle facts by picture or on a conveyor belt: the three muscle types, then the layers inside skeletal muscle.',
     lo: 'OL2',
     loText: 'Differentiate the gross and microscopic characteristics of skeletal, cardiac and smooth muscle',
     minutes: '2–3 min',
@@ -28,7 +28,7 @@ export const GAMES = [
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
     minutes: '6 min',
     keys: ['diameter'],
-    intro: 'Read each clue, find the right piece and fit it onto the 3D model, then zoom in! 🔬',
+    intro: 'Read each clue, find the right piece and fit it onto the 3D model, then zoom in! 🔬 You have 3 hearts: a wrong piece costs one.',
   },
 ];
 
