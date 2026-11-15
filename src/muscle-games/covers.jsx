@@ -299,7 +299,7 @@ function CvCrate({ x, y }) {
 function CvTissue({ x, y, id }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect width="22" height="17" rx="2.5" fill="#fff1f7" stroke="#8fb3bb" />
+      <rect width="22" height="17" rx="2.5" fill="#dce9ec" stroke="#8fb3bb" />
       <image href={picUrl(id)} x="1.5" y="1.5" width="19" height="14" preserveAspectRatio="xMidYMid meet" filter="url(#cv-flat)" />
     </g>
   );
@@ -311,13 +311,13 @@ export function ConveyorCoverScene({ nested = false, bare = false }) {
   return (
     <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className={nested ? undefined : 'mg-scene'} aria-hidden="true">
       <defs>
-        {/* the model pictures on the screen, flattened to three tones of the cover's pink so they read as flat art */}
+        {/* the model pictures on the screen, flattened to three muted rose tones so they read as flat art */}
         <filter id="cv-flat" colorInterpolationFilters="sRGB">
           <feColorMatrix type="matrix" values="0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0 0 0 1 0" />
           <feComponentTransfer>
-            <feFuncR type="discrete" tableValues="0.78 0.94 0.98" />
-            <feFuncG type="discrete" tableValues="0.33 0.55 0.8" />
-            <feFuncB type="discrete" tableValues="0.5 0.71 0.87" />
+            <feFuncR type="discrete" tableValues="0.55 0.7 0.82" />
+            <feFuncG type="discrete" tableValues="0.33 0.48 0.66" />
+            <feFuncB type="discrete" tableValues="0.4 0.55 0.7" />
           </feComponentTransfer>
         </filter>
         <clipPath id="cv-sign">
