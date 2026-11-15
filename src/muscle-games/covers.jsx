@@ -299,8 +299,8 @@ function CvCrate({ x, y }) {
 function CvTissue({ x, y, id }) {
   return (
     <g transform={`translate(${x} ${y})`}>
-      <rect width="22" height="17" rx="2.5" fill="#fff" stroke="#8fb3bb" />
-      <image href={picUrl(id)} x="0.5" y="0.5" width="21" height="16" preserveAspectRatio="xMidYMid meet" />
+      <rect width="22" height="17" rx="2.5" fill="#fff1f7" stroke="#8fb3bb" />
+      <image href={picUrl(id)} x="1.5" y="1.5" width="19" height="14" preserveAspectRatio="xMidYMid meet" filter="url(#cv-flat)" />
     </g>
   );
 }
@@ -311,6 +311,15 @@ export function ConveyorCoverScene({ nested = false, bare = false }) {
   return (
     <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid slice" className={nested ? undefined : 'mg-scene'} aria-hidden="true">
       <defs>
+        {/* the model pictures on the screen, flattened to three tones of the cover's pink so they read as flat art */}
+        <filter id="cv-flat" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0 0 0 1 0" />
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0.78 0.94 0.98" />
+            <feFuncG type="discrete" tableValues="0.33 0.55 0.8" />
+            <feFuncB type="discrete" tableValues="0.5 0.71 0.87" />
+          </feComponentTransfer>
+        </filter>
         <clipPath id="cv-sign">
           <rect x="10" y="25" width="120" height="25" rx="3" />
         </clipPath>
@@ -411,7 +420,7 @@ function NoirPhoto({ x, y, w, h, r, id }) {
     <g transform={`translate(${x} ${y}) rotate(${r})`}>
       <rect width={w} height={h} fill="#8d7f6b" />
       <rect x="2.5" y="2.5" width={w - 5} height={h - 9} fill="#2b2520" />
-      <image href={picUrl(id)} x="2.5" y="2.5" width={w - 5} height={h - 9} preserveAspectRatio="xMidYMid meet" filter="url(#nr-sepia)" />
+      <image href={picUrl(id)} x="2.5" y="2.5" width={w - 5} height={h - 9} preserveAspectRatio="xMidYMid meet" filter="url(#nr-sepia)" opacity="0.85" />
     </g>
   );
 }
@@ -437,9 +446,15 @@ export function DetectiveCoverScene({ nested = false, bare = false }) {
           <stop offset="0" stopColor="#3a322b" stopOpacity="0.7" />
           <stop offset="1" stopColor="#3a322b" stopOpacity="0" />
         </radialGradient>
-        {/* old-print toning for the evidence photos */}
+        {/* faded old-print toning for the evidence photos: grey, flattened to a few tones and tinted the wall's
+            dim sepia, so they sit back like the rest of the dark scene */}
         <filter id="nr-sepia" colorInterpolationFilters="sRGB">
-          <feColorMatrix type="matrix" values="0.45 0.85 0.2 0 0.04  0.4 0.76 0.18 0 0.03  0.31 0.6 0.14 0 0.02  0 0 0 1 0" />
+          <feColorMatrix type="matrix" values="0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0.3 0.55 0.15 0 0  0 0 0 1 0" />
+          <feComponentTransfer>
+            <feFuncR type="discrete" tableValues="0.17 0.33 0.5 0.62" />
+            <feFuncG type="discrete" tableValues="0.15 0.29 0.44 0.56" />
+            <feFuncB type="discrete" tableValues="0.13 0.24 0.36 0.46" />
+          </feComponentTransfer>
         </filter>
         <radialGradient id="nr-vignette" cx="0.55" cy="0.45" r="0.75">
           <stop offset="0.55" stopColor="#000" stopOpacity="0" />
