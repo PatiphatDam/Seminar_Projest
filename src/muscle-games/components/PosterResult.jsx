@@ -29,13 +29,19 @@ function Engraving() {
           <circle cx="114" cy="38" r="3" />
         </g>
         <g strokeWidth="1.3">
-          <path d="M36 112l16-50 16 50zM52 62l-12-26 26 18z" />
-          <circle cx="54" cy="58" r="7" />
+          <path d="M36 112l16-50 16 50z" />
           <path d="M48 62q6 16 0 24M60 62q-6 16 0 24M50 64q4 10 4 22" />
           <path d="M68 70l6-22" strokeWidth="1.8" />
           <circle cx="74" cy="46" r="3.5" />
         </g>
-        <path d="M40 108l6-18M44 108l7-22M48 108l7-24M56 108l4-14M60 108l3-10M64 108l2-6M42 44l6 5M45 40l8 6M49 37l8 6" strokeWidth=".5" />
+        {/* the face and the hat are drawn last, filled with the paper colour, so the robe and head lines don't show through */}
+        <g strokeWidth="1.3" fill="#ead6a6">
+          <circle cx="54" cy="58" r="7" />
+          <path d="M45 52q2-9-3-15t-6-8q10 4 17 11t9 12z" />
+          <ellipse cx="54" cy="52" rx="12.5" ry="3.2" transform="rotate(-6 54 52)" />
+          <path d="M44 44q8 2 15 0" fill="none" strokeWidth=".6" />
+        </g>
+        <path d="M40 108l6-18M44 108l7-22M48 108l7-24M56 108l4-14M60 108l3-10M64 108l2-6" strokeWidth=".5" />
         <path d="M0 114q30-6 60-1t60-2 100 2" strokeWidth="1" />
         <path d="M8 118h30M90 118h40M170 117h40" strokeWidth=".5" />
         <path d="M14 30l2-4 2 4-4-2h4zM96 8l1.5-3 1.5 3-3-1.5h3zM206 52l1.5-3 1.5 3-3-1.5h3z" strokeWidth=".7" />
