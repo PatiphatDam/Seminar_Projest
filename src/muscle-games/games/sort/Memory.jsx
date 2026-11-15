@@ -65,16 +65,19 @@ export default function Memory({ onScore, onFinish }) {
     return () => list.forEach(clearTimeout);
   }, [fx]);
 
-  // Tie each found pair's pins together; re-measured when the board changes size and after a card
-  // settles (the card tapped first is still sliding back from its lifted "selected" look).
+  // Tie each found pair's pins together. Positions are measured from the board's padding box (where the string layer
+  // sits, inside its wooden border), and re-measured every frame for a moment after a match while the cards settle
+  // (the tapped cards slide back from their lifted look), and again when the board changes size.
   useLayoutEffect(() => {
     const board = boardRef.current;
     if (!board) return undefined;
     const measure = () => {
       const box = board.getBoundingClientRect();
+      const ox = box.left + board.clientLeft;
+      const oy = box.top + board.clientTop;
       const pin = (uid) => {
         const r = board.querySelector(`[data-card="${uid}"] .mg-pcard__pin`)?.getBoundingClientRect();
-        return r && { x: r.left + r.width / 2 - box.left, y: r.top + r.height / 2 - box.top };
+        return r && { x: r.left + r.width / 2 - ox, y: r.top + r.height / 2 - oy };
       };
       setStrings(
         Object.entries(matched).flatMap(([uid, pair]) => {
@@ -85,10 +88,16 @@ export default function Memory({ onScore, onFinish }) {
       );
     };
     measure();
+    const until = performance.now() + 700;
+    let raf = requestAnimationFrame(function tick() {
+      measure();
+      if (performance.now() < until) raf = requestAnimationFrame(tick);
+    });
     const ro = new ResizeObserver(measure);
     ro.observe(board);
     board.addEventListener('transitionend', measure);
     return () => {
+      cancelAnimationFrame(raf);
       ro.disconnect();
       board.removeEventListener('transitionend', measure);
     };
@@ -166,6 +175,8 @@ export default function Memory({ onScore, onFinish }) {
 
   const cardClass = (c) =>
     `mg-pcard mg-pcard--${c.kind}${selected?.uid === c.uid ? ' mg-pcard--selected' : ''}${(c.kind === 'text' ? matched[c.uid] : picDone(c.pair)) ? ' mg-pcard--matched' : ''}${
+      c.kind === 'pic' && Object.values(matched).includes(c.pair) ? ' mg-pcard--tied' : ''
+    }${
       wrongPair.includes(c.uid) ? ' mg-pcard--wrong' : ''
     }`;
 

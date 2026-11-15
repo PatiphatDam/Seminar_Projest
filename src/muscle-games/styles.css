@@ -1086,7 +1086,7 @@
 }
 .mg-pcard--matched, .mg-pcard--matched:hover { cursor: default; transform: none; }
 /* a found pair's pins are redrawn on top of its string (see .mg-cork__strings), so hide the card's own */
-.mg-pcard--matched .mg-pcard__pin { visibility: hidden; }
+.mg-pcard--matched .mg-pcard__pin, .mg-pcard--tied .mg-pcard__pin { visibility: hidden; }
 .mg-pcard--wrong { box-shadow: 0 0 0 3px var(--bad), 0 8px 14px rgb(0 0 0 / 0.25); animation: mg-shake 0.4s; }
 .mg-pcard:focus-visible { outline: 3px solid var(--light); outline-offset: 3px; }
 /* strings sit over the cards, between the pins */
