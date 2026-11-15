@@ -38,7 +38,7 @@ const CLUES = [
 
 const ROUNDS = 10;
 const LIVES = 3;
-const TIME = 100;
+const TIME = 200; // about 20 s per clue
 const ATP_MAX = 4;
 // Stripe colour and its shade for each lane's balloon.
 const SWING_AT = 280; // ms into the cast animation when the staff swings forward
@@ -425,7 +425,7 @@ function Round({ q, duration, ult, fire, staffAt, onHit, onWrong, onMiss, onSpec
   const [flyerGone, setFlyerGone] = useState(false);
   const flyerShot = useRef(false);
   const delays = useMemo(() => shuffle([0, 0.35, 0.7, 1.05]).map((d) => d + Math.random() * 0.25), []);
-  const flyer = useMemo(() => ({ top: 10 + Math.random() * 24, delay: 1 + Math.random() * 1.5, rev: Math.random() < 0.5 }), []);
+  const flyer = useMemo(() => ({ top: 10 + Math.random() * 24, delay: 2 + Math.random() * 4, rev: Math.random() < 0.5 }), []);
 
   // the ATP ultimate marks two wrong balloons at once, and ULT_STRIKE s later a bolt from the sky rune's lower small
   // circles hits each (the left balloon from the left circle), measured then since they keep falling; a balloon not
@@ -563,7 +563,8 @@ export default function BalloonPop({ onScore, onFinish }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const s = st.current;
   const q = questions[s.i];
-  const duration = Math.max(7, 10.5 - s.i * 0.35);
+  // a balloon takes about 18 s to fall through the sky (a little quicker in later rounds), so each clue lasts ~20 s
+  const duration = Math.max(15, 18.5 - s.i * 0.35);
   const [left] = useCountdown(TIME, { running: !s.over, onExpire: () => end() });
 
   function end() {

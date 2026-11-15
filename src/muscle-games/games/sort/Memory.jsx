@@ -10,7 +10,7 @@ import { STAGES, TOTAL_FACTS, groupOf } from './data.js';
 // pictures and six of its facts on an evidence board (stage 1: 3 pictures, two facts each; stage 2: 6 pictures, one
 // fact each). Tap a picture, then a fact that goes with it.
 // A wrong match costs a heart; with no hearts left the game ends.
-const TIME = 180;
+const TIME = 120;
 const LIVES = 3;
 const ROUND_BREAK_MS = 1100;
 const PER_STAGE = 2; // cases per stage, each with an equal share of every group's facts

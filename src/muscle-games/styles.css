@@ -662,7 +662,7 @@
   --size: 54px;
   position: absolute; left: -80px; z-index: 5; width: var(--size); height: var(--size); border: 0; border-radius: 50%; cursor: crosshair;
   display: grid; place-items: center; padding: 0; background: none; touch-action: manipulation;
-  animation: mg-fly 5.5s linear var(--fdelay) forwards;
+  animation: mg-fly 9s linear var(--fdelay) forwards;
 }
 /* the invisible ring keeps a 44px tap target */
 .mg-flyer::after { content: ''; position: absolute; inset: calc((var(--size) - var(--tap)) / 2); border-radius: 50%; }
