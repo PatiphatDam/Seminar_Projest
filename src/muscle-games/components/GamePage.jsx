@@ -6,6 +6,7 @@ import { HudContext } from './FrameHead.jsx';
 import { GAMES, MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
 import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
+import PosterResult from './PosterResult.jsx';
 
 const cheer = (score) =>
   score >= MAX_SCORE
@@ -197,7 +198,16 @@ export default function GamePage({ game, Game }) {
         </HudContext.Provider>
       </div>
 
-      {result && (
+      {result && game.resultStyle === 'poster' && (
+        <PosterResult
+          result={result}
+          best={bestOf(game, best)}
+          max={MAX_SCORE}
+          saveText={onGameFinish ? SAVE_TEXT[result.save] : null}
+          onRestart={restart}
+        />
+      )}
+      {result && game.resultStyle !== 'poster' && (
         <div className="mg-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
           <div className="mg-result__card">
             {/* a full score: Armin jumps and cheers on the result card (the bar behind it is covered) */}
