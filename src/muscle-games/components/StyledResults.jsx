@@ -192,7 +192,7 @@ export function ManifestResult({ result, best, max, saveText, onRestart }) {
               </div>
             </div>
             <div className="mg-manifest__stamp">
-              <Stamp>{failed ? 'Shipment failed' : 'Shipment complete'}</Stamp>
+              <Stamp>{failed ? 'You’re fired' : 'Job well done'}</Stamp>
             </div>
             <div className="mg-manifest__lcds">
               <div>
