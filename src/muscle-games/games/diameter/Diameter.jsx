@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFx } from '../../fx/Fx.jsx';
 import { scoreOutOf10 } from '../meta.js';
+import FrameHead from '../../components/FrameHead.jsx';
 import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 
 // Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
@@ -412,17 +413,14 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
 
   return (
     <section className="mg-zp">
-      <div className="mg-zp__top">
-        <span className="mg-zp__dwg">
-          Diameter / DWG-0{stepIdx + 1} · {step.title}
-        </span>
+      <FrameHead className="mg-zp__top" titleClass="mg-zp__dwg" pill="mg-zp__pill" title={`Diameter / DWG-0${stepIdx + 1} · ${step.title}`}>
         <span className={`mg-zp__pill${left <= 30 ? ' mg-zp__pill--low' : ''}`} role="timer" aria-label={`${mmss(left)} left`}>
           ⏱ {mmss(left)}
         </span>
         <span className="mg-zp__pill">
           Stage {stepIdx + 1}/{STEPS.length}
         </span>
-      </div>
+      </FrameHead>
       <ol className="mg-zp__steps" aria-label="Zoom steps">
         {STEPS.map((x, k) => (
           <li key={x.id} className={k === stepIdx ? 'mg-on' : k < stepIdx || (k === stepIdx && cleared) ? 'mg-done' : undefined}>

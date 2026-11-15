@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useScores } from '../scores.jsx';
-import { Armin, MascotBar, useFx, useFxState } from '../fx/Fx.jsx';
+import { Armin, MascotBar, useFx } from '../fx/Fx.jsx';
+import { HudContext } from './FrameHead.jsx';
 import { GAMES, MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
 import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
@@ -64,11 +65,11 @@ function PageHead({ game }) {
   );
 }
 
-// Shared frame for every game: header, Armin, live score out of 10, session best, results, review and replay.
+// Shared frame for every game: page header, Armin above the game, the live score out of 10 and session best (shown in
+// each game's own frame header, see FrameHead), results, review and replay.
 export default function GamePage({ game, Game }) {
   const { best, submit } = useScores();
   const fx = useFx();
-  const { muted } = useFxState();
   const { onGameFinish, gameHeader, playerId } = useGamesConfig();
   const [run, setRun] = useState(0);
   const [score, setScore] = useState(0);
@@ -150,7 +151,7 @@ export default function GamePage({ game, Game }) {
       if (final >= 8) fx.burst(window.innerWidth / 2, window.innerHeight / 3, 48);
       // a full score: Armin jumps and cheers (in every game, Balloon Pop too); otherwise a line for the score
       if (final >= MAX_SCORE) fx.say(...cheer(final), 'jump');
-      else if (!game.mascotAsks) fx.say(...cheer(final));
+      else fx.say(...cheer(final));
       setResult({ score: final, key, isNewBest, summary: info.summary, mistakes, runId, save: 'saving' });
       saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
@@ -180,50 +181,20 @@ export default function GamePage({ game, Game }) {
   return (
     <main className="mg-page mg-page--game">
       {gameHeader && <PageHead game={game} />}
-      <div className="mg-game-bar">
-        <span className="mg-lo-tag" title={game.loText}>
-          {game.lo}
-        </span>
-        <p className="mg-game-bar__lo">{game.loText}</p>
-        <div className="mg-game-bar__stats">
-          <div className="mg-stat">
-            <span>Score</span>
-            <strong key={score} className="mg-stat__bump">
-              {score}
-              <small>/{MAX_SCORE}</small>
-            </strong>
-          </div>
-          <div className="mg-stat mg-stat--best">
-            <span>Best</span>
-            <strong>{bestOf(game, best) ?? '—'}</strong>
-          </div>
-          <button
-            type="button"
-            className="mg-btn mg-btn--ghost mg-btn--icon"
-            onClick={() => fx.setMuted(!muted)}
-            aria-label={muted ? 'Turn sound on' : 'Turn sound off'}
-            aria-pressed={!muted}
-          >
-            {muted ? '🔇' : '🔊'}
-          </button>
-          <button type="button" className="mg-btn mg-btn--ghost mg-btn--icon" onClick={restart} aria-label="Restart game">
-            ↻
-          </button>
-        </div>
-      </div>
-
       <MascotBar fallback={game.intro} />
 
       <div className="mg-game-stage">
-        <Game
-          key={run}
-          fresh={run > 0}
-          runId={runIdRef.current}
-          onScore={setScore}
-          onFinish={finish}
-          setScoreKey={setScoreKey}
-          setExitReport={setExitReport}
-        />
+        <HudContext.Provider value={{ score, best: bestOf(game, best) }}>
+          <Game
+            key={run}
+            fresh={run > 0}
+            runId={runIdRef.current}
+            onScore={setScore}
+            onFinish={finish}
+            setScoreKey={setScoreKey}
+            setExitReport={setExitReport}
+          />
+        </HudContext.Provider>
       </div>
 
       {result && (

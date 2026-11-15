@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useFx } from '../../fx/Fx.jsx';
 import { Lives, useCountdown } from '../../components/Hud.jsx';
-import { GearTimer } from '../../components/SortTimers.jsx';
+import FrameHead, { TimePill } from '../../components/FrameHead.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import { shuffle } from '../util.js';
 import { GROUPS, TEXT_CARDS, groupLabel } from './data.js';
@@ -253,14 +253,18 @@ export default function Conveyor({ onScore, onFinish }) {
   };
 
   return (
-    <section className="mg-conveyor">
-      <div className="mg-hud">
-        <GearTimer left={left} total={TIME} />
-        <div className="mg-hud__row">
-          <span className="mg-hud__q">📦 {s.sorted} packed</span>
+    <section className="mg-conveyor mg-frame mg-frame--warehouse">
+      {/* the night shift: a dark warehouse floor framed in yellow-and-black hazard tape. Crates keep coming until the
+          time is up, so the count is the crate on the belt now and how many are packed */}
+      <FrameHead title="Conveyor Sort">
+        <TimePill left={left} total={TIME} />
+        <span className="mg-fpill" aria-label={`Crate ${s.sorted + s.wrong + s.fell + 1}, ${s.sorted} packed`}>
+          Crate {s.sorted + s.wrong + s.fell + 1} · {s.sorted} packed
+        </span>
+        <span className="mg-fpill mg-fpill--lives">
           <Lives lives={s.lives} max={LIVES} />
-        </div>
-      </div>
+        </span>
+      </FrameHead>
 
       <div ref={beltEl} className={`mg-factory${over ? ' mg-factory--stopped' : ''}`}>
         <FactoryBackdrop />

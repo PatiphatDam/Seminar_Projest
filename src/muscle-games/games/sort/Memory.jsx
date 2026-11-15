@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { pick, useFx } from '../../fx/Fx.jsx';
 import { useCountdown } from '../../components/Hud.jsx';
-import { MagnifierTimer } from '../../components/SortTimers.jsx';
+import FrameHead, { TimePill } from '../../components/FrameHead.jsx';
 import { scoreOutOf10 } from '../meta.js';
 import { sample, shuffle } from '../util.js';
 import { PAIRS } from './data.js';
@@ -159,15 +159,14 @@ export default function Memory({ onScore, onFinish }) {
     }`;
 
   return (
-    <section className="mg-memory">
-      <div className="mg-hud">
-        <MagnifierTimer left={left} total={TIME} />
-        <div className="mg-hud__row">
-          <span className="mg-hud__q">
-            🔎 Case {round + 1}/{ROUNDS.length} · {ROUNDS[round].title} · {Object.keys(matched).length}/{deck.pics.length}
-          </span>
-        </div>
-      </div>
+    <section className="mg-memory mg-frame mg-frame--noir">
+      {/* a film-noir evidence wall: red string strung across it and a CASE FILE stamp, like the cover's detective half */}
+      <FrameHead title={`Picture Match · Case ${round + 1}`}>
+        <TimePill left={left} total={TIME} />
+        <span className="mg-fpill" aria-label={`${s.found} of ${TOTAL_PAIRS} pairs found`}>
+          Pairs {s.found}/{TOTAL_PAIRS}
+        </span>
+      </FrameHead>
       <div className="mg-cork" ref={boardRef}>
         <div className={`mg-pmatch${between ? ' mg-pmatch--fade' : ''}`} key={round}>
           <div className="mg-pmatch__col">
