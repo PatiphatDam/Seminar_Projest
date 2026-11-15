@@ -280,8 +280,6 @@
 .mg-scene * { transform-box: fill-box; }
 .mg-sc-bob { animation: mg-bob 3s ease-in-out infinite; transform-origin: center; }
 .mg-sc-drift { animation: mg-drift 9s ease-in-out infinite alternate; }
-.mg-bc-clouds { animation: mg-bc-clouds 48s linear infinite; }
-@keyframes mg-bc-clouds { to { transform: translateX(320px); } }
 .mg-sc-drift--slow { animation-duration: 13s; animation-direction: alternate-reverse; }
 .mg-sc-spin { animation: mg-spin 14s linear infinite; transform-box: view-box; }
 .mg-sc-hop { animation: mg-float 2.6s ease-in-out infinite; }
@@ -306,16 +304,11 @@
 
 /* Scene previews (hover / Preview button) */
 
-/* a still cover (Group Sort's hub card): its two halves come from the animated mode covers, frozen here */
+/* a still hub cover: nothing on it moves (Group Sort's halves come from the animated mode covers, frozen here) */
 .mg-still, .mg-still * { animation: none !important; }
 
-/* Balloon Pop cover: the orb glows and throws sparks. */
 /* placed art (wizard, balloons) and its inner details keep plain SVG transforms, not the scene-wide fill-box */
 .mg-bc [transform] { transform-box: view-box; transform-origin: 0 0; }
-.mg-bc-glow { animation: mg-bc-glow 2.4s ease-in-out infinite; transform-origin: center; }
-@keyframes mg-bc-glow { 50% { opacity: 0.55; transform: scale(1.12); } }
-.mg-bc-spark { animation: mg-bc-spark 2.2s ease-in-out infinite; }
-@keyframes mg-bc-spark { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); } }
 
 /* ---------- Game frame ---------- */
 .mg-page--game { max-width: 980px; padding-top: 16px; }
@@ -1466,7 +1459,7 @@
 @keyframes mg-pop-in { from { transform: scale(0.85); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .mg-sc-bob, .mg-bc-glow, .mg-bc-spark, .mg-sc-drift, .mg-bc-clouds, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-sc-flicker, .mg-btn--pulse,
+  .mg-sc-bob, .mg-sc-drift, .mg-sc-spin, .mg-sc-hop, .mg-sc-deal, .mg-sc-belt, .mg-sc-convey, .mg-sc-twinkle, .mg-sc-breathe, .mg-sc-flicker, .mg-btn--pulse,
   .mg-hub-hero__mascot, .mg-armin__body, .mg-armin__head, .mg-armin__arm, .mg-armin__leg, .mg-armin__pupil, .mg-armin [class*='mg-armin__'], .mg-mascot-bar__bubble--nudge, .mg-factory__belt, .mg-factory__dial::after, .mg-worker__limb { animation: none; }
   .mg-pcard, .mg-pmatch, .mg-cork::before, .mg-cork__strings path, .mg-cork__stamp { transition: none; animation: none; }
   .mg-sc-smoke { animation: none; opacity: 0.35; }

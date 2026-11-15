@@ -1,7 +1,7 @@
 import { AirshipShapes, WizardShapes } from './art.jsx';
 import { art } from './games/diameter/levels.js';
 
-// Cartoon scenes for the hub cards. Balloon Pop keeps its gentle idle loops; the other covers are still posters.
+// Cartoon scenes for the hub cards. Every hub cover is a still picture (the user's choice, 2026-11-15).
 
 // Balloon Pop: the hooded sage close up, his orb glowing on the left, goblin balloons over the night castle.
 // The backdrop is the game's night scene, simplified: a big moon, puffy clouds, a faded castle, a row of town houses
@@ -23,7 +23,7 @@ const BC_BRICKS =
 
 export function BalloonScene() {
   return (
-    <svg viewBox="0 0 320 200" className="mg-scene mg-bc" aria-hidden="true">
+    <svg viewBox="0 0 320 200" className="mg-scene mg-bc mg-still" aria-hidden="true">
       <defs>
         <linearGradient id="bc-night" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="hsl(250 48% 15%)" />
@@ -59,20 +59,13 @@ export function BalloonScene() {
         <circle cx="250" cy="44" r=".8" />
         <circle cx="90" cy="60" r=".8" />
       </g>
-      {/* clouds drift one way, left to right like in the game, behind the castle; a second copy one width to the
-          left makes the loop seamless */}
-      <g className="mg-bc-clouds">
-        {[0, -320].map((dx) => (
-          <g key={dx} transform={`translate(${dx} 0)`}>
-            {BC_CLOUDS.map((d) => (
-              <g key={d}>
-                <path d={d} fill="hsl(258 24% 30%)" />
-                <path d={d} fill="none" stroke="hsl(258 26% 42%)" strokeWidth="1.2" opacity=".6" />
-              </g>
-            ))}
-          </g>
-        ))}
-      </g>
+      {/* clouds behind the castle */}
+      {BC_CLOUDS.map((d) => (
+        <g key={d}>
+          <path d={d} fill="hsl(258 24% 30%)" />
+          <path d={d} fill="none" stroke="hsl(258 26% 42%)" strokeWidth="1.2" opacity=".6" />
+        </g>
+      ))}
       <path d={BC_CASTLE} fill="hsl(262 22% 34%)" />
       <path d={BC_TOWN} fill="hsl(258 26% 24%)" />
       <path d={BC_WINDOWS} fill="hsl(258 22% 34%)" />
@@ -80,31 +73,20 @@ export function BalloonScene() {
       <rect y="178" width="320" height="22" fill="hsl(255 18% 34%)" />
       <path d={BC_BRICKS} stroke="hsl(255 20% 26%)" strokeWidth="1" />
       <path d="M0 178.5H320" stroke="hsl(255 18% 46%)" strokeWidth="1" />
-      <g className="mg-sc-bob">
-        <g transform="translate(208 16) scale(0.3167)">
-          <AirshipShapes />
-        </g>
+      <g transform="translate(208 16) scale(0.3167)">
+        <AirshipShapes />
       </g>
-      <g className="mg-sc-bob" style={{ animationDelay: '-1s' }}>
-        <g transform="translate(262 58) scale(0.25)">
-          <AirshipShapes />
-        </g>
+      <g transform="translate(262 58) scale(0.25)">
+        <AirshipShapes />
       </g>
-      <g className="mg-sc-bob" style={{ animationDelay: '-2s' }}>
-        <g transform="translate(34 14) scale(0.27)">
-          <AirshipShapes />
-        </g>
+      <g transform="translate(34 14) scale(0.27)">
+        <AirshipShapes />
       </g>
       {/* warm light from the orb */}
-      <circle className="mg-bc-glow" cx="130" cy="72" r="70" fill="url(#bc-orb)" opacity=".75" />
+      <circle cx="130" cy="72" r="70" fill="url(#bc-orb)" opacity=".75" />
       {/* the wizard, mirrored so the staff and orb sit on the left, cropped at the chest */}
       <g transform="translate(276 24) scale(-0.9 0.9)">
         <WizardShapes />
-      </g>
-      <g fill="#ffe1b0">
-        <circle className="mg-bc-spark" cx="130" cy="72" r="1.6" style={{ '--dx': '-24px', '--dy': '-30px' }} />
-        <circle className="mg-bc-spark" cx="130" cy="72" r="1.2" style={{ '--dx': '22px', '--dy': '-26px', animationDelay: '-0.8s' }} />
-        <circle className="mg-bc-spark" cx="130" cy="72" r="1.4" style={{ '--dx': '-30px', '--dy': '8px', animationDelay: '-1.5s' }} />
       </g>
       <rect width="320" height="200" fill="url(#bc-fade)" />
       <text x="14" y="172" fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="27" fill="url(#bc-gold)" stroke="#2a1606" strokeWidth="1.1" paintOrder="stroke">
