@@ -570,11 +570,14 @@ export default function BalloonPop({ onScore, onFinish }) {
   function end() {
     if (s.over) return;
     s.over = true;
+    // the mission is complete only when all 10 clues were played with a heart left; out of hearts (or time) fails it
+    const complete = s.lives > 0 && s.i + 1 >= ROUNDS;
     rerender();
     later(() => {
       onFinish(scoreOutOf10(s.right, ROUNDS), {
         summary: `${s.right}/${ROUNDS} clues right`,
         mistakes: s.mistakes,
+        mission: complete ? 'complete' : 'failed',
       });
     }, 1000);
   }

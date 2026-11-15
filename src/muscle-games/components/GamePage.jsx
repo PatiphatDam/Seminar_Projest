@@ -153,7 +153,7 @@ export default function GamePage({ game, Game }) {
       // a full score: Armin jumps and cheers (in every game, Balloon Pop too); otherwise a line for the score
       if (final >= MAX_SCORE) fx.say(...cheer(final), 'jump');
       else fx.say(...cheer(final));
-      setResult({ score: final, key, isNewBest, summary: info.summary, mistakes, runId, save: 'saving' });
+      setResult({ score: final, key, isNewBest, summary: info.summary, mission: info.mission, mistakes, runId, save: 'saving' });
       saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
     [fx, game, record]

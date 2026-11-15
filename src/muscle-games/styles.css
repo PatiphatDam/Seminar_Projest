@@ -458,6 +458,7 @@
   mask-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -2.2 1.6'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
   animation: mg-stamp 0.35s 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
+.mg-poster__stamp--failed { color: #7d0f14; border-color: #7d0f14; font-size: 30px; }
 .mg-poster__scores { display: grid; grid-template-columns: 1fr 1fr; margin: 6px 0 12px; border-top: 1.5px solid #5a3a16; border-bottom: 1.5px solid #5a3a16; }
 .mg-poster__scores div { padding: 8px 4px 6px; }
 .mg-poster__scores div + div { border-left: 1px solid rgba(90, 58, 22, 0.55); }

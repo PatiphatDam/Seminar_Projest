@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
-// Balloon Pop's end screen: a WANTED poster nailed up in the night town, stamped MISSION COMPLETE in red. It shows only
+// Balloon Pop's end screen: a WANTED poster nailed up in the night town, stamped in red MISSION COMPLETE (all 10 clues
+// played with a heart left) or MISSION FAILED (out of hearts or time first). It shows only
 // the score, the best score and the clues that were missed with their right answers.
 
 // One line per missed clue (a clue may hold a wrong tap and then reach the castle: list it once).
@@ -69,6 +70,7 @@ function WaxSeal() {
 
 export default function PosterResult({ result, best, max, saveText, onRestart }) {
   const missed = missedClues(result.mistakes);
+  const failed = result.mission === 'failed';
   return (
     <div className="mg-result mg-result--poster" role="dialog" aria-modal="true" aria-labelledby="result-title">
       <div className="mg-poster-wrap">
@@ -87,7 +89,7 @@ export default function PosterResult({ result, best, max, saveText, onRestart })
           <p className="mg-poster__sub">The rogue balloons of Myo Town</p>
           <div className="mg-poster__scene">
             <Engraving />
-            <span className="mg-poster__stamp">Mission complete</span>
+            <span className={`mg-poster__stamp${failed ? ' mg-poster__stamp--failed' : ''}`}>{failed ? 'Mission failed' : 'Mission complete'}</span>
           </div>
 
           <div className="mg-poster__scores">
@@ -120,7 +122,7 @@ export default function PosterResult({ result, best, max, saveText, onRestart })
               </ul>
             </>
           ) : (
-            <p className="mg-poster__clean">No wrong answers. Every balloon is down!</p>
+            <p className="mg-poster__clean">{failed ? 'No wrong answers, but time ran out.' : 'No wrong answers. Every balloon is down!'}</p>
           )}
 
           {saveText && (
