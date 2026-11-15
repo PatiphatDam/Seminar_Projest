@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GAMES, MAX_SCORE, bestOf } from './games/meta.js';
 import { useScores } from './scores.jsx';
@@ -10,31 +9,13 @@ const SCENES = { 'balloon-pop': BalloonScene, 'group-sort': GroupSortScene, diam
 
 function GameCard({ g, n }) {
   const { best } = useScores();
-  const [preview, setPreview] = useState(false);
   const Scene = SCENES[g.id];
   const top = bestOf(g, best);
 
   return (
-    <li
-      className="mg-game-card"
-      onMouseEnter={() => setPreview(true)}
-      onMouseLeave={() => setPreview(false)}
-      onFocus={() => setPreview(true)}
-      onBlur={() => setPreview(false)}
-    >
-      <div className={`mg-game-card__cover${preview ? ' mg-is-preview' : ''}`}>
+    <li className="mg-game-card">
+      <div className="mg-game-card__cover">
         <Scene />
-        {Scene.preview !== false && (
-          <button
-            type="button"
-            className="mg-preview-chip"
-            onClick={() => setPreview((p) => !p)}
-            aria-pressed={preview}
-            aria-label={`Preview ${g.title}`}
-          >
-            {preview ? '■ Stop' : '▶ Preview'}
-          </button>
-        )}
       </div>
       <div className="mg-game-card__body">
         <div className="mg-game-card__titlerow">

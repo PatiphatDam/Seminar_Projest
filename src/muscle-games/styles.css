@@ -178,7 +178,7 @@
 }
 .mg-btn:active { transform: scale(0.97); }
 .mg-btn:focus-visible, .mg-bin:focus-visible, .mg-piece:focus-visible, .mg-row:focus-visible, .mg-board:focus-visible,
-.mg-mcard:focus-visible, .mg-mode:focus-visible, .mg-preview-chip:focus-visible {
+.mg-mcard:focus-visible, .mg-mode:focus-visible {
   outline: 3px solid var(--sea-500); outline-offset: 2px;
 }
 .mg-btn--primary { background: var(--sea-600); color: var(--on-accent); box-shadow: var(--shadow); }
@@ -261,11 +261,6 @@
 @media (hover: hover) { .mg-game-card:hover { transform: translateY(-2px); } }
 .mg-game-card__cover { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 12px; background: var(--card-panel); }
 .mg-game-card__cover .mg-scene { width: 100%; height: 100%; }
-.mg-preview-chip {
-  position: absolute; top: 10px; right: 10px; min-height: var(--tap); padding: 0 12px; border-radius: 999px; border: 0;
-  background: rgb(12 30 26 / 0.72); color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
-}
-@media (hover: hover) { .mg-preview-chip { opacity: 0; transition: opacity 0.2s; } .mg-game-card:hover .mg-preview-chip, .mg-preview-chip:focus-visible { opacity: 1; } }
 .mg-game-card__body { display: flex; flex-direction: column; gap: 8px; padding: 18px 8px 0; flex: 1; }
 .mg-game-card__tags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 /* Compact chips so OL · time · points stay on one row even in the narrow two-column cards. */
@@ -310,31 +305,17 @@
 @keyframes mg-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.8; } 50% { opacity: 0.95; } 55% { opacity: 0.75; } }
 
 /* Scene previews (hover / Preview button) */
-.mg-pv-dart, .mg-pv-score, .mg-pv-confetti { opacity: 0; }
-.mg-is-preview .mg-pv-dart { animation: mg-pv-dart 2.4s ease-in infinite; }
-.mg-is-preview .mg-pv-pop { animation: mg-pv-pop 2.4s ease-out infinite; }
-.mg-is-preview .mg-pv-score { animation: mg-pv-score 2.4s ease-out infinite; }
-.mg-is-preview .mg-pv-confetti { animation: mg-pv-confetti 2.4s ease-out infinite; transform-box: view-box; }
-@keyframes mg-pv-dart { 0% { transform: translate(0, 0); opacity: 0; } 5% { opacity: 1; } 28% { transform: translate(16px, -118px); opacity: 1; } 30%, 100% { transform: translate(16px, -118px); opacity: 0; } }
-@keyframes mg-pv-pop { 0%, 28% { transform: scale(1); opacity: 1; } 34% { transform: scale(1.35); opacity: 0.6; } 40%, 82% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes mg-pv-score { 0%, 30% { opacity: 0; transform: translateY(6px); } 40%, 70% { opacity: 1; transform: translateY(-6px); } 85%, 100% { opacity: 0; transform: translateY(-14px); } }
-@keyframes mg-pv-confetti { 0%, 30% { opacity: 0; transform: scale(0.3); } 36% { opacity: 1; } 70%, 100% { opacity: 0; transform: scale(1.6); } }
 
-/* Balloon Pop cover: the orb glows and throws sparks; in preview it turns red and fires at the near balloon,
-   timed to the shared 2.4s pop/confetti/score loop. */
+/* a still cover (Group Sort's hub card): its two halves come from the animated mode covers, frozen here */
+.mg-still, .mg-still * { animation: none !important; }
+
+/* Balloon Pop cover: the orb glows and throws sparks. */
 /* placed art (wizard, balloons) and its inner details keep plain SVG transforms, not the scene-wide fill-box */
 .mg-bc [transform] { transform-box: view-box; transform-origin: 0 0; }
 .mg-bc-glow { animation: mg-bc-glow 2.4s ease-in-out infinite; transform-origin: center; }
 @keyframes mg-bc-glow { 50% { opacity: 0.55; transform: scale(1.12); } }
 .mg-bc-spark { animation: mg-bc-spark 2.2s ease-in-out infinite; }
 @keyframes mg-bc-spark { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); } }
-.mg-bc-redglow, .mg-bc-fire { opacity: 0; }
-.mg-is-preview .mg-bc-redglow { animation: mg-bc-red 2.4s ease-out infinite; }
-.mg-is-preview .mg-bc .mg-wizard__orb-red { animation: mg-bc-orb 2.4s ease-out infinite; }
-.mg-is-preview .mg-bc-fire { animation: mg-bc-fire 2.4s ease-in infinite; }
-@keyframes mg-bc-red { 0%, 2% { opacity: 0; } 6%, 26% { opacity: 1; } 36%, 100% { opacity: 0; } }
-@keyframes mg-bc-orb { 0%, 2% { opacity: 0; } 6%, 26% { opacity: 1; } 36%, 100% { opacity: 0; } }
-@keyframes mg-bc-fire { 0%, 8% { opacity: 0; transform: translate(0, 0); } 10% { opacity: 1; } 28% { opacity: 1; transform: translate(97px, -38px); } 30%, 100% { opacity: 0; transform: translate(97px, -38px); } }
 
 /* ---------- Game frame ---------- */
 .mg-page--game { max-width: 980px; padding-top: 16px; }

@@ -1,11 +1,9 @@
 import { AirshipShapes, WizardShapes } from './art.jsx';
 import { art } from './games/diameter/levels.js';
 
-// Animated cartoon scenes for the hub cards.
-// Idle loops run all the time; ".is-preview" on the cover plays a short gameplay preview.
+// Cartoon scenes for the hub cards. Balloon Pop keeps its gentle idle loops; the other covers are still posters.
 
 // Balloon Pop: the hooded sage close up, his orb glowing on the left, goblin balloons over the night castle.
-// Preview: the orb turns red, a fireball flies to the near balloon, it bursts and "+30" floats up.
 // The backdrop is the game's night scene, simplified: a big moon, puffy clouds, a faded castle, a row of town houses
 // and the stone wall the wizard stands behind.
 const puff = (x, y, w) =>
@@ -40,16 +38,6 @@ export function BalloonScene() {
           <stop offset="0" stopColor="#fff" stopOpacity=".95" />
           <stop offset=".35" stopColor="#ffd9a8" stopOpacity=".55" />
           <stop offset="1" stopColor="#ff8a3d" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="bc-red">
-          <stop offset="0" stopColor="#fff2e0" />
-          <stop offset=".3" stopColor="#ff5a3c" stopOpacity=".85" />
-          <stop offset="1" stopColor="#e0322b" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="bc-fire">
-          <stop offset="0" stopColor="#fff7d6" />
-          <stop offset=".45" stopColor="#ffb020" />
-          <stop offset="1" stopColor="#e0322b" />
         </radialGradient>
         <linearGradient id="bc-gold" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#fff3c4" />
@@ -92,11 +80,9 @@ export function BalloonScene() {
       <rect y="178" width="320" height="22" fill="hsl(255 18% 34%)" />
       <path d={BC_BRICKS} stroke="hsl(255 20% 26%)" strokeWidth="1" />
       <path d="M0 178.5H320" stroke="hsl(255 18% 46%)" strokeWidth="1" />
-      <g className="mg-pv-pop">
-        <g className="mg-sc-bob">
-          <g transform="translate(208 16) scale(0.3167)">
-            <AirshipShapes />
-          </g>
+      <g className="mg-sc-bob">
+        <g transform="translate(208 16) scale(0.3167)">
+          <AirshipShapes />
         </g>
       </g>
       <g className="mg-sc-bob" style={{ animationDelay: '-1s' }}>
@@ -109,17 +95,8 @@ export function BalloonScene() {
           <AirshipShapes />
         </g>
       </g>
-      <g className="mg-pv-confetti" style={{ transformOrigin: '227px 34px' }}>
-        {Array.from({ length: 8 }, (_, k) => (
-          <circle key={k} cx={227 + Math.cos(k * 0.79) * 14} cy={34 + Math.sin(k * 0.79) * 14} r="2.4" fill={['#ffb020', '#fbf1c7', '#2fb5a3', '#ff5a3c'][k % 4]} />
-        ))}
-      </g>
-      <text className="mg-pv-score" x="244" y="20" fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="12" fill="url(#bc-gold)" stroke="#3a2008" strokeWidth=".6">
-        +30
-      </text>
-      {/* warm light from the orb, turning red when he casts */}
+      {/* warm light from the orb */}
       <circle className="mg-bc-glow" cx="130" cy="72" r="70" fill="url(#bc-orb)" opacity=".75" />
-      <circle className="mg-bc-redglow" cx="130" cy="72" r="70" fill="url(#bc-red)" />
       {/* the wizard, mirrored so the staff and orb sit on the left, cropped at the chest */}
       <g transform="translate(276 24) scale(-0.9 0.9)">
         <WizardShapes />
@@ -129,7 +106,6 @@ export function BalloonScene() {
         <circle className="mg-bc-spark" cx="130" cy="72" r="1.2" style={{ '--dx': '22px', '--dy': '-26px', animationDelay: '-0.8s' }} />
         <circle className="mg-bc-spark" cx="130" cy="72" r="1.4" style={{ '--dx': '-30px', '--dy': '8px', animationDelay: '-1.5s' }} />
       </g>
-      <circle className="mg-bc-fire" cx="130" cy="72" r="5" fill="url(#bc-fire)" />
       <rect width="320" height="200" fill="url(#bc-fade)" />
       <text x="14" y="172" fontFamily="'Cinzel Decorative', Georgia, serif" fontWeight="900" fontSize="27" fill="url(#bc-gold)" stroke="#2a1606" strokeWidth="1.1" paintOrder="stroke">
         Balloon
@@ -196,8 +172,6 @@ export function DiameterScene() {
     </svg>
   );
 }
-// A still poster: no gameplay preview, so the hub hides its Preview chip.
-DiameterScene.preview = false;
 
 const GS_INK = '#141010';
 
@@ -207,7 +181,7 @@ const GS_INK = '#141010';
 // "Group" on the detective's half, "SORT" on the factory's; the two mode names sit along the bottom.
 export function GroupSortScene() {
   return (
-    <svg viewBox="0 0 320 200" className="mg-scene" aria-hidden="true">
+    <svg viewBox="0 0 320 200" className="mg-scene mg-still" aria-hidden="true">
       <defs>
         <clipPath id="gss-fig-left">
           <rect x="-60" y="-110" width="60" height="115" />
@@ -322,8 +296,6 @@ function GsNut({ x, y }) {
   );
 }
 
-// A still poster: no gameplay preview, so the hub hides its Preview chip.
-GroupSortScene.preview = false;
 
 // Conveyor Sort mode card: the factory from the game in flat style. A yellow hazard sign carries the title,
 // the robot arm holds a crate (bobbing), the belt rollers turn, and a worker at the console watches the
