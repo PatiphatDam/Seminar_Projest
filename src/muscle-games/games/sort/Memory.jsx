@@ -160,7 +160,7 @@ export default function Memory({ onScore, onFinish }) {
 
   return (
     <section className="mg-memory mg-frame mg-frame--noir">
-      {/* a film-noir evidence wall: red string strung across it and a CASE FILE stamp, like the cover's detective half */}
+      {/* a film-noir detective's office, the game on an evidence board in a wooden frame (see .mg-frame--noir) */}
       <FrameHead title={`Picture Match · Case ${round + 1}`}>
         <TimePill left={left} total={TIME} />
         <span className="mg-fpill" aria-label={`${s.found} of ${TOTAL_PAIRS} pairs found`}>

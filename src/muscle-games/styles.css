@@ -466,29 +466,29 @@
   .mg-fpill { min-height: 28px; padding: 3px 9px; font-size: 12px; }
 }
 
-/* Balloon Pop: an old spellbook page - parchment inside a double ink border */
-.mg-frame--spell { color: #3b2810; border: 3px double #6b4a22; outline: 2px solid #6b4a22; outline-offset: 3px; background: radial-gradient(ellipse at 50% 40%, #f6ead0, #e5cf9f 80%, #cfb07a); }
-.mg-frame--spell .mg-fpill { border: 1.5px solid #6b4a22; border-radius: 999px; background: #fff6e0; color: #3b2810; }
-.mg-frame--spell .mg-fpill--low { border-color: #b91c1c; background: #fee2e2; color: #b91c1c; }
+/* Balloon Pop: a spellbook in deep night purple with a gold double border, to match the night sky of the game */
+.mg-frame--spell { color: #e9e1ff; border: 3px double #c9a24a; outline: 2px solid #c9a24a; outline-offset: 3px; background: radial-gradient(ellipse at 50% 35%, #4a3a78, #2f2456 70%, #1f173d); }
+.mg-frame--spell .mg-fpill { border: 1.5px solid #c9a24a; border-radius: 999px; background: #1c1438; color: #f6e7b8; }
+.mg-frame--spell .mg-fpill--low { border-color: #f87171; background: #7f1d1d; color: #fee2e2; }
 
-/* Picture Match: a film-noir evidence wall - near-black brown under a dim light from above, red string strung taut
-   between the pins, the photos a touch sepia, and a red CASE FILE stamp (the cover's detective half) */
+/* Picture Match: a film-noir detective's office - near-black brown wall under a dim light from above; the game sits
+   on its own evidence board inside it: dark cork in a heavy wooden frame, the photos a touch sepia */
 .mg-frame--noir {
   color: #efe6d6; border: 2px solid #0c0a09; border-radius: 6px; box-shadow: inset 0 0 60px rgb(0 0 0 / 0.75), 0 12px 26px rgb(0 0 0 / 0.5);
   background: radial-gradient(ellipse at 50% -5%, #d9b77a44, transparent 55%), repeating-linear-gradient(90deg, #ffffff05 0 1px, transparent 1px 4px), linear-gradient(#2b2420, #1c1714);
 }
-.mg-frame--noir::before { content: ""; position: absolute; inset: 60px 6px 6px; pointer-events: none; background: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%201000%20420%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20stroke%3D%22%23b3171c%22%20stroke-width%3D%221.8%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M40%2060%20L470%2040%22/%3E%3Cpath%20d%3D%22M470%2040%20L960%2090%22/%3E%3Cpath%20d%3D%22M60%20380%20L560%20390%22/%3E%3Cpath%20d%3D%22M560%20390%20L950%20380%22/%3E%3Cpath%20d%3D%22M470%2040%20L560%20390%22/%3E%3Cpath%20d%3D%22M40%2060%20L60%20380%22/%3E%3C/g%3E%3C/svg%3E") center / 100% 100% no-repeat; }
-.mg-frame--noir::after {
-  content: "CASE FILE"; position: absolute; right: 28px; bottom: 6px; z-index: 2; transform: rotate(-6deg); padding: 2px 12px; pointer-events: none;
-  border: 3px solid #b3171c; color: #b3171c; font: 900 20px "Cinzel Decorative", Georgia, serif; letter-spacing: 0.14em; opacity: 0.85;
-}
 .mg-frame--noir .mg-fhead__title { color: #f3ead8; font-family: "Cinzel Decorative", Georgia, serif; font-size: 20px; font-weight: 900; letter-spacing: 0.06em; text-transform: none; text-shadow: 0 2px 0 #000; }
 .mg-frame--noir .mg-fpill { border: 1px solid #c8b38a66; border-radius: 1px; background: #0e0b09cc; color: #e9dcc2; font-family: "Courier New", monospace; letter-spacing: 0.04em; }
 .mg-frame--noir .mg-fpill--low { border-color: #dc2626; color: #fca5a5; }
-.mg-frame--noir .mg-cork { position: relative; z-index: 1; background: transparent; border: 0; box-shadow: none; }
+.mg-frame--noir .mg-cork {
+  position: relative; z-index: 1; padding: 12px; border: 12px solid #3a2416; border-radius: 4px;
+  background: radial-gradient(circle at 30% 40%, #5a3d26 0 1px, transparent 1.6px) 0 0 / 9px 9px, radial-gradient(circle at 70% 70%, #6e4b2e 0 1px, transparent 1.6px) 0 0 / 13px 13px, linear-gradient(#4a3322, #3b2819);
+  box-shadow: inset 0 0 0 2px #1a0f08, inset 0 0 26px rgb(0 0 0 / 0.65), 0 0 0 2px #6b4a2c, 0 8px 18px rgb(0 0 0 / 0.6);
+}
 .mg-frame--noir .mg-cork::before, .mg-frame--noir .mg-cork::after { display: none; }
 .mg-frame--noir .mg-pmatch__label { background: #e9dcc2; color: #1c1714; font-family: "Courier New", monospace; letter-spacing: 0.18em; }
 .mg-frame--noir .mg-pcard--pic { filter: sepia(0.25) contrast(1.05); }
+@media (max-width: 560px) { .mg-frame--noir .mg-cork { padding: 8px; border-width: 8px; } }
 
 /* Conveyor Sort: the night shift - a dark warehouse floor framed in yellow-and-black hazard tape */
 .mg-frame--warehouse {
@@ -517,7 +517,7 @@
     radial-gradient(circle at 22% 80%, rgb(139 90 30 / 0.14) 0 5%, transparent 12%),
     repeating-linear-gradient(90deg, rgb(120 80 30 / 0.05) 0 1px, transparent 1px 5px),
     linear-gradient(180deg, #ecd6a4, #d6b274 58%, #bb8f4e);
-  clip-path: polygon(0 4%,6% 1%,13% 3%,21% 0,30% 2.5%,40% .5%,50% 3%,60% 0,70% 2.5%,79% .5%,88% 3%,95% 0,100% 4%,100% 96%,94% 100%,86% 97.5%,76% 100%,66% 97%,56% 99.5%,46% 97%,36% 100%,26% 97.5%,16% 100%,8% 97%,0 99%);
+  border-radius: 3px; clip-path: inset(0 0 0 0);
   animation: mg-scroll-unroll var(--unroll) cubic-bezier(0.3, 0.7, 0.3, 1);
 }
 .mg-scroll__burn { position: absolute; inset: 0; pointer-events: none; box-shadow: inset 0 0 0 2px rgb(60 25 5 / 0.55), inset 0 0 10px 3px rgb(60 25 5 / 0.45); }
@@ -564,7 +564,7 @@
 .mg-scroll__cap--top { top: 0; transform: scaleY(-1); }
 .mg-scroll__cap--bottom { bottom: 0; }
 .mg-scroll__cap::after { content: ''; position: absolute; left: 50%; top: 1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: radial-gradient(circle at 40% 30%, #bfdbfe, #2563eb 55%, #0b1430); }
-@keyframes mg-scroll-unroll { from { clip-path: polygon(0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 4%,0 96%,0 100%,0 97.5%,0 100%,0 97%,0 99.5%,0 97%,0 100%,0 97.5%,0 100%,0 97%,0 99%); } }
+@keyframes mg-scroll-unroll { from { clip-path: inset(0 100% 0 0); } }
 @keyframes mg-scroll-roll { from { left: 0; } }
 @keyframes mg-scroll-ink { 0%, 55% { opacity: 0; filter: blur(2px); } }
 @keyframes mg-scroll-glow { 0%, 45% { box-shadow: none; } 60% { border-color: #60a5fa; box-shadow: 0 0 8px 1px rgb(96 165 250 / 0.9), inset 0 0 8px rgb(96 165 250 / 0.7); } }
