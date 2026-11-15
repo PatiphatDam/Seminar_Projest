@@ -134,7 +134,7 @@ export default function Conveyor({ onScore, onFinish }) {
   const [arm, setArm] = useState({ x: '50%', key: 0, card: null, mark: null });
   const [binFx, setBinFx] = useState({});
   const [over, setOver] = useState(false);
-  const st = useRef({ sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], n: 0, grabs: 0, t0: performance.now(), stage: 0, made: 0, handled: 0, pause: 0 });
+  const st = useRef({ sorted: 0, wrong: 0, fell: 0, lives: LIVES, mistakes: [], crates: [], n: 0, grabs: 0, t0: performance.now(), stage: 0, made: 0, handled: 0, pause: 0 });
   const [, rerender] = useReducer((x) => x + 1, 0);
   const timers = useRef([]);
   const later = (fn, ms) => timers.current.push(setTimeout(fn, ms));
@@ -174,7 +174,7 @@ export default function Conveyor({ onScore, onFinish }) {
     };
   }, [fx, pools, s]);
 
-  function end(line) {
+  function end(line, complete = false) {
     if (overRef.current) return;
     overRef.current = true;
     setOver(true);
@@ -184,6 +184,8 @@ export default function Conveyor({ onScore, onFinish }) {
         onFinish(score(), {
           summary: `${s.sorted}/${TOTAL_FACTS} crates packed · ${s.wrong + s.fell} missed`,
           mistakes: s.mistakes,
+          mission: complete ? 'complete' : 'failed', // end screen: SHIPMENT COMPLETE or SHIPMENT FAILED
+          crates: s.crates, // one entry per crate handled (true = packed right), for the manifest's 24 boxes
         }),
       1100
     );
@@ -194,7 +196,7 @@ export default function Conveyor({ onScore, onFinish }) {
     s.handled += 1;
     if (s.lives <= 0 || s.handled < pools[s.stage].length) return;
     if (s.stage + 1 >= STAGES.length) {
-      later(() => end('All crates done! 🎉'), 500);
+      later(() => end('All crates done! 🎉', s.lives > 0), 500);
       return;
     }
     s.stage += 1;
@@ -225,6 +227,7 @@ export default function Conveyor({ onScore, onFinish }) {
     const { x, y } = fx.centerOf(`[data-drop="bin-${bin}"]`);
     if (item.card.answer === bin) {
       s.sorted += 1;
+      s.crates.push(true);
       onScore(score());
       fx.sound('good');
       fx.burst(x, y - 20, 14);
@@ -235,6 +238,7 @@ export default function Conveyor({ onScore, onFinish }) {
       return 'good';
     }
     s.wrong += 1;
+    s.crates.push(false);
     s.mistakes.push({ prompt: item.card.text, yours: groupOf(item.stage, bin).label, answer: groupOf(item.stage, item.card.answer).label, why: item.card.why });
     fx.sound('bad');
     fx.vibrate(120);
@@ -251,6 +255,7 @@ export default function Conveyor({ onScore, onFinish }) {
     // Keep the crate on screen while it tips off the end; it is removed when the fall animation ends.
     setBelt((b) => b.map((c) => (c.uid === uid ? { ...c, falling: true } : c)));
     s.fell += 1;
+    s.crates.push(false);
     s.mistakes.push({ prompt: item.card.text, yours: 'Fell off the belt', answer: groupOf(item.stage, item.card.answer).label, why: item.card.why });
     fx.sound('bad');
     fx.vibrate(100);

@@ -114,6 +114,7 @@ export default function Memory({ onScore, onFinish }) {
         onFinish(score(), {
           summary: `${s.found}/${TOTAL_PAIRS} pairs · ${s.misses} wrong`,
           mistakes: s.mistakes,
+          mission: completed ? 'complete' : 'failed', // end screen: CASE CLOSED or CASE UNSOLVED
         }),
       1100
     );

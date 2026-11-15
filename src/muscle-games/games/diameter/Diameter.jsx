@@ -405,7 +405,8 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   function finish(timeUp) {
     if (s.done) return;
     s.done = true;
-    onFinish(score(), report(timeUp));
+    // end screen: BUILD COMPLETE when all 5 stages were built with hearts and time left, else BUILD FAILED
+    onFinish(score(), { ...report(timeUp), mission: !timeUp && s.lives > 0 ? 'complete' : 'failed' });
   }
   const goNext = () => {
     if (stepIdx + 1 >= STEPS.length) {

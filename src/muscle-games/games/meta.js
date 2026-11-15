@@ -18,6 +18,8 @@ export const GAMES = [
     loText: 'Differentiate the gross and microscopic characteristics of skeletal, cardiac and smooth muscle',
     minutes: '3 min',
     keys: ['group-sort:memory', 'group-sort:conveyor'],
+    // end screens (components/StyledResults.jsx): a case report for Picture Match, a delivery manifest for Conveyor
+    resultStyle: { 'group-sort:memory': 'casefile', 'group-sort:conveyor': 'manifest' },
     modeLabels: { 'group-sort:memory': 'Picture Match', 'group-sort:conveyor': 'Conveyor' },
     intro: 'Pick a mode: Picture Match or Conveyor Sort?',
   },
@@ -29,6 +31,7 @@ export const GAMES = [
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
     minutes: '5 min',
     keys: ['diameter'],
+    resultStyle: 'drawing', // end screen: an engineering drawing sheet (components/StyledResults.jsx)
     intro: 'Read each clue, find the right piece and fit it onto the 3D model, then zoom in! 🔬 You have 3 hearts: a wrong piece costs one.',
   },
 ];

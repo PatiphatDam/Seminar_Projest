@@ -7,6 +7,11 @@ import { GAMES, MAX_SCORE, bestOf } from '../games/meta.js';
 import { useGamesConfig } from '../config.js';
 import { deliver, onOutboxChange, pendingFor } from '../outbox.js';
 import PosterResult from './PosterResult.jsx';
+import { CaseFileResult, DrawingResult, ManifestResult } from './StyledResults.jsx';
+
+// Each game's own end screen (meta.js `resultStyle`: one name, or one per score key for Group Sort's two modes).
+const RESULT_SCREENS = { poster: PosterResult, casefile: CaseFileResult, manifest: ManifestResult, drawing: DrawingResult };
+const screenFor = (game, key) => RESULT_SCREENS[typeof game.resultStyle === 'object' ? game.resultStyle?.[key] : game.resultStyle];
 
 const cheer = (score) =>
   score >= MAX_SCORE
@@ -153,7 +158,7 @@ export default function GamePage({ game, Game }) {
       // a full score: Armin jumps and cheers (in every game, Balloon Pop too); otherwise a line for the score
       if (final >= MAX_SCORE) fx.say(...cheer(final), 'jump');
       else fx.say(...cheer(final));
-      setResult({ score: final, key, isNewBest, summary: info.summary, mission: info.mission, mistakes, runId, save: 'saving' });
+      setResult({ score: final, key, isNewBest, summary: info.summary, mission: info.mission, crates: info.crates, mistakes, runId, save: 'saving' });
       saving.then((save) => setResult((r) => (r?.runId === runId ? { ...r, save } : r)));
     },
     [fx, game, record]
@@ -179,6 +184,8 @@ export default function GamePage({ game, Game }) {
     setScoreKey(game.keys[0]);
   };
 
+  const ResultScreen = result ? screenFor(game, result.key) : null;
+
   return (
     <main className="mg-page mg-page--game">
       {gameHeader && <PageHead game={game} />}
@@ -198,8 +205,8 @@ export default function GamePage({ game, Game }) {
         </HudContext.Provider>
       </div>
 
-      {result && game.resultStyle === 'poster' && (
-        <PosterResult
+      {ResultScreen && (
+        <ResultScreen
           result={result}
           best={bestOf(game, best)}
           max={MAX_SCORE}
@@ -207,7 +214,7 @@ export default function GamePage({ game, Game }) {
           onRestart={restart}
         />
       )}
-      {result && game.resultStyle !== 'poster' && (
+      {result && !ResultScreen && (
         <div className="mg-result" role="dialog" aria-modal="true" aria-labelledby="result-title">
           <div className="mg-result__card">
             {/* a full score: Armin jumps and cheers on the result card (the bar behind it is covered) */}
