@@ -8,7 +8,7 @@ import { STAGES, TOTAL_FACTS, groupOf } from './data.js';
 
 // The same two stages as Picture Match (data.js): the 12 crates of stage 1 (3 bins), then the bins change to the six
 // levels of stage 2 for its 12 crates. A crate packed in the wrong bin or left to fall off costs a heart.
-const TIME = 120;
+const TIME = 180;
 const STAGE_BREAK_MS = 1600;
 const LIVES = 3;
 // The arm slides to the crate, reaches down and closes its claws at REACH_MS, then lifts it away.

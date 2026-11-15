@@ -11,14 +11,14 @@ const MODES = [
     title: 'Picture Match',
     icon: '🖼️',
     desc: 'Pictures and facts are pinned to an evidence board. Tap a picture, then the fact that goes with it. Stage 1: the three types of muscle; stage 2: six levels inside skeletal muscle.',
-    meta: '2 stages · 24 pairs · 2 min · 3 lives',
+    meta: '2 stages · 24 pairs · 3 min · 3 lives',
   },
   {
     id: 'conveyor',
     title: 'Conveyor Sort',
     icon: '📦',
     desc: 'Crates roll down the factory belt. Press a picture button and the robot arm packs the crate. Stage 1: the three types of muscle; stage 2: six levels inside skeletal muscle.',
-    meta: '2 stages · 24 crates · 2 min · 3 lives',
+    meta: '2 stages · 24 crates · 3 min · 3 lives',
   },
 ];
 

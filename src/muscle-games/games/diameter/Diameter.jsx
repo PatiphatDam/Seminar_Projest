@@ -12,13 +12,13 @@ import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 // the game moves on to the next step by itself, like Group Sort. Each part's place is numbered from the biggest part to
 // the smallest, and every piece in the tray carries its name. Out of 10 = pieces placed over all 25 pieces of the
 // five steps. A wrong answer takes no point away and adds no time, but costs one of 3 hearts; with none left the
-// game ends (try again while hearts last; wrong tries are listed for review). No hints. The clock counts down from 6 minutes; when it runs out the game ends and pieces not placed score 0.
+// game ends (try again while hearts last; wrong tries are listed for review). No hints. The clock counts down from 5 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
 const H = 600;
 // shapes are tested on a half-size copy: a quarter of the pixels to read when a step loads (a 1-px slip is 2 px)
 const MW = W / 2;
 const MH = H / 2;
-const TIME = 360; // seconds
+const TIME = 300; // seconds
 const LIVES = 3;
 const CLEARED_MS = 1400; // how long the finished model shows before the next stage
 const mmss = (t) => `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
