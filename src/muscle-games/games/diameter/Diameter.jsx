@@ -5,13 +5,13 @@ import FrameHead from '../../components/FrameHead.jsx';
 import { Lives } from '../../components/Hud.jsx';
 import { DECOYS, STEPS, TOTAL_ANSWERS, art } from './levels.js';
 
-// Diameter: zoom into a skeletal muscle in five steps (whole muscle → fascicle → muscle fiber → myofibril →
-// sarcomere). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
+// Diameter: zoom into a skeletal muscle in six steps (whole muscle → fascicle → muscle fiber → myofibril →
+// sarcomere → myofilaments). Each step is a shape-fit puzzle on a grey render of the site's 3D model: a clue gives a part's function,
 // the student finds that piece among the real pieces and decoys in the tray and drags it (or taps it, then taps its
 // place) onto the model, where it snaps into its place and takes its colour. When the last piece is in, the full model shows a moment and
 // the game moves on to the next step by itself, like Group Sort. Each part's place is numbered from the biggest part to
-// the smallest, and every piece in the tray carries its name. Out of 10 = pieces placed over all 25 pieces of the
-// five steps. A wrong answer takes no point away and adds no time, but costs one of 3 hearts; with none left the
+// the smallest, and every piece in the tray carries its name. Out of 10 = pieces placed over all 30 pieces of the
+// six steps. A wrong answer takes no point away and adds no time, but costs one of 3 hearts; with none left the
 // game ends (try again while hearts last; wrong tries are listed for review). No hints. The clock counts down from 5 minutes; when it runs out the game ends and pieces not placed score 0.
 const W = 900; // every render is 900 x 600
 const H = 600;
@@ -405,7 +405,7 @@ export default function Diameter({ onScore, onFinish, runId, setExitReport }) {
   function finish(timeUp) {
     if (s.done) return;
     s.done = true;
-    // end screen: BUILD COMPLETE when all 5 stages were built with hearts and time left, else BUILD FAILED
+    // end screen: BUILD COMPLETE when all 6 stages were built with hearts and time left, else BUILD FAILED
     onFinish(score(), { ...report(timeUp), mission: !timeUp && s.lives > 0 ? 'complete' : 'failed' });
   }
   const goNext = () => {

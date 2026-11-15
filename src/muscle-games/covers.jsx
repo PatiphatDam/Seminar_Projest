@@ -148,9 +148,10 @@ export function DiameterScene() {
       </text>
       <g fontFamily="ui-monospace, Consolas, 'Cascadia Mono', Menlo, monospace" fontSize="5.6" letterSpacing="1">
         <text x="13" y="55" fill={DM_TONE.sub}>OL3 · BUILD THE MUSCLE</text>
-        <text x="308" y="170" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
-        <text x="308" y="178" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
-        <text x="308" y="186" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
+        <text x="308" y="162" fill="#fff" textAnchor="end">WHOLE MUSCLE ▶</text>
+        <text x="308" y="170" fill="#fff" textAnchor="end">FASCICLE ▶ FIBER</text>
+        <text x="308" y="178" fill="#fff" textAnchor="end">▶ MYOFIBRIL ▶ SARCOMERE</text>
+        <text x="308" y="186" fill="#fff" textAnchor="end">▶ MYOFILAMENTS</text>
       </g>
     </svg>
   );

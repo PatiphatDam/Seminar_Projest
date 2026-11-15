@@ -26,7 +26,7 @@ export const GAMES = [
   {
     id: 'diameter',
     title: 'Diameter',
-    goal: 'Build a muscle from its 3D parts and zoom in, from the whole muscle to the sarcomere.',
+    goal: 'Build a muscle from its 3D parts and zoom in, from the whole muscle to the myofilaments.',
     lo: 'OL3',
     loText: 'Explain the structural organization of skeletal muscle from the whole muscle to the molecular level',
     minutes: '5 min',

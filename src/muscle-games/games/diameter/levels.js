@@ -1,4 +1,4 @@
-// OL3 — structural organization of skeletal muscle, as one zoom from the whole muscle to the sarcomere.
+// OL3 — structural organization of skeletal muscle, as one zoom from the whole muscle to the myofilaments.
 // Every picture is rendered from the main site's 3D models (public/models/*.glb, the /explore zoom chain): a grey
 // render of the whole model, and each part on its own, in colour, from the same camera, showing only the pixels of
 // that part that are visible in the model (made with scripts/diameter-art). Clues use the wording of the 3D model's info panels
@@ -16,6 +16,7 @@ export const DECOYS = {
   perimysium: { art: 'fascicle-perimysium', name: 'Perimysium', why: 'it wraps a fascicle; you meet it one zoom level further out' },
   ttubule: { art: 'fiber-ttubule', name: 'T-tubules', why: 'they belong inside a single muscle fiber, deeper in the zoom' },
   sr: { art: 'fiber-sr', name: 'Sarco\u00adplasmic reticulum', why: 'it wraps the myofibrils of a fiber, one level further out' },
+  zdisc: { art: 'sarcomere-zdisc', name: 'Z discs', why: 'they cap the ends of a sarcomere, one zoom level further out' },
 };
 
 export const STEPS = [
@@ -92,8 +93,25 @@ export const STEPS = [
     ],
     decoys: ['idisc', 'sr'],
     scale: 'One sarcomere ≈ 2.5 µm, Z disc to Z disc',
+    zoom: 'Zoom into the myofilaments',
+  },
+  {
+    // the main site's last skeletal zoom level (/models/filaments.glb): six thin filaments round one thick filament.
+    // Actin and the thick filament's core are see-through, as tropomyosin and troponin lie behind them.
+    id: 'filaments',
+    title: 'Myofilaments',
+    say: 'Step 6: the myofilaments, thick and thin.',
+    parts: [
+      { id: 'thick', see: 0.5, name: 'Thick filament (myosin)', clue: 'The main protein of the thick filament — its long tails point toward the centre of the sarcomere.' },
+      { id: 'heads', name: 'Myosin heads (cross-bridges)', clue: 'Globular heads that bind actin and split ATP; they attach, pull the thin filament toward the centre (power stroke), detach and repeat.' },
+      { id: 'actin', see: 0.5, name: 'Actin', clue: 'The main protein of the thin filament: G-actin joins into helical strands of F-actin, each with a site where a myosin head can bind.' },
+      { id: 'tropomyosin', name: 'Tropomyosin', clue: 'A long, fibrous regulatory protein lying along the thin filament; in a relaxed fiber it covers the myosin-binding sites.' },
+      { id: 'troponin', one: true, name: 'Troponin (TnC · TnI · TnT)', clue: 'Small complexes along the thin filament: one part binds Ca²⁺, one inhibits actin–myosin interaction, one binds tropomyosin.' },
+    ],
+    decoys: ['dense', 'zdisc'],
+    scale: 'Thick filament ≈ 15 nm across, thin ≈ 7 nm',
   },
 ];
 
-// One point per piece to place (25 in all); the score out of 10 is pieces placed / TOTAL_ANSWERS.
+// One point per piece to place (30 in all); the score out of 10 is pieces placed / TOTAL_ANSWERS.
 export const TOTAL_ANSWERS = STEPS.reduce((n, s) => n + s.parts.length, 0);

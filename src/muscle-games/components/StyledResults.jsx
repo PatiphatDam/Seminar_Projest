@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { STAGES } from '../games/sort/data.js';
 import muscleArt from '../games/diameter/art/muscle-full.webp';
-import sarcomereArt from '../games/diameter/art/sarcomere-full.webp';
+import filamentsArt from '../games/diameter/art/filaments-full.webp';
 
 // End screens in each game's own style (chosen with the user, 2026-11-15). Every one shows the same things: a red
 // rubber stamp that says whether the mission was completed or failed, the score, the best score, and each wrong
@@ -250,18 +250,18 @@ export function DrawingResult({ result, best, max, saveText, onRestart }) {
       <div className="mg-rwrap">
         <article className="mg-dwg">
           <p className="mg-dwg__meta">
-            <span>DIAMETER / DWG-05</span>
+            <span>DIAMETER / DWG-06</span>
             <span>REV C</span>
-            <span>SHEET 5 OF 5</span>
+            <span>SHEET 6 OF 6</span>
           </p>
           <h2 id="result-title" className="mg-dwg__title">
             {failed ? 'MUSCLE, UNFINISHED' : 'MUSCLE, ASSEMBLED'}
           </h2>
-          <p className="mg-dwg__sub">GENERAL ARRANGEMENT · WHOLE MUSCLE TO SARCOMERE</p>
+          <p className="mg-dwg__sub">GENERAL ARRANGEMENT · WHOLE MUSCLE TO MYOFILAMENTS</p>
           <div className="mg-dwg__view" aria-hidden="true">
             <img className="mg-dwg__muscle" src={muscleArt} alt="" draggable={false} />
             <div className="mg-dwg__detail">
-              <img src={sarcomereArt} alt="" draggable={false} />
+              <img src={filamentsArt} alt="" draggable={false} />
             </div>
             <svg viewBox="0 0 334 170" preserveAspectRatio="none">
               <g stroke="#e8f1ff" fill="none" strokeWidth=".8">
@@ -270,7 +270,7 @@ export function DrawingResult({ result, best, max, saveText, onRestart }) {
               </g>
               <g fill="#9fc3f0" fontFamily="Consolas, monospace" fontSize="9">
                 <text x="84" y="164">Ø 30 cm</text>
-                <text x="250" y="164">2.5 µm</text>
+                <text x="250" y="164">Ø 15 nm</text>
                 <text x="200" y="22">DETAIL A</text>
                 <text x="8" y="14">VIEW 1:1</text>
               </g>
