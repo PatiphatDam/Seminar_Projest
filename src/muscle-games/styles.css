@@ -547,7 +547,7 @@
 .mg-case__sign { margin-left: auto; text-align: right; }
 .mg-case__sign span { display: block; font: 20px 'Segoe Script', 'Brush Script MT', cursive; color: #1d3a8a; }
 .mg-case__sign small { display: block; font-size: 9px; color: #6b5a3a; border-top: 1px solid #6b5a3a; }
-.mg-desk__lens { position: absolute; left: -4px; bottom: -40px; width: 100px; height: 100px; transform: rotate(-28deg); pointer-events: none; }
+.mg-desk__lens { position: absolute; left: 6px; bottom: -2px; width: 100px; height: 100px; transform: rotate(-28deg); pointer-events: none; }
 .mg-ractions--desk { margin-top: 26px; }
 .mg-ractions--desk .mg-rbtn { color: #e8c98a; background: #2a1a0e; border-color: #8a6a3a; }
 .mg-ractions--desk .mg-rbtn--main { color: #2a1b10; background: linear-gradient(#f0d595, #c99a4a); border-color: #6b4a1a; box-shadow: 0 3px 0 #6b4a1a; }
