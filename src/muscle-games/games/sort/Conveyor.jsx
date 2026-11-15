@@ -184,7 +184,7 @@ export default function Conveyor({ onScore, onFinish }) {
         onFinish(score(), {
           summary: `${s.sorted}/${TOTAL_FACTS} crates packed · ${s.wrong + s.fell} missed`,
           mistakes: s.mistakes,
-          mission: complete ? 'complete' : 'failed', // end screen stamp: JOB WELL DONE or YOU’RE FIRED
+          mission: complete ? 'complete' : 'failed', // end screen stamp: YOU’RE HIRED or YOU’RE FIRED
           crates: s.crates, // one entry per crate handled (true = packed right), for the manifest's 24 boxes
         }),
       1100
